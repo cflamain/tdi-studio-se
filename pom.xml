@@ -52,6 +52,7 @@
 		<module>main/plugins/org.talend.designer.components.localprovider</module>
 		<module>main/plugins/org.talend.designer.core</module>
 		<module>main/plugins/org.talend.designer.dbmap</module>
+		<module>main/plugins/org.talend.designer.unitemap</module>
 		<module>main/plugins/org.talend.designer.documentation</module>
 		<module>main/plugins/org.talend.designer.filemultischemas</module>
 		<module>main/plugins/org.talend.designer.fileoutputxml</module>
