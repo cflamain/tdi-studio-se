@@ -73,6 +73,10 @@ public class OracleGenerationManager extends DbGenerationManager {
      // TODO Auto-generated method stub
         if (dbMapComponent instanceof UniteMapComponent) {
             List<? extends IConnection> incomingConnections = dbMapComponent.getIncomingConnections();
+            if (incomingConnections.size() == 0) {
+                // when call from javajet (tELTOracleUniteMap -> tEltOracleOutput). incomingConnections are empty
+                incomingConnections = dbMapComponent.getRealGraphicalNode().getIncomingConnections();
+            }
             boolean firstSql = true;
             StringBuilder sqlText = new StringBuilder();
             for (IConnection ic : incomingConnections) {

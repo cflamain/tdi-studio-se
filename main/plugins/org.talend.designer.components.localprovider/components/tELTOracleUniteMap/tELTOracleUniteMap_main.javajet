@@ -86,7 +86,7 @@
             	continue;
             }
 
-            String sqlQuery = gm.buildSqlSelect((UniteMapComponent) node, outputTable.getName());
+            String sqlQuery = gm.buildSqlSelect((UniteMapComponent) node, outputTable.getName(), "");
             
             if (useHintOptions && hintsValues.get("SELECT")!= null) {
 	            StringBuffer tmpSqlQuery = new StringBuffer(sqlQuery);
