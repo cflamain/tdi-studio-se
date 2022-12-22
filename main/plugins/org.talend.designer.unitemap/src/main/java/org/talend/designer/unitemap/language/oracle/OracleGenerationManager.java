@@ -88,7 +88,7 @@ public class OracleGenerationManager extends DbGenerationManager {
                         List<ExternalDbMapTable> inputTables = externalData.getInputTables();
                         for (ExternalDbMapTable edt : inputTables) {
                             if (ic.getName().equals(edt.getName())) {
-                                uniteType = edt.getJoinType();
+                                uniteType = language.getJoin(edt.getJoinType()).getLabel();
                                 break;
                             }
                         }
