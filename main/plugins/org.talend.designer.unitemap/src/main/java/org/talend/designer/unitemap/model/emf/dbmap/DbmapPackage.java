@@ -38,7 +38,7 @@ public interface DbmapPackage extends EPackage {
      * <!-- begin-user-doc --> <!-- end-user-doc -->
      * @generated
      */
-    String eNS_URI = "http://www.talend.org/dbmap";
+    String eNS_URI = "http://www.talend.org/unitemap";
 
     /**
      * The package namespace name.

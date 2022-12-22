@@ -7,7 +7,7 @@
    </extension>
    <extension point="org.eclipse.emf.ecore.generated_package">
       <package
-            uri="http://www.talend.org/dbmap"
+            uri="http://www.talend.org/unitemap"
             class="org.talend.designer.unitemap.model.emf.dbmap.DbmapPackage"
             genModel="model/dbmap.genmodel"/>
    </extension>
@@ -15,7 +15,7 @@
    <extension point="org.eclipse.emf.ecore.extension_parser">
       <!-- @generated dbmap -->
       <parser
-            type="dbmap"
+            type="unitemap"
             class="org.talend.designer.unitemap.model.emf.dbmap.util.DbmapResourceFactoryImpl"/>
    </extension>
    <extension
