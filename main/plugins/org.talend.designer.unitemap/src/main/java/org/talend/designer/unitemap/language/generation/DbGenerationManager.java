@@ -453,35 +453,26 @@ public abstract class DbGenerationManager extends AbstractDbGenerationManager{
                     String labelJoinType = joinType.getLabel();
                     appendSqlQuery(sb, labelJoinType);
                     appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                    if (joinType == AbstractDbLanguage.JOIN.CROSS_JOIN) {
-                        ExternalDbMapTable nextTable = null;
-                        if (i < lstSizeInputTables) {
-                            nextTable = inputTables.get(i);
-                            buildTableDeclaration(component, sb, nextTable, false, false, true);
-                        }
 
-                    } else {
-
-                        // ExternalDbMapTable rightTable = joinLeftToJoinRightTables.get(inputTable.getName());
-                        buildTableDeclaration(component, sb, inputTable, false, false, true);
-                        // if (rightTable != null) {
-                        // } else {
-                        // sb.append(" <!! NO JOIN CLAUSES FOR '" + inputTable.getName() + "' !!> ");
-                        // }
+                    // ExternalDbMapTable rightTable = joinLeftToJoinRightTables.get(inputTable.getName());
+                    buildTableDeclaration(component, sb, inputTable, false, false, true);
+                    // if (rightTable != null) {
+                    // } else {
+                    // sb.append(" <!! NO JOIN CLAUSES FOR '" + inputTable.getName() + "' !!> ");
+                    // }
+                    appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                    appendSqlQuery(sb, DbMapSqlConstants.ON);
+                    appendSqlQuery(sb, DbMapSqlConstants.LEFT_BRACKET);
+                    appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                    if (!buildConditions(component, sb, inputTable, true, true, true)) {
+                        appendSqlQuery(sb, DbMapSqlConstants.LEFT_COMMENT);
                         appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                        appendSqlQuery(sb, DbMapSqlConstants.ON);
-                        appendSqlQuery(sb, DbMapSqlConstants.LEFT_BRACKET);
+                        appendSqlQuery(sb, Messages.getString("DbGenerationManager.conditionNotSet"));//$NON-NLS-1$
                         appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                        if (!buildConditions(component, sb, inputTable, true, true, true)) {
-                            appendSqlQuery(sb, DbMapSqlConstants.LEFT_COMMENT);
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            appendSqlQuery(sb, Messages.getString("DbGenerationManager.conditionNotSet"));//$NON-NLS-1$
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            appendSqlQuery(sb, DbMapSqlConstants.RIGHT_COMMENT);
-                        }
-                        appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                        appendSqlQuery(sb, DbMapSqlConstants.RIGHT_BRACKET);
+                        appendSqlQuery(sb, DbMapSqlConstants.RIGHT_COMMENT);
                     }
+                    appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                    appendSqlQuery(sb, DbMapSqlConstants.RIGHT_BRACKET);
 
                 }
             }
@@ -2633,33 +2624,22 @@ public abstract class DbGenerationManager extends AbstractDbGenerationManager{
                         appendSqlQuery(sb, DbMapSqlConstants.SPACE);
                     }
                     String labelJoinType = joinType.getLabel();
-                    if (joinType == AbstractDbLanguage.JOIN.CROSS_JOIN) {
-                        ExternalDbMapTable nextTable = null;
-                        if (i < lstSizeInputTables) {
-                            nextTable = inputTables.get(i);
-                                appendSqlQuery(sb, labelJoinType);
-                                appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                                buildTableDeclaration(component, sb, nextTable, false, true, true);
-                        }
-
+                    if (isConditionChecked(component, inputTable)) {
+                        appendSqlQuery(sb, labelJoinType);
+                        appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                        buildTableDeclaration(component, sb, inputTable, false, false, true);
+                        appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                        appendSqlQuery(sb, DbMapSqlConstants.ON);
+                        appendSqlQuery(sb, DbMapSqlConstants.LEFT_BRACKET);
+                        appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                        buildConditions(component, sb, inputTable, true, true, true);
+                        appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                        appendSqlQuery(sb, DbMapSqlConstants.RIGHT_BRACKET);
                     } else {
-                        if (isConditionChecked(component, inputTable)) {
-                            appendSqlQuery(sb, labelJoinType);
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            buildTableDeclaration(component, sb, inputTable, false, false, true);
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            appendSqlQuery(sb, DbMapSqlConstants.ON);
-                            appendSqlQuery(sb, DbMapSqlConstants.LEFT_BRACKET);
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            buildConditions(component, sb, inputTable, true, true, true);
-                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                            appendSqlQuery(sb, DbMapSqlConstants.RIGHT_BRACKET);
-                        } else {
-                            commaCouldBeAdded = true;
-                            buildTableDeclaration(component, sb, inputTable, commaCouldBeAdded, crCouldBeAdded, false);
-                        }
-
+                        commaCouldBeAdded = true;
+                        buildTableDeclaration(component, sb, inputTable, commaCouldBeAdded, crCouldBeAdded, false);
                     }
+
 
                 }
             }
@@ -2671,16 +2651,8 @@ public abstract class DbGenerationManager extends AbstractDbGenerationManager{
             for (int i = 0; i < lstSizeInputTables; i++) {
                 ExternalDbMapTable inputTable = inputTables.get(i);
                 IJoinType joinType = language.getJoin(inputTable.getJoinType());
-                if (joinType == AbstractDbLanguage.JOIN.CROSS_JOIN) {
-                    // if join type is CROSS JOIN the condition will only in where clause no matter explicit join
-                    // checked or not
-                    if (buildConditions4WhereClause(isFirstClause, component, sbWhere, inputTable, false)) {
-                        isFirstClause = false;
-                    }
-                } else {
-                    if (buildConditions(component, sbWhere, inputTable, false, isFirstClause, false)) {
-                        isFirstClause = false;
-                    }
+                if (buildConditions(component, sbWhere, inputTable, false, isFirstClause, false)) {
+                    isFirstClause = false;
                 }
             }
             /*

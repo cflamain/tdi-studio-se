@@ -42,8 +42,7 @@ public class OracleLanguage extends AbstractDbLanguage {
      */
     public static enum ORACLEJOIN implements IJoinType {
         // the LEFT_OUTER_JOIN_ORACLE and RIGHT_OUTER_JOIN_ORACLE don't support explicit join
-        LEFT_OUTER_JOIN_ORACLE("LEFT OUTER JOIN (+)"), //$NON-NLS-1$
-        RIGHT_OUTER_JOIN_ORACLE("RIGHT OUTER JOIN (+)"); //$NON-NLS-1$
+        EXCEPT("EXCEPT"); //$NON-NLS-1$
 
         String label;
 
@@ -56,6 +55,7 @@ public class OracleLanguage extends AbstractDbLanguage {
          *
          * @return the label
          */
+        @Override
         public String getLabel() {
             return this.label;
         }
@@ -71,7 +71,7 @@ public class OracleLanguage extends AbstractDbLanguage {
         List<IJoinType> joins = new ArrayList<IJoinType>();
         joins.addAll(Arrays.asList(super.getAvailableJoins()));
         joins.addAll(Arrays.asList(ORACLEJOIN.values()));
-        return (IJoinType[]) joins.toArray(new IJoinType[0]);
+        return joins.toArray(new IJoinType[0]);
     }
 
     @Override
@@ -90,8 +90,7 @@ public class OracleLanguage extends AbstractDbLanguage {
     @Override
     public List<IJoinType> unuseWithExplicitJoin() {
         List<IJoinType> joins = super.unuseWithExplicitJoin();
-        joins.add(ORACLEJOIN.LEFT_OUTER_JOIN_ORACLE);
-        joins.add(ORACLEJOIN.RIGHT_OUTER_JOIN_ORACLE);
+        joins.add(ORACLEJOIN.EXCEPT);
         return joins;
     }
 }

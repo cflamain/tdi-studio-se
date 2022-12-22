@@ -42,9 +42,7 @@ public abstract class AbstractDbLanguage implements IDbLanguage {
         UNION("UNION"), //$NON-NLS-1$
         UNION_ALL("UNION ALL"), //$NON-NLS-1$
         MINUS("MINUS"), //$NON-NLS-1$
-        INTERSECT("INTERSECT"), //$NON-NLS-1$
-        FULL_OUTER_JOIN("FULL OUTER JOIN"), //$NON-NLS-1$
-        CROSS_JOIN("CROSS JOIN"); //$NON-NLS-1$
+        INTERSECT("INTERSECT"); //$NON-NLS-1$
 
         String label;
 

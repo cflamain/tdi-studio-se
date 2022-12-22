@@ -46,8 +46,8 @@ import org.talend.commons.utils.data.bean.IBeanPropertyAccessors;
 import org.talend.designer.abstractmap.model.tableentry.ITableEntry;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.unitemap.i18n.Messages;
-import org.talend.designer.unitemap.language.IJoinType;
 import org.talend.designer.unitemap.language.AbstractDbLanguage.JOIN;
+import org.talend.designer.unitemap.language.IJoinType;
 import org.talend.designer.unitemap.language.operator.IDbOperator;
 import org.talend.designer.unitemap.language.operator.IDbOperatorManager;
 import org.talend.designer.unitemap.managers.MapperManager;
@@ -86,10 +86,12 @@ public class InputDataMapTableView extends DataMapTableView {
         columnJoin.setId(ID_EXPLICIT_JOIN);
         columnJoin.setBeanPropertyAccessors(new IBeanPropertyAccessors<InputColumnTableEntry, Boolean>() {
 
+            @Override
             public Boolean get(InputColumnTableEntry bean) {
                 return bean.isJoin();
             }
 
+            @Override
             public void set(InputColumnTableEntry bean, Boolean value) {
                 bean.setJoin(value);
                 boolean enable = true;
@@ -133,10 +135,12 @@ public class InputDataMapTableView extends DataMapTableView {
         column.setId(DataMapTableView.ID_NAME_COLUMN);
         column.setBeanPropertyAccessors(new IBeanPropertyAccessors<InputColumnTableEntry, String>() {
 
+            @Override
             public String get(InputColumnTableEntry bean) {
                 return bean.getMetadataColumn().getLabel();
             }
 
+            @Override
             public void set(InputColumnTableEntry bean, String value) {
                 bean.getMetadataColumn().setLabel(value);
             }
@@ -150,10 +154,12 @@ public class InputDataMapTableView extends DataMapTableView {
         columnOperator.setToolTipHeader(Messages.getString("InputDataMapTableView.Operator")); //$NON-NLS-1$
         columnOperator.setBeanPropertyAccessors(new IBeanPropertyAccessors<InputColumnTableEntry, String>() {
 
+            @Override
             public String get(InputColumnTableEntry bean) {
                 return bean.getOperator();
             }
 
+            @Override
             public void set(InputColumnTableEntry bean, String value) {
                 bean.setOperator(value);
                 mapperManager.getProblemsManager().checkProblemsForTableEntry(bean, true);
@@ -172,6 +178,7 @@ public class InputDataMapTableView extends DataMapTableView {
                 arrayOperators, SWT.NONE);
         typeComboEditor.addListener(new ICellEditorListener() {
 
+            @Override
             public void applyEditorValue() {
                 ModifiedObjectInfo modifiedObjectInfo = tableViewerCreatorForColumns.getModifiedObjectInfo();
                 InputColumnTableEntry currentInputEntry = (InputColumnTableEntry) modifiedObjectInfo.getCurrentModifiedBean();
@@ -184,12 +191,14 @@ public class InputDataMapTableView extends DataMapTableView {
                 }
             }
 
+            @Override
             public void cancelEditor() {
                 ModifiedObjectInfo modifiedObjectInfo = tableViewerCreatorForColumns.getModifiedObjectInfo();
                 InputColumnTableEntry currentInputEntry = (InputColumnTableEntry) modifiedObjectInfo.getCurrentModifiedBean();
                 // currentInputEntry.setExpression(currentInputEntry.getOriginalExpression());
             }
 
+            @Override
             public void editorValueChanged(boolean oldValidState, boolean newValidState) {
                 ModifiedObjectInfo modifiedObjectInfo = tableViewerCreatorForColumns.getModifiedObjectInfo();
                 InputColumnTableEntry currentInputEntry = (InputColumnTableEntry) modifiedObjectInfo.getCurrentModifiedBean();
@@ -222,10 +231,12 @@ public class InputDataMapTableView extends DataMapTableView {
         columnExpression.setId(DataMapTableView.ID_EXPRESSION_COLUMN);
         columnExpression.setBeanPropertyAccessors(new IBeanPropertyAccessors<InputColumnTableEntry, String>() {
 
+            @Override
             public String get(InputColumnTableEntry bean) {
                 return bean.getExpression();
             }
 
+            @Override
             public void set(InputColumnTableEntry bean, String value) {
                 bean.setExpression(value);
                 // mapperManager.getProblemsManager().checkProblemsForTableEntry(bean, true);
@@ -238,6 +249,7 @@ public class InputDataMapTableView extends DataMapTableView {
         columnExpression.setWeight(COLUMN_EXPRESSION_SIZE_WEIGHT);
         columnExpression.setColorProvider(new IColumnColorProvider() {
 
+            @Override
             public Color getBackgroundColor(Object bean) {
                 if (!cellModifier.canModify(bean, columnExpression.getId())) {
                     return READONLY_CELL_BG_COLOR;
@@ -245,6 +257,7 @@ public class InputDataMapTableView extends DataMapTableView {
                 return null;
             }
 
+            @Override
             public Color getForegroundColor(Object bean) {
                 return null;
             }
@@ -316,6 +329,7 @@ public class InputDataMapTableView extends DataMapTableView {
 
         private boolean visible = false;
 
+        @Override
         public void widgetSelected(SelectionEvent event) {
             // Create the menu if it has not already been created
             if (menu == null) {
@@ -329,11 +343,9 @@ public class InputDataMapTableView extends DataMapTableView {
                         .equals("tELTMysqlMap")) {
                     List<IJoinType> joinTypes = new ArrayList<IJoinType>();
                     for (IJoinType joinType : availableJoins) {
-                        if (!joinType.equals(JOIN.FULL_OUTER_JOIN)) {
                             joinTypes.add(joinType);
-                        }
                     }
-                    availableJoins = (IJoinType[]) joinTypes.toArray(new IJoinType[joinTypes.size()]);
+                    availableJoins = joinTypes.toArray(new IJoinType[joinTypes.size()]);
                 }
 
                 for (int i = 0; i < availableJoins.length; ++i) {
@@ -352,6 +364,7 @@ public class InputDataMapTableView extends DataMapTableView {
                          */
                         menuItem.addSelectionListener(new SelectionAdapter() {
 
+                            @Override
                             public void widgetSelected(SelectionEvent e) {
                                 MenuItem menuItem = (MenuItem) e.widget;
                                 MenuItem[] menuItems = menu.getItems();
