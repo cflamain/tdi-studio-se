@@ -331,6 +331,8 @@ public class Node extends Element implements IGraphicalNode {
 
     private String uniqueShortName;
 
+    private String generatingUniqueName;
+
     /**
      * Getter for index.
      *
@@ -2082,6 +2084,9 @@ public class Node extends Element implements IGraphicalNode {
             externalNode.setSubProcessStart(isSubProcessStart());
             externalNode.setProcess(getProcess());
             externalNode.setComponent(getComponent());
+            if (!getUniqueName().equals(getGeneratingUniqueName())) {
+                externalNode.setGeneratingUniqueName(getGeneratingUniqueName());
+            }
         }
         return this.externalNode;
     }
@@ -5799,6 +5804,19 @@ public class Node extends Element implements IGraphicalNode {
 
     public void setReplaceNodeHandler(IReplaceNodeHandler replaceNodeHandler) {
         this.replaceNodeHandler = replaceNodeHandler;
+    }
+
+    @Override
+    public String getGeneratingUniqueName() {
+        if (StringUtils.isNotBlank(generatingUniqueName)) {
+            return generatingUniqueName;
+        }
+        return getUniqueName();
+    }
+
+    @Override
+    public void setGeneratingUniqueName(String generatingUniqueName) {
+        this.generatingUniqueName = generatingUniqueName;
     }
 
 }
