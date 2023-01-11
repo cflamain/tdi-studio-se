@@ -107,7 +107,7 @@
 
   <CODEGENERATION>
 	<IMPORTS>
-	  <IMPORT NAME="Talend_CSV" MODULE="talendcsv-1.0.0.jar" MVN="mvn:org.talend.components/talendcsv/1.0.0" UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv-1.0.0.jar" REQUIRED="true" />
+	  <IMPORT NAME="Talend_CSV" MODULE="talendcsv-1.1.0.jar" MVN="mvn:org.talend.components/talendcsv/1.1.0" UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv-1.1.0.jar" REQUIRED="true" />
 
 	  <IMPORT NAME="jasperreports" MODULE="jasperreports-6.15.0.jar" MVN="mvn:net.sf.jasperreports/jasperreports/6.15.0" REQUIRED="true" />
 	  <IMPORT NAME="jackson-core" MODULE="jackson-core-2.13.4.jar" MVN="mvn:com.fasterxml.jackson.core/jackson-core/2.13.4" REQUIRED="true" />
