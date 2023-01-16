@@ -59,15 +59,15 @@ imports="
             auth_<%=cid%> .setDomain(<%=domain%>);
             auth_<%=cid%> .setPreemptiveAuthentication(false);
 
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.AUTHENTICATE, auth_<%=cid%>);
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.REUSE_HTTP_CLIENT, "<%=reuseHttpClient%>");
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.AUTHENTICATE, auth_<%=cid%>);
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.REUSE_HTTP_CLIENT, "<%=reuseHttpClient%>");
 
             options_<%=cid%> .setUserName(<%=username%>);
             options_<%=cid%> .setPassword(decryptedPassword_<%=cid%>);
             options_<%=cid%> .setTimeOutInMilliSeconds(Long.valueOf(<%=timeout%>));
 
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.SO_TIMEOUT,new Integer(<%=timeout%>));
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.CONNECTION_TIMEOUT, new Integer(<%=timeout%>));
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.SO_TIMEOUT,new Integer(<%=timeout%>));
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.CONNECTION_TIMEOUT, new Integer(<%=timeout%>));
 
             com.microsoft.schemas.crm._2007.webservices.CrmAuthenticationTokenDocument catd_<%=cid%> = com.microsoft.schemas.crm._2007.webservices.CrmAuthenticationTokenDocument.Factory.newInstance();
             com.microsoft.schemas.crm._2007.coretypes.CrmAuthenticationToken token_<%=cid%> = com.microsoft.schemas.crm._2007.coretypes.CrmAuthenticationToken.Factory.newInstance();
@@ -81,11 +81,11 @@ imports="
 			msDynamicsWrapper_<%=cid%>.connect();
 			String crmTicket_<%=cid%> = msDynamicsWrapper_<%=cid%>.getCrmTicket();
 
-        	options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.REUSE_HTTP_CLIENT, "<%=reuseHttpClient%>");
+        	options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.REUSE_HTTP_CLIENT, "<%=reuseHttpClient%>");
         	options_<%=cid%> .setTimeOutInMilliSeconds(Long.valueOf(<%=timeout%>));
 
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.SO_TIMEOUT,new Integer(<%=timeout%>));
-            options_<%=cid%> .setProperty(org.apache.axis2.transport.http.HTTPConstants.CONNECTION_TIMEOUT, new Integer(<%=timeout%>));
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.SO_TIMEOUT,new Integer(<%=timeout%>));
+            options_<%=cid%> .setProperty(org.apache.axis2.kernel.http.HTTPConstants.CONNECTION_TIMEOUT, new Integer(<%=timeout%>));
 
         	com.microsoft.schemas.crm._2007.webservices.CrmAuthenticationTokenDocument catd_<%=cid%> = com.microsoft.schemas.crm._2007.webservices.CrmAuthenticationTokenDocument.Factory.newInstance();
             com.microsoft.schemas.crm._2007.coretypes.CrmAuthenticationToken token_<%=cid%> = com.microsoft.schemas.crm._2007.coretypes.CrmAuthenticationToken.Factory.newInstance();
