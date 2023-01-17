@@ -56,6 +56,7 @@ boolean advancedSeparator = (advancedSeparatorStr!=null&&!("").equals(advancedSe
 String thousandsSeparator = ElementParameterParser.getValueWithJavaType(node, "__THOUSANDS_SEPARATOR__", JavaTypesManager.CHARACTER);
 String decimalSeparator = ElementParameterParser.getValueWithJavaType(node, "__DECIMAL_SEPARATOR__", JavaTypesManager.CHARACTER);
 boolean isTruncateExceedingCharacters = ("true").equals(ElementParameterParser.getValue(node, "__TRUNCATE_EXCEEDING_CHARACTERS__" ));
+boolean useSharedStringsTable = ("true").equals(ElementParameterParser.getValue(node, "__USE_SHARED_STRINGS_TABLE__" ));
 Map<String,String> autColSizeMaping=new HashMap<String,String>();
 
 List< ? extends IConnection> conns = node.getIncomingConnections();
@@ -776,6 +777,7 @@ if(!hasDynamic && isIncludeHeader){
 %>
 		int nb_line_<%=cid%> = 0;
 		org.talend.ExcelTool xlsxTool_<%=cid%> = new org.talend.ExcelTool();
+		xlsxTool_<%=cid%>.setUseSharedStringTable(<%=useSharedStringsTable%>);
 		<% if (protectFile) { %>
         xlsxTool_<%=cid%>.setPasswordProtection(password_<%=cid%>);
     <%}%>

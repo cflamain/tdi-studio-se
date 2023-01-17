@@ -232,12 +232,16 @@
     <PARAMETER NAME="SCHEMA_OPT_NUM" FIELD="TEXT" NUM_ROW="100" REQUIRED="true" SHOW="false">
         <DEFAULT>100</DEFAULT>
      </PARAMETER>
+
+     <PARAMETER NAME="USE_SHARED_STRINGS_TABLE" FIELD="CHECK" NUM_ROW="110" SHOW_IF="(VERSION_2007 == 'true')">
+        <DEFAULT>false</DEFAULT>
+     </PARAMETER>
   </ADVANCED_PARAMETERS>
 
   <CODEGENERATION>
     <IMPORTS>
       <IMPORT NAME="Java_Excel" MODULE="jxl.jar" MVN="mvn:org.talend.libraries/jxl/6.0.0" UrlPath="platform:/plugin/org.talend.libraries.jexcel/lib/jxl.jar" REQUIRED_IF="(VERSION_2007 == 'false')" />
-      <IMPORT NAME="TALEND_EXCEL" MODULE="talendExcel-1.14-20220912.jar" MVN="mvn:org.talend.components/talendExcel/1.14-20220912" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="TALEND_EXCEL" MODULE="talendExcel-1.15-20230117.jar" MVN="mvn:org.talend.components/talendExcel/1.15-20230117" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="xlsx-streamer" MODULE="xlsx-streamer-2.1.0-20201125.jar" MVN="mvn:com.monitorjbl/xlsx-streamer/2.1.0-20201125" REQUIRED_IF="(VERSION_2007 == 'true') AND (STREAMING_APPEND == 'true')" />
       
       <IMPORT NAME="commons-lang3" MODULE="commons-lang3-3.10.jar" MVN="mvn:org.apache.commons/commons-lang3/3.10" REQUIRED_IF="(VERSION_2007 == 'true')" />
