@@ -12,18 +12,24 @@
 // ============================================================================
 package org.talend.repository.ui.processor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.eclipse.jface.viewers.Viewer;
 import org.talend.core.model.repository.ERepositoryObjectType;
+import org.talend.repository.model.IRepositoryNode;
 import org.talend.repository.model.IRepositoryNode.EProperties;
 import org.talend.repository.model.RepositoryNode;
 
 public class CodesJarTypeProcessor extends SingleTypeProcessor {
 
     private ERepositoryObjectType type;
+    private Set<String> sourceItems = new HashSet<String>();
 
-    public CodesJarTypeProcessor(String repositoryType, ERepositoryObjectType type) {
+    public CodesJarTypeProcessor(String repositoryType, ERepositoryObjectType type,  Set<String> sourceItems) {
         super(repositoryType);
         this.type = type;
+        this.sourceItems = sourceItems;
     }
 
     @Override
@@ -34,6 +40,19 @@ public class CodesJarTypeProcessor extends SingleTypeProcessor {
     @Override
     protected boolean selectRepositoryNode(Viewer viewer, RepositoryNode parentNode, RepositoryNode node) {
         return node.getProperties(EProperties.CONTENT_TYPE) == type;
+    }
+    
+    @Override
+    public boolean isSelectionValid(RepositoryNode node) {
+        if (node.getObjectType() != getType()) {
+            return false;
+        }
+        for (IRepositoryNode child: node.getChildren()) {
+            if (sourceItems.contains(child.getObject().getProperty().getLabel())) {
+                return false;
+            }
+        }     
+        return true;
     }
 
 }

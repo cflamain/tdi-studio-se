@@ -15,14 +15,18 @@ package org.talend.repository.ui.dialog;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
@@ -56,6 +60,7 @@ import org.talend.core.model.process.INode;
 import org.talend.core.model.properties.DatabaseConnectionItem;
 import org.talend.core.model.properties.FolderItem;
 import org.talend.core.model.properties.Item;
+import org.talend.core.model.properties.RoutineItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryContentHandler;
 import org.talend.core.model.repository.IRepositoryTypeProcessor;
@@ -89,7 +94,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * bqian check the content of the repository view. <br/>
  *
- * $Id: talend.epf 1 2006-09-29 17:06:40 +0000 (ææäº, 29 ä¹æ 2006) nrousseau $
+ * $Id: talend.epf 1 2006-09-29 17:06:40 +0000 (Ã¦Â˜ÂŸÃ¦ÂœÂŸÃ¤ÂºÂ”, 29 Ã¤Â¹Â�Ã¦ÂœÂˆ 2006) nrousseau $
  *
  */
 public class RepositoryReviewDialog extends Dialog {
@@ -359,7 +364,19 @@ public class RepositoryReviewDialog extends Dialog {
         }
 
         if (ERepositoryObjectType.getAllTypesOfCodesJar().contains(type)) {
-            return new CodesJarTypeProcessor(repositoryType, type);
+            IRepositoryView repoView = getRepView();
+            Set<String> sourceRoutineItems = new HashSet<String>();
+            if (repoView != null && repoView.getViewer() != null && !repoView.getViewer().getControl().isDisposed()) {
+                ISelection selection = repoView.getViewer().getSelection();
+                Iterator<?> iterator = ((IStructuredSelection) selection).iterator();
+                while (iterator.hasNext()) {
+                    RepositoryNode node = (RepositoryNode) iterator.next();
+                    if (node.getObject().getProperty().getItem() instanceof RoutineItem) {
+                        sourceRoutineItems.add(node.getObject().getProperty().getLabel());
+                    }
+                }
+            }
+            return new CodesJarTypeProcessor(repositoryType, type, sourceRoutineItems);
         }
 
         throw new IllegalArgumentException(Messages.getString("RepositoryReviewDialog.0", type)); //$NON-NLS-1$

@@ -21,6 +21,7 @@ import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.IProcess;
+import org.talend.core.model.properties.JobletProcessItem;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.designer.core.model.components.ElementParameter;
 import org.talend.designer.runprocess.ItemCacheManager;
@@ -81,6 +82,10 @@ public class VirtualComponentModel extends ComponentModel {
             ProcessItem processItem = ItemCacheManager.getProcessItem(process.getId());
             if (processItem != null) {
                 manager.checkNodeMigration(processItem, getName(), process.getComponentsType());
+            }
+            JobletProcessItem jpi = ItemCacheManager.getJobletProcessItem(process.getId());
+            if (jpi != null) {
+                manager.checkNodeItemMigration(jpi, getName(), process.getComponentsType());
             }
         }
         ConfigTypeNode configTypeNode = Lookups.taCoKitCache().findDatastoreConfigTypeNodeByName(detail.getId().getFamily());

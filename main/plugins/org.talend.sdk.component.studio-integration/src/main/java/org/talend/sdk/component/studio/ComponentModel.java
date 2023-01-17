@@ -52,6 +52,7 @@ import org.talend.core.model.process.INode;
 import org.talend.core.model.process.INodeConnector;
 import org.talend.core.model.process.INodeReturn;
 import org.talend.core.model.process.IProcess;
+import org.talend.core.model.properties.JobletProcessItem;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.temp.ECodePart;
 import org.talend.core.runtime.IAdditionalInfo;
@@ -306,6 +307,10 @@ public class ComponentModel extends AbstractBasicComponent implements IAdditiona
             ProcessItem processItem = ItemCacheManager.getProcessItem(process.getId());
             if (processItem != null) {
                 manager.checkNodeMigration(processItem, getName(), process.getComponentsType());
+            }
+            JobletProcessItem jpi = ItemCacheManager.getJobletProcessItem(process.getId());
+            if (jpi != null) {
+                manager.checkNodeItemMigration(jpi, getName(), process.getComponentsType());
             }
         }
         ElementParameterCreator creator = new ElementParameterCreator(this, detail, node, reportPath, isCatcherAvailable);

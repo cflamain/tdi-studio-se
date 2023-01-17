@@ -64,14 +64,23 @@ java.util.Map<String, String> typeMappings = new java.util.HashMap<String, Strin
     put("id_String"     , "org.talend.sdk.component.api.record.Schema.Type.STRING");
     put("id_byte[]"     , "org.talend.sdk.component.api.record.Schema.Type.BYTES");
 }};
+boolean hasInput = false;
 IConnection inputConn = null;
 for (IConnection conn : node.getIncomingConnections()) {
     if (conn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
        inputConn = conn;
+       hasInput = true;
     }
 }
-List<IMetadataColumn> input_columnList = null;
-if(inputConn != null) {
+if (!hasInput) {
+    for (IConnection conn : node.getOutgoingConnections()) {
+        if ("FLOW".equals(conn.getConnectorName())) {
+            inputConn = conn;
+        }
+    }
+}
+List<IMetadataColumn> input_columnList = java.util.Collections.emptyList();
+if (inputConn != null) {
     input_columnList = inputConn.getMetadataTable().getListColumns();
 }
 for (IMetadataColumn col: input_columnList){

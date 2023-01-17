@@ -74,6 +74,7 @@ System.setOut(new java.io.PrintStream(new java.io.OutputStream() {
     final String version = (String)node.getElementParameter(EParameterName.VERSION.getName()).getValue();
 %>
     <%@include file="../../jet_stub/generic/configuration.javajet"%>
+    <%@include file="../../jet_stub/generic/utils/schema.javajet"%>
 
     org.talend.sdk.component.runtime.di.schema.TaCoKitGuessSchema tacokitGuessSchema =
                             new org.talend.sdk.component.runtime.di.schema.TaCoKitGuessSchema(out, configuration_<%=guessSchemaCid%>,
@@ -85,12 +86,11 @@ System.setOut(new java.io.PrintStream(new java.io.OutputStream() {
                                                                                     );
 <% if ("input".equalsIgnoreCase(tacokitComponentType)) {  %>
     try {
-        tacokitGuessSchema.guessInputComponentSchema();
+        tacokitGuessSchema.guessInputComponentSchema(schema_<%=cid%>);
     } finally {
         tacokitGuessSchema.close();
     }
 <% } else { %>
-    <%@include file="../../jet_stub/generic/utils/schema.javajet"%>
     try {
         tacokitGuessSchema.guessComponentSchema(schema_<%=cid%>, "<%=outputConnectionName%>");
     } finally {

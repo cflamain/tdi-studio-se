@@ -1353,7 +1353,7 @@ public class JobSettingsManager {
                 if (i != 0) {
                     seqBuffer.append("+"); //$NON-NLS-1$
                 }
-                if (seqs[i].contains("context.")) { //$NON-NLS-1$
+                if (seqs[i].contains("context.") || seqs[i].startsWith("System.get")) { //$NON-NLS-1$ //$NON-NLS-2$
                     seqBuffer.append(seqs[i]);
                 } else {
                     seqBuffer.append(doAddMark4SpecialChar(seqs[i]));

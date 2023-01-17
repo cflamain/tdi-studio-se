@@ -181,27 +181,27 @@ public class EditPropertiesAction extends AContextualAction {
                 }
             }
 
-            // warn re-generate all pom after codejar rename
-            ERepositoryObjectType objectType = node.getObjectType();
-            Property property = object.getProperty();
-            if (property != null && !originalName.equals(property.getLabel())
-                    && ERepositoryObjectType.getAllTypesOfCodesJar().contains(objectType)) {
-                String relationType = null;
-                if (ERepositoryObjectType.ROUTINESJAR != null && ERepositoryObjectType.ROUTINESJAR.equals(objectType)) {
-                    relationType = RelationshipItemBuilder.ROUTINES_JAR_RELATION;
-                } else if (ERepositoryObjectType.BEANSJAR != null && ERepositoryObjectType.BEANSJAR.equals(objectType)) {
-                    relationType = RelationshipItemBuilder.BEANS_JAR_RELATION;
-                }
-                if (StringUtils.isNotBlank(relationType)) {
-                    List<Relation> itemsRelatedTo = RelationshipItemBuilder.getInstance()
-                            .getAllVersionItemsRelatedTo(object.getProperty().getId(), relationType, true);
-                    if (!itemsRelatedTo.isEmpty()) {
-                        MessageDialog.openWarning(Display.getCurrent().getActiveShell(),
-                                Messages.getString("EditPropertiesAction.warning"), //$NON-NLS-1$
-                                Messages.getString("EditPropertiesAction.warnToReGenerateAllPom")); //$NON-NLS-1$
-                    }
-                }
-            }
+//            // warn re-generate all pom after codejar rename
+//            ERepositoryObjectType objectType = node.getObjectType();
+//            Property property = object.getProperty();
+//            if (property != null && !originalName.equals(property.getLabel())
+//                    && ERepositoryObjectType.getAllTypesOfCodesJar().contains(objectType)) {
+//                String relationType = null;
+//                if (ERepositoryObjectType.ROUTINESJAR != null && ERepositoryObjectType.ROUTINESJAR.equals(objectType)) {
+//                    relationType = RelationshipItemBuilder.ROUTINES_JAR_RELATION;
+//                } else if (ERepositoryObjectType.BEANSJAR != null && ERepositoryObjectType.BEANSJAR.equals(objectType)) {
+//                    relationType = RelationshipItemBuilder.BEANS_JAR_RELATION;
+//                }
+//                if (StringUtils.isNotBlank(relationType)) {
+//                    List<Relation> itemsRelatedTo = RelationshipItemBuilder.getInstance()
+//                            .getAllVersionItemsRelatedTo(object.getProperty().getId(), relationType, true);
+//                    if (!itemsRelatedTo.isEmpty()) {
+//                        MessageDialog.openWarning(Display.getCurrent().getActiveShell(),
+//                                Messages.getString("EditPropertiesAction.warning"), //$NON-NLS-1$
+//                                Messages.getString("EditPropertiesAction.warnToReGenerateAllPom")); //$NON-NLS-1$
+//                    }
+//                }
+//            }
 
         }
     }
@@ -223,6 +223,10 @@ public class EditPropertiesAction extends AContextualAction {
 
     protected static boolean isInstanceofCamelRoutes(final ERepositoryObjectType type) {
         return type == ERepositoryObjectType.PROCESS_ROUTE || type == ERepositoryObjectType.PROCESS_ROUTELET;
+    }
+    
+    protected static boolean isInstanceofRoutineJars(final ERepositoryObjectType type) {
+        return type == ERepositoryObjectType.ROUTINESJAR || type == ERepositoryObjectType.BEANSJAR;
     }
 
     /**
@@ -429,13 +433,10 @@ public class EditPropertiesAction extends AContextualAction {
                     } else if (node.getObjectType() == ERepositoryObjectType.ROUTINES) {
                         Item item = node.getObject().getProperty().getItem();
                         if (item instanceof RoutineItem) {
-                            canWork = !((RoutineItem) item).isBuiltIn() && !RoutinesUtil.isInnerCodes(item.getProperty());
+                            canWork = !((RoutineItem) item).isBuiltIn();
                         } else {
                             canWork = false;
                         }
-                    } else if (node.getObjectType() == ERepositoryObjectType.ROUTINESJAR
-                            || node.getObjectType() == ERepositoryObjectType.BEANSJAR) {
-                        canWork = false;
                     } else if (node.getObjectType() == ERepositoryObjectType.SQLPATTERNS) {
                         Item item = node.getObject().getProperty().getItem();
                         if (item instanceof SQLPatternItem) {
@@ -451,8 +452,7 @@ public class EditPropertiesAction extends AContextualAction {
                             canWork = false;
                         }
                     } else {
-                        canWork = isInstanceofCamelRoutes(node.getObjectType()) || (isInstanceofCamelBeans(
-                                node.getObjectType()) && !RoutinesUtil.isInnerCodes(node.getObject().getProperty()));
+                        canWork = isInstanceofCamelRoutes(node.getObjectType()) || isInstanceofCamelBeans(node.getObjectType()) || isInstanceofRoutineJars(node.getObjectType());
                     }
                     break;
                 default:
