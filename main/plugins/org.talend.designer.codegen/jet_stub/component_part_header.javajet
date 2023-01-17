@@ -137,7 +137,7 @@
 	}
 	%>
 	currentComponent="<%=node.getUniqueName() %>";
-
+	
 	<%
 	connSet =  new HashSet<IConnection>();
 	connSet.addAll(node.getIncomingConnections(EConnectionType.FLOW_MAIN));
@@ -154,6 +154,17 @@
 	
 	//about performance monitor, no way to support more than one job catcher component, also that is not necessary
 	final String subprocessName4Catcher = logstashCurrent ? jobCatcherNodes.get(0).getDesignSubjobStartNode().getUniqueName() : null;
+	
+	if(logstashCurrent) {
+		String currentLabel = ElementParameterParser.getValue(node, "__LABEL__");
+		if(currentLabel==null || "".equals(currentLabel) || "__UNIQUE_NAME__".equals(currentLabel) || cid.endsWith(NodeUtil.getLabel(node))) {
+			//not generate the unnecessary statement if label is default one
+		} else {
+		%>
+			cLabel="<%=NodeUtil.getLabel(node)%>";
+		<%
+		}
+	}
 	
 	if ((codePart.equals(ECodePart.BEGIN))&&(stat || logstashCurrent)&&connSet.size()>0) {
 		if(containsTPartitioner) {
@@ -196,11 +207,9 @@
 					INode source = con.getSource();
 					String sourceNodeId = source.getUniqueName();
 					
-					String sourceLabel = ElementParameterParser.getValue(source, "__LABEL__");
-					String sourceNodeLabel = ((sourceLabel==null || "__UNIQUE_NAME__".equals(sourceLabel) || sourceLabel.contains("\"")) ? sourceNodeId : sourceLabel.trim());
+					String sourceNodeLabel = NodeUtil.getLabel(source);
 					
-					String targetLabel = ElementParameterParser.getValue(node, "__LABEL__");
-					String targetNodeLabel = ((targetLabel==null || "__UNIQUE_NAME__".equals(targetLabel) || targetLabel.contains("\"")) ? node.getUniqueName() : targetLabel.trim());
+					String targetNodeLabel = NodeUtil.getLabel(node);
 					
 					String sourceNodeComponent = source.getComponent().getName();
 				%>
@@ -232,11 +241,9 @@
 							INode source = con.getSource();
 							String sourceNodeId = source.getUniqueName();
 							
-							String sourceLabel = ElementParameterParser.getValue(source, "__LABEL__");
-							String sourceNodeLabel = ((sourceLabel==null || "__UNIQUE_NAME__".equals(sourceLabel) || sourceLabel.contains("\"")) ? sourceNodeId : sourceLabel.trim());
-							
-							String targetLabel = ElementParameterParser.getValue(node, "__LABEL__");
-							String targetNodeLabel = ((targetLabel==null || "__UNIQUE_NAME__".equals(targetLabel) || targetLabel.contains("\"")) ? node.getUniqueName() : targetLabel.trim());
+							String sourceNodeLabel = NodeUtil.getLabel(source);
+					
+							String targetNodeLabel = NodeUtil.getLabel(node);
 							
 							String sourceNodeComponent = source.getComponent().getName();
 						%>
@@ -259,11 +266,9 @@
 							INode source = con.getSource();
 							String sourceNodeId = source.getUniqueName();
 							
-							String sourceLabel = ElementParameterParser.getValue(source, "__LABEL__");
-							String sourceNodeLabel = ((sourceLabel==null || "__UNIQUE_NAME__".equals(sourceLabel) || sourceLabel.contains("\"")) ? sourceNodeId : sourceLabel.trim());
-							
-							String targetLabel = ElementParameterParser.getValue(node, "__LABEL__");
-							String targetNodeLabel = ((targetLabel==null || "__UNIQUE_NAME__".equals(targetLabel) || targetLabel.contains("\"")) ? node.getUniqueName() : targetLabel.trim());
+							String sourceNodeLabel = NodeUtil.getLabel(source);
+					
+							String targetNodeLabel = NodeUtil.getLabel(node);
 							
 							String sourceNodeComponent = source.getComponent().getName();
 							
@@ -295,11 +300,9 @@
 									INode source = con.getSource();
 									String sourceNodeId = source.getUniqueName();
 									
-									String sourceLabel = ElementParameterParser.getValue(source, "__LABEL__");
-									String sourceNodeLabel = ((sourceLabel==null || "__UNIQUE_NAME__".equals(sourceLabel) || sourceLabel.contains("\"")) ? sourceNodeId : sourceLabel.trim());
+									String sourceNodeLabel = NodeUtil.getLabel(source);
 									
-									String targetLabel = ElementParameterParser.getValue(node, "__LABEL__");
-									String targetNodeLabel = ((targetLabel==null || "__UNIQUE_NAME__".equals(targetLabel) || targetLabel.contains("\"")) ? node.getUniqueName() : targetLabel.trim());
+									String targetNodeLabel = NodeUtil.getLabel(node);
 							
 									String sourceNodeComponent = source.getComponent().getName();
 							
@@ -434,8 +437,7 @@
 		
 		if(logstashCurrent) {
 			for (INode jobStructureCatcher : jobCatcherNodes) {
-				String label = ElementParameterParser.getValue(node, "__LABEL__");
-				String nodeLabel = ((label==null || "__UNIQUE_NAME__".equals(label) || label.contains("\"")) ? node.getUniqueName() : label.trim());
+				String nodeLabel = NodeUtil.getLabel(node);
 			%>
 			if(enableLogStash) {
 				<%=jobStructureCatcher.getUniqueName() %>.addCM("<%=node.getUniqueName()%>", "<%=nodeLabel%>", "<%=node.getComponent().getName()%>");

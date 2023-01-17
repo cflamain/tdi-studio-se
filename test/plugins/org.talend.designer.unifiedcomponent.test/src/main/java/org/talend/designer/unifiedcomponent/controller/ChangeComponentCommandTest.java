@@ -324,17 +324,11 @@ public class ChangeComponentCommandTest {
         IComponent tDB2Input = compService.getComponentsFactory().get("tDB2Input", ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tInformixInput = compService.getComponentsFactory().get("tInformixInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
-        IComponent tIngresInput = compService.getComponentsFactory().get("tIngresInput",
-                ComponentCategory.CATEGORY_4_DI.getName());
-        IComponent tInterbaseInput = compService.getComponentsFactory().get("tInterbaseInput",
-                ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tMSSqlInput = compService.getComponentsFactory().get("tMSSqlInput", ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tMysqlInput = compService.getComponentsFactory().get("tMysqlInput", ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tNetezzaInput = compService.getComponentsFactory().get("tNetezzaInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tOracleInput = compService.getComponentsFactory().get("tOracleInput",
-                ComponentCategory.CATEGORY_4_DI.getName());
-        IComponent tParAccelInput = compService.getComponentsFactory().get("tParAccelInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tPostgresqlInput = compService.getComponentsFactory().get("tPostgresqlInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
@@ -347,8 +341,6 @@ public class ChangeComponentCommandTest {
         IComponent tSybaseInput = compService.getComponentsFactory().get("tSybaseInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tTeradataInput = compService.getComponentsFactory().get("tTeradataInput",
-                ComponentCategory.CATEGORY_4_DI.getName());
-        IComponent tVectorWiseInput = compService.getComponentsFactory().get("tVectorWiseInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
         IComponent tVerticaInput = compService.getComponentsFactory().get("tVerticaInput",
                 ComponentCategory.CATEGORY_4_DI.getName());
@@ -371,20 +363,16 @@ public class ChangeComponentCommandTest {
         tDBInputs.add(tGreenplumInput);
         tDBInputs.add(tDB2Input);
         tDBInputs.add(tInformixInput);
-        tDBInputs.add(tIngresInput);
-        tDBInputs.add(tInterbaseInput);
         tDBInputs.add(tMSSqlInput);
         tDBInputs.add(tMysqlInput);
         tDBInputs.add(tNetezzaInput);
         tDBInputs.add(tOracleInput);
-        tDBInputs.add(tParAccelInput);
         tDBInputs.add(tPostgresqlInput);
         tDBInputs.add(tPostgresPlusInput);
         tDBInputs.add(tSAPHanaInput);
         tDBInputs.add(tSQLiteInput);
         tDBInputs.add(tSybaseInput);
         tDBInputs.add(tTeradataInput);
-        tDBInputs.add(tVectorWiseInput);
         tDBInputs.add(tVerticaInput);
 
         for (IComponent component : tDBInputs) {

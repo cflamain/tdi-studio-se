@@ -27,8 +27,11 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jboss.serial.io.JBossObjectInputStream;
-import org.jboss.serial.io.JBossObjectOutputStream;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Unmarshaller;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.designer.components.persistent.utils.FileUtils;
 
@@ -74,6 +77,8 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
 
     /** This is 0 when using Sun stream library and 1 when using JBoss implementation */
     private static final int JBOSS_EOF = 1;
+
+    public static boolean USE_JBOSS_IMPLEMENTATION = true;
 
     private static final float MARGIN_MAX = 0.35f;
 
@@ -126,6 +131,8 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
     private boolean nextFreeRowCalled;
 
     private boolean sortEnabled = true;
+    
+    private boolean init = false;
 
     /**
      *
@@ -137,23 +144,39 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
 
         private BufferedInputStream bufferedInputStream;
 
+        private Unmarshaller unmarshaller;
+
         public StreamContainer(ObjectInputStream ois, BufferedInputStream bis) {
             super();
             this.objectInputStream = ois;
             this.bufferedInputStream = bis;
         }
 
+        public StreamContainer(Unmarshaller unmarshaller){
+            this.unmarshaller = unmarshaller;
+        }
+
         public void close() {
+
             try {
-                this.objectInputStream.close();
+                if (objectInputStream != null)
+                    this.objectInputStream.close();
             } catch (IOException e) {
                 // e.printStackTrace();
                 ExceptionHandler.process(e);
             }
             try {
-                this.bufferedInputStream.close();
+                if (bufferedInputStream != null)
+                    this.bufferedInputStream.close();
             } catch (IOException e) {
                 // e.printStackTrace();
+                ExceptionHandler.process(e);
+            }
+
+            try {
+                if (unmarshaller != null)
+                    unmarshaller.close();
+            } catch (IOException e) {
                 ExceptionHandler.process(e);
             }
         }
@@ -191,6 +214,9 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
     }
 
     public void put(V bean) throws IOException {
+    	if(!init) {
+    		USE_JBOSS_IMPLEMENTATION = bean.supportJboss();
+    	}
 
         if (!MemoryHelper.hasFreeMemory(MARGIN_MAX)) {
             if (!bufferIsMarked) {
@@ -278,13 +304,30 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
 
         count++;
         // ObjectOutputStream rw = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-        ObjectOutputStream rw = new JBossObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-        // System.out.println("Start write buffer ");
-        for (int i = 0; i < bufferBeanIndex + 1; i++) {
-            buffer[i].writeData(rw);
-            // System.out.println(buffer[i]);
+        if (USE_JBOSS_IMPLEMENTATION) {
+            final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
+            final MarshallingConfiguration configuration = new MarshallingConfiguration();
+            final Marshaller marshaller = marshallerFactory.createMarshaller(configuration);
+            marshaller.start(Marshalling.createByteOutput(new BufferedOutputStream(new FileOutputStream(file))));
+            for (int i = 0; i < bufferBeanIndex + 1; i++) {
+                buffer[i].writeData(marshaller);
+            }
+            marshaller.flush();
+            marshaller.close();
+
+        } else {
+            ObjectOutputStream rw = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+            // System.out.println("Start write buffer ");
+            for (int i = 0; i < bufferBeanIndex + 1; i++) {
+                buffer[i].writeData(rw);
+                rw.reset();
+                // System.out.println(buffer[i]);
+            }
+            rw.close();
         }
-        rw.close();
+
+
+
         files.add(file);
 
         // time2 = System.currentTimeMillis();
@@ -346,18 +389,33 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
         boolean someFileStillHasRows = false;
 
         bufferBeanIndex = INIT_BUFFER_INDEX;
+        final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
+        final MarshallingConfiguration configuration = new MarshallingConfiguration();
 
         for (int i = 0; i < numFiles; i++) {
             BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(files.get(i)));
             // ObjectInputStream ois = new ObjectInputStream(bufferedInputStream);
-            ObjectInputStream ois = new JBossObjectInputStream(bufferedInputStream);
-            scList.add(new StreamContainer(ois, bufferedInputStream));
-            V bean = createRowInstance();
-            bean.readData(ois);
-            if (!someFileStillHasRows) {
-                someFileStillHasRows = true;
+            if(USE_JBOSS_IMPLEMENTATION){
+                final Unmarshaller unmarshaller = marshallerFactory.createUnmarshaller(configuration);
+                unmarshaller.start(Marshalling.createByteInput(bufferedInputStream));
+                scList.add(new StreamContainer(unmarshaller));
+                V bean = createRowInstance();
+                bean.readData(unmarshaller);
+                if (!someFileStillHasRows) {
+                    someFileStillHasRows = true;
+                }
+                datasList.add(bean);
+
+            }else {
+                ObjectInputStream ois = new ObjectInputStream(bufferedInputStream);
+                scList.add(new StreamContainer(ois, bufferedInputStream));
+                V bean = createRowInstance();
+                bean.readData(ois);
+                if (!someFileStillHasRows) {
+                    someFileStillHasRows = true;
+                }
+                datasList.add(bean);
             }
-            datasList.add(bean);
         }
 
         int size = datasList.size();
@@ -416,7 +474,11 @@ public abstract class PersistentRowSorterIterator<V extends IPersistableRow> imp
 
             // get another data from the file
             StreamContainer sc = scArray[minIndex];
-            if (sc.objectInputStream.available() > JBOSS_EOF || sc.bufferedInputStream.available() > 0) {
+            if(USE_JBOSS_IMPLEMENTATION && sc.unmarshaller.available() > JBOSS_EOF){
+                bean = createRowInstance();
+                bean.readData(sc.unmarshaller);
+                datas[minIndex] = bean;
+            }else if (!USE_JBOSS_IMPLEMENTATION&& (sc.objectInputStream.available() > 0 || sc.bufferedInputStream.available() > 0)) {
                 bean = createRowInstance();
                 bean.readData(sc.objectInputStream);
                 datas[minIndex] = bean;

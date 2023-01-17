@@ -30,17 +30,19 @@ imports="
 	boolean usePrepareStatement = "true".equals(ElementParameterParser.getValue(node,"__USE_PREPAREDSTATEMENT__"));
 
 	boolean useParquet = "true".equals(ElementParameterParser.getValue(node,"__USE_PARQUET__"));
-
+	String encryptedToken = null;
+	
     String theDistribution = ElementParameterParser.getValue(node, "__DISTRIBUTION__");
     String theVersion = ElementParameterParser.getValue(node, "__HIVE_VERSION__");
+	String connMode = ElementParameterParser.getValue(node, "__CONNECTION_MODE__");
 
-	String encryptedToken = null;
     if("true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"))) {
         String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
         for (INode pNode : node.getProcess().getNodesOfType("tHiveConnection")) {
             if(connection!=null && connection.equals(pNode.getUniqueName())) {
                 theDistribution = ElementParameterParser.getValue(pNode, "__DISTRIBUTION__");
                 theVersion = ElementParameterParser.getValue(pNode, "__HIVE_VERSION__");
+                connMode = ElementParameterParser.getValue(pNode, "__CONNECTION_MODE__");
             }
         }
     }
@@ -89,12 +91,12 @@ imports="
 			}
 <%
 		}
-    } else if(hiveDistrib.isGoogleDataprocDistribution()) {
+    } else if ("DATAPROC".equalsIgnoreCase(connMode)) {
 		// Distribution: Google Dataproc
 %>
         <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Hive/GetDataprocConnection.javajet"%>
 <%
-	} else {
+	 } else {
 		// Distribution: other than WebHCat, Dataproc
 %>
 		<%@ include file="../templates/Hive/GetConnection.javajet"%>
@@ -231,7 +233,7 @@ imports="
 	    }
 	}
 
-	if(!hiveDistrib.useCloudLauncher()) {
+	if(!hiveDistrib.useCloudLauncher() && !"DATAPROC".equalsIgnoreCase(connMode)) {
 		if (usePrepareStatement) {
 		%>
 			java.sql.PreparedStatement pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(<%=dbquery%>);
@@ -244,3 +246,4 @@ imports="
 %>
 	String query_<%=cid %> = "";
 	boolean whetherReject_<%=cid%> = false;
+

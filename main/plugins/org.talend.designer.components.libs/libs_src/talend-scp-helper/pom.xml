@@ -6,12 +6,20 @@
 
     <groupId>org.talend.components</groupId>
     <artifactId>talend-scp-helper</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+            <distribution>may be downloaded from the Maven repository</distribution>
+        </license>
+    </licenses>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <ssd.version>2.5.1</ssd.version>
+        <ssd.version>2.9.2</ssd.version>
 		<talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
     </properties>
 	

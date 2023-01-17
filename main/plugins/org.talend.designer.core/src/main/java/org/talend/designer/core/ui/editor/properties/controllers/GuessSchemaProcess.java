@@ -93,7 +93,7 @@ public class GuessSchemaProcess extends AbstractGuessSchemaProcess {
                 if (module.isRequired(node.getElementParameters())) {
                     Node libNode1 = new Node(ComponentsFactoryProvider.getInstance().get(LIB_NODE,
                             ComponentCategory.CATEGORY_4_DI.getName()), process);
-                    libNode1.setPropertyValue("LIBRARY", "\"" + module.getModuleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                    libNode1.setPropertyValue("LIBRARY", "\"" + module.getMavenUri() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                     NodeContainer nc = process.loadNodeContainer(libNode1, false);
                     process.addNodeContainer(nc);
                 }
@@ -160,7 +160,7 @@ public class GuessSchemaProcess extends AbstractGuessSchemaProcess {
         JavaProcessUtil.addNodeRelatedModules(process, neededLibraries, node);
         for (ModuleNeeded module : neededLibraries) {
             Node libNode1 = new Node(ComponentsFactoryProvider.getInstance().get(LIB_NODE), process);
-            libNode1.setPropertyValue("LIBRARY", "\"" + module.getModuleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            libNode1.setPropertyValue("LIBRARY", "\"" + module.getMavenUri() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             process.addNodeContainer(new NodeContainer(libNode1));
         }
 
@@ -169,7 +169,7 @@ public class GuessSchemaProcess extends AbstractGuessSchemaProcess {
             JavaProcessUtil.addNodeRelatedModules(process, neededLibraries, connectionNode);
             for (ModuleNeeded module : neededLibraries) {
                 Node libNode1 = new Node(ComponentsFactoryProvider.getInstance().get(LIB_NODE), process);
-                libNode1.setPropertyValue("LIBRARY", "\"" + module.getModuleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                libNode1.setPropertyValue("LIBRARY", "\"" + module.getMavenUri() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 process.addNodeContainer(new NodeContainer(libNode1));
             }
         }
@@ -177,7 +177,7 @@ public class GuessSchemaProcess extends AbstractGuessSchemaProcess {
         // create the tLibraryLoad for the output component which is "tFileOutputDelimited"
         for (ModuleNeeded module : outputComponent.getModulesNeeded()) {
             Node libNode2 = new Node(ComponentsFactoryProvider.getInstance().get(LIB_NODE), process);
-            libNode2.setPropertyValue("LIBRARY", "\"" + module.getModuleName() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            libNode2.setPropertyValue("LIBRARY", "\"" + module.getMavenUri() + "\""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             process.addNodeContainer(new NodeContainer(libNode2));
         }
         int fetchSize = maximumRowsToPreview; // for sql statement, feature 6622.

@@ -212,7 +212,7 @@ public class DynamicComposite extends MissingSettingsMultiThreadDynamicComposite
                     }
                     List<String> tableLabels = new ArrayList<>();
                     for (MetadataTable metaTable : metadataTables) {
-                        tableLabels.add(metaTable.getLabel());
+                        tableLabels.add(metaTable.getName());
                     }
                     List<NamedThing> possibleValues = ComponentsUtils.getFormalPossibleValues(genericElementParameter);
                     for (NamedThing possibleValue : possibleValues) {
@@ -469,6 +469,7 @@ public class DynamicComposite extends MissingSettingsMultiThreadDynamicComposite
         super.dispose();
     }
 
+    @Override
     public ConnectionItem getConnectionItem() {
         return this.connectionItem;
     }

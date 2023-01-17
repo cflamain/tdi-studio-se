@@ -46,6 +46,8 @@ import org.talend.designer.dbmap.external.data.ExternalDbMapTable;
 public class DbGenerationManagerTestHelper {
 
     protected DbMapComponent dbMapComponent;
+    
+    protected DbMapComponent dbMapComponentDelimited;
 
     protected Process process;
 

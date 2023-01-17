@@ -26,6 +26,6 @@ public class RuntimeLineagePageTester implements IProjectSettingPageTester {
 
     @Override
     public boolean valid(IConfigurationElement element, IPreferenceNode node) {
-        return PluginChecker.isTIS() && Boolean.valueOf(System.getProperty("runtime.lineage", Boolean.FALSE.toString())); //$NON-NLS-1$
+        return PluginChecker.isTIS();
     }
 }

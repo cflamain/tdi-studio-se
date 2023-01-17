@@ -12,6 +12,7 @@
 // ============================================================================
 package org.talend.sqlbuilder.actions;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.widgets.Display;
@@ -34,11 +35,13 @@ import org.talend.core.repository.model.repositoryObject.QueryRepositoryObject;
 import org.talend.core.sqlbuilder.util.ConnectionParameters;
 import org.talend.core.sqlbuilder.util.TextUtil;
 import org.talend.metadata.managment.ui.wizard.metadata.ContextSetsSelectionDialog;
+import org.talend.metadata.managment.utils.MetadataConnectionUtils;
 import org.talend.repository.model.IProxyRepositoryFactory;
 import org.talend.repository.model.IRepositoryNode.EProperties;
 import org.talend.repository.model.RepositoryNode;
 import org.talend.repository.ui.actions.AContextualAction;
 import org.talend.sqlbuilder.Messages;
+import org.talend.sqlbuilder.repository.utility.EMFRepositoryNodeManager;
 import org.talend.sqlbuilder.ui.SQLBuilderDialog;
 import org.talend.sqlbuilder.util.UIUtils;
 
@@ -90,23 +93,31 @@ public class ReadQueriesAction extends AContextualAction {
         }
         Shell parentShell = DisplayUtils.getDefaultShell(false);
         TextUtil.setDialogTitle(TextUtil.SQL_BUILDER_TITLE_REP);
-        Connection connection = dbConnectionItem.getConnection();
         String selectedContext = null;
+        Connection connection = dbConnectionItem.getConnection();
+        Connection copyConnection = MetadataConnectionUtils.prepareConection(connection);
+        if (copyConnection == null) {
+            return;
+        } else {
+            selectedContext = copyConnection.getContextName();
+        }
         if (connection.isContextMode()) {
-            ContextItem contextItem = ContextUtils.getContextItemById2(connection.getContextId());
-            if (contextItem != null && connection.isContextMode()) {
+            if (StringUtils.isBlank(selectedContext)) {
+                ContextItem contextItem = ContextUtils.getContextItemById2(connection.getContextId());
+                if (contextItem != null && connection.isContextMode()) {
 
-                ContextSetsSelectionDialog setsDialog = new ContextSetsSelectionDialog(null, contextItem, false);
-                setsDialog.open();
-                selectedContext = setsDialog.getSelectedContext();
+                    ContextSetsSelectionDialog setsDialog = new ContextSetsSelectionDialog(null, contextItem, false);
+                    setsDialog.open();
+                    selectedContext = setsDialog.getSelectedContext();
+                }
             }
         }
         SQLBuilderDialog dial = new SQLBuilderDialog(parentShell, repositoryNode, selectedContext);
-
+        EMFRepositoryNodeManager.getInstance().setCopyConnection((DatabaseConnection) copyConnection);
         dial.setReadOnly(true);
 
-        if (connection instanceof DatabaseConnection) {
-            IMetadataConnection imetadataConnection = ConvertionHelper.convert(connection, true);
+        if (copyConnection instanceof DatabaseConnection) {
+            IMetadataConnection imetadataConnection = ConvertionHelper.convert(copyConnection);
             connParameters.setSchema(imetadataConnection.getSchema() == null ? "" : imetadataConnection.getSchema());
             UIUtils.checkConnection(parentShell, imetadataConnection);
         }

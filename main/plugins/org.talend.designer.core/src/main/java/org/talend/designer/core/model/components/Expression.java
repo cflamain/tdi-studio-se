@@ -13,6 +13,7 @@
 package org.talend.designer.core.model.components;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -39,7 +40,6 @@ import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
 import org.talend.designer.core.ui.editor.process.Process;
-import org.talend.designer.joblet.model.JobletProcess;
 import org.talend.hadoop.distribution.DistributionFactory;
 import org.talend.hadoop.distribution.ESparkVersion;
 import org.talend.hadoop.distribution.spark.SparkVersionUtil;
@@ -108,7 +108,9 @@ public final class Expression {
     }
 
     private static final String CONTAINS = "CONTAINS"; //$NON-NLS-1$
-
+    
+    private static final String IS_CONTEXT = "isContext["; //$NON-NLS-1$
+    
     private static final String IS_PLUGIN_LOADED = "IS_PLUGIN_LOADED"; //$NON-NLS-1$
 
     private Expression(String expressionString) {
@@ -160,23 +162,23 @@ public final class Expression {
     }
 
     public static boolean evaluate(final String string, List<? extends IElementParameter> listParam, ElementParameter curParam) {
-        if (Boolean.FALSE.toString().equals(string)) {
+    	String newValue; // remove brackets
+    	if (string.contains("(") //$NON-NLS-1$
+                && (isThereCondition(string, AND) || isThereCondition(string, OR))) {
+            return evaluateExpression(new Expression(string), listParam, curParam).isValid();
+        } else {
+            newValue = string.replace("(", ""); //$NON-NLS-1$ //$NON-NLS-2$
+            newValue = newValue.replace(")", ""); //$NON-NLS-1$ //$NON-NLS-2$
+        }
+    	
+    	if (Boolean.FALSE.toString().equals(string)) {
             return false;
         }
         if (Boolean.TRUE.toString().equals(string)) {
             return true;
         }
-
-        if (string.contains("(") //$NON-NLS-1$
-                && (isThereCondition(string, AND) || isThereCondition(string, OR))) {
-            return evaluateExpression(new Expression(string), listParam, curParam).isValid();
-        } else {
-            String newValue; // remove brackets
-            newValue = string.replace("(", ""); //$NON-NLS-1$ //$NON-NLS-2$
-            newValue = newValue.replace(")", ""); //$NON-NLS-1$ //$NON-NLS-2$
-            return evaluateSimpleExpression(newValue, listParam, curParam);
-        }
-
+        
+        return evaluateSimpleExpression(newValue, listParam, curParam);
     }
 
     protected static boolean isThereCondition(String expression, String condition) {
@@ -298,6 +300,11 @@ public final class Expression {
         } else if (simpleExpression.contains(LESS_THAN)) {
             test = LESS_THAN;
         }
+
+        if (simpleExpression.contains("SPARK_MODE") && simpleExpression.contains("LINK@")) { //$NON-NLS-1$
+            return evaluateSparkMode(simpleExpression, listParam, currentParam);
+        }
+
         if ((simpleExpression.contains(" IN [") || //$NON-NLS-1$
                 simpleExpression.contains(" IN[")) && simpleExpression.endsWith("]")) { //$NON-NLS-1$ //$NON-NLS-2$
             return evaluateInExpression(simpleExpression, listParam);
@@ -312,6 +319,9 @@ public final class Expression {
         }
         if (simpleExpression.contains("SPARK_VERSION[")) { //$NON-NLS-1$
             return evaluateSparkVersion(simpleExpression, listParam, currentParam);
+        }
+        if (simpleExpression.contains(IS_CONTEXT)) { //$NON-NLS-1$
+            return evaluateIsContext(simpleExpression, listParam, currentParam);
         }
 
         if (simpleExpression.contains(CONTAINS)) {
@@ -861,6 +871,43 @@ public final class Expression {
 
         return false;
     }
+    
+    private static boolean evaluateSparkMode(String simpleExpression, List<? extends IElementParameter> listParam,
+            ElementParameter currentParam) {
+        
+        INode node = retrieveNodeElementFromParameter(currentParam, listParam);
+        INode sparkNode;
+        if (node.getProcess().getNodesOfType("tSparkConfiguration") != null) {
+        	sparkNode = node.getProcess().getNodesOfType("tSparkConfiguration").get(0);
+        	IElementParameter sparkMode = sparkNode.getElementParameter("SPARK_MODE");
+            if (sparkMode == null) {
+                return false;
+            }
+            String sparkModeValue = sparkMode.getValue().toString();
+            if (simpleExpression.contains("IN [")) {
+                String values = simpleExpression.substring(simpleExpression.indexOf("[") + 1, simpleExpression.lastIndexOf("]"));
+                return Arrays.asList(values.split(",")).stream().map(m -> m.substring(1, m.length() - 1)).anyMatch(n -> sparkModeValue.equals(n));
+            } else {
+                String toEvaluate = simpleExpression.substring(simpleExpression.indexOf("'") + 1, simpleExpression.lastIndexOf("'"));
+                if (simpleExpression.contains("!=")) {
+                    return !sparkModeValue.equals(toEvaluate);
+                } else {
+                    return sparkModeValue.equals(toEvaluate);
+                }
+            }
+        }
+        return false;
+    }
+    
+    private static boolean evaluateIsContext(String simpleExpression, List<? extends IElementParameter> listParam,
+            ElementParameter currentParam) {
+    	String isContextParameter = simpleExpression.replaceAll("isContext\\[", "").replaceAll("\\]", "");
+    	return listParam.stream()
+    			.filter(x -> isContextParameter.equals(x.getName()))
+    			.findFirst()
+    			.map(value -> value.getValue().toString().startsWith("context"))
+    			.orElse(false);
+    }
 
     /**
      * Execute a methode for a given distribution and version. This function must return a booelan
@@ -1090,10 +1137,14 @@ public final class Expression {
 
         // Look for the param name in list
         IElementParameter param = listParam.stream().filter(p -> paramName.equals(p.getName())).findAny().orElse(null);
-        if (param == null || !EParameterFieldType.TABLE.equals(param.getFieldType())) {
+        if (param == null) {
             return false;
         }
 
+        if (!EParameterFieldType.TABLE.equals(param.getFieldType())) {
+            return param.getValue().toString().contains(paramValue.replaceAll("'", ""));
+        }
+            
         // Check if we can find paraValue among table lines
         return ((List<Map<String, Object>>) param.getValue()).stream().anyMatch(line -> paramValue.equals(line.toString()));
     }

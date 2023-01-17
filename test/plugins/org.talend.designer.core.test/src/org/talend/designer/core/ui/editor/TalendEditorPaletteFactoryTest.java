@@ -12,7 +12,9 @@
 // ============================================================================
 package org.talend.designer.core.ui.editor;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,6 +26,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.components.EComponentType;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.components.IComponentsFactory;
@@ -36,6 +39,7 @@ import org.talend.core.model.process.INodeReturn;
 import org.talend.core.model.process.IProcess;
 import org.talend.core.model.temp.ECodePart;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
+import org.talend.designer.core.IUnifiedComponentService;
 import org.talend.designer.core.ui.editor.TalendEditorPaletteFactory.RecentlyUsedComponent;
 
 /**
@@ -211,6 +215,29 @@ public class TalendEditorPaletteFactoryTest {
         assertExistedComponent(keyword, keyword2, componentHits2); // tdb includes tDBConnection
         assertExistedComponent(keyword1, keyword2, componentHits2); // tdb includes tDBInput
 
+    }
+
+    @Test
+    public void testAddDelegateComponents() throws Exception {
+        IComponentsFactory componentsFactory = ComponentsFactoryProvider.getInstance();
+        ProcessComponentsHandler processComponentsHandler = new ProcessComponentsHandler();
+        componentsFactory.setComponentsHandler(processComponentsHandler);
+        List<IComponent> componentSet = new ArrayList<IComponent>();
+        Method method = TalendEditorPaletteFactory.class.getDeclaredMethod("addDelegateComponents",
+                new Class[] { IComponentsFactory.class, Collection.class, String.class });
+        method.setAccessible(true);
+        method.invoke(null, new Object[] { componentsFactory, componentSet, "" });
+
+        String paletteType = componentsFactory.getComponentsHandler().extractComponentsCategory().getName();
+        IUnifiedComponentService service = GlobalServiceRegister.getDefault().getService(IUnifiedComponentService.class);
+        List<IComponent> allDelegateComponents = new ArrayList<IComponent>(service.getDelegateComponents(paletteType));
+        Assert.assertTrue(componentSet.size() == allDelegateComponents.size());
+
+        componentSet.clear();
+        String keyWord = "tDBInput";
+        method.invoke(null, new Object[] { componentsFactory, componentSet, keyWord.toLowerCase() });
+        Assert.assertTrue(componentSet.size() == 1);
+        Assert.assertTrue(keyWord.equals(componentSet.get(0).getName()));
     }
 
     private void assertExistedComponent(String compName, String keywords, List<IComponent> componentHits) {

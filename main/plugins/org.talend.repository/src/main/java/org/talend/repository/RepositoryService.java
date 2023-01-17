@@ -13,6 +13,7 @@
 package org.talend.repository;
 
 import java.beans.PropertyChangeEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -30,12 +31,14 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.dialogs.ProgressMonitorDialog;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.StructuredViewer;
@@ -92,9 +95,9 @@ import org.talend.core.model.properties.SQLPatternItem;
 import org.talend.core.model.properties.User;
 import org.talend.core.model.properties.impl.PropertiesFactoryImpl;
 import org.talend.core.model.repository.ERepositoryObjectType;
+import org.talend.core.model.repository.GITConstant;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.repository.RepositoryElementDelta;
-import org.talend.core.model.repository.SVNConstant;
 import org.talend.core.model.utils.CloneConnectionUtils;
 import org.talend.core.model.utils.RepositoryManagerHelper;
 import org.talend.core.prefs.PreferenceManipulator;
@@ -108,9 +111,9 @@ import org.talend.core.repository.model.repositoryObject.SalesforceModuleReposit
 import org.talend.core.repository.utils.ProjectHelper;
 import org.talend.core.repository.utils.RepositoryPathProvider;
 import org.talend.core.runtime.util.SharedStudioUtils;
+import org.talend.core.service.ICloudSignOnService;
 import org.talend.core.services.ICoreTisService;
 import org.talend.core.services.IGITProviderService;
-import org.talend.core.services.ISVNProviderService;
 import org.talend.core.ui.branding.IBrandingService;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
 import org.talend.core.ui.services.IRulesProviderService;
@@ -143,7 +146,6 @@ import org.talend.repository.ui.utils.ColumnNameValidator;
 import org.talend.repository.ui.utils.Log4jPrefsSettingManager;
 import org.talend.repository.ui.utils.UpdateLog4jJarUtils;
 import org.talend.repository.ui.views.IRepositoryView;
-import org.talend.utils.json.JSONException;
 import org.talend.utils.json.JSONObject;
 
 /**
@@ -157,7 +159,6 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
 
     private static Logger log = Logger.getLogger(RepositoryService.class);
 
-    private ISVNProviderService svnProviderService;
     private IGITProviderService gitProviderService;
     private boolean isInitedProviderService = false;
     private final Semaphore askUserForNetworkIssueSemaphore = new Semaphore(1, true);
@@ -280,7 +281,13 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
     @Override
     public void openLoginDialog() {
         if (isloginDialogDisabled()) {
-            return;
+            try {
+                if (ICloudSignOnService.get() != null && ICloudSignOnService.get().isSignViaCloud() && ICloudSignOnService.get().hasValidToken()) {
+                    return;
+                }
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+            }
         }
 
         if (CorePlugin.getContext().getProperty(Context.REPOSITORY_CONTEXT_KEY) != null) {
@@ -362,7 +369,10 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
 
     private boolean isloginDialogDisabled() {
         boolean reload = Boolean.parseBoolean(System.getProperty("talend.project.reload")); //$NON-NLS-1$
-        reload = reload | Boolean.parseBoolean(EclipseCommandLine.getEclipseArgument(EclipseCommandLine.TALEND_CONTINUE_LOGON));
+        final boolean continueLogon = Boolean
+                .parseBoolean(EclipseCommandLine.getEclipseArgument(EclipseCommandLine.TALEND_CONTINUE_LOGON));
+        reload = reload | continueLogon
+                | Boolean.parseBoolean(EclipseCommandLine.getEclipseArgument(EclipseCommandLine.TALEND_RESTART_FLAG));
         PreferenceManipulator preferenceManipulator = new PreferenceManipulator();
         ConnectionBean lastBean = null;
         if (reload) {
@@ -377,25 +387,26 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
             }
         }
 
-        if (ArrayUtils.contains(Platform.getApplicationArgs(), EclipseCommandLine.TALEND_DISABLE_LOGINDIALOG_COMMAND)) {
+        if (ArrayUtils.contains(Platform.getApplicationArgs(), EclipseCommandLine.TALEND_DISABLE_LOGINDIALOG_COMMAND)
+                || continueLogon) {
             boolean deleteProjectIfExist = ArrayUtils.contains(Platform.getApplicationArgs(), "--deleteProjectIfExist"); //$NON-NLS-1$
             IBrandingService brandingService = GlobalServiceRegister.getDefault().getService(
                     IBrandingService.class);
             brandingService.getBrandingConfiguration().setUseProductRegistration(false);
             ProxyRepositoryFactory repositoryFactory = ProxyRepositoryFactory.getInstance();
 
-            String projectName = getAppArgValue("-project", "AUTO_LOGIN_PROJECT"); //$NON-NLS-1$ //$NON-NLS-2$
+            String projectName = getAppArgValue(EclipseCommandLine.ARG_PROJECT, "AUTO_LOGIN_PROJECT"); //$NON-NLS-1$ //$NON-NLS-2$
             String language = getAppArgValue("-language", ECodeLanguage.JAVA.getName()); //$NON-NLS-1$
             String login = getAppArgValue("-login", "auto@login.com"); //$NON-NLS-1$ //$NON-NLS-2$
             String password = getAppArgValue("-loginPass", ""); //$NON-NLS-1$ //$NON-NLS-2$
             String tacURL = getAppArgValue("-tacURL", null); //$NON-NLS-1$
             // if tacURL is null, the branch will be no useful.
-            String branch = getAppArgValue("-branch", null); //$NON-NLS-1$
+            String branch = getAppArgValue(EclipseCommandLine.ARG_BRANCH, null); // $NON-NLS-1$
             // if tacURL is not null, will be remote
             final boolean isRemote = tacURL != null;
 
             if (reload && lastBean != null) {
-                if (lastBean.isStoreCredentials()) {
+                if (lastBean.isStoreCredentials() && !lastBean.isLoginViaCloud()) {
                     if (StringUtils.isBlank(lastBean.getCredentials())) {
                         LoginHelper.getInstance().getCredentials(lastBean);
                     }
@@ -490,29 +501,41 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
 
                 }
                 if (!repositoryFactory.isLocalConnectionProvider()) {
-                    ProjectManager.getInstance().setMainProjectBranch(
-                            project,
-                            preferenceManipulator.getLastSVNBranch(
-                                    new JSONObject(project.getEmfProject().getUrl()).getString("location"),
-                                    project.getTechnicalLabel()));
-                }
-                if (project != null && reload && lastBean != null && repositoryFactory.getRepositoryContext().isOffline()) {
-                    if (PluginChecker.isSVNProviderPluginLoaded()) {
-                        ISVNProviderService svnProviderService = GlobalServiceRegister.getDefault()
-                                .getService(ISVNProviderService.class);
-                        if (svnProviderService.isSVNProject(project)) {
-                            String projectUrl = svnProviderService.getProjectUrl(project);
-                            String lastBranch = preferenceManipulator.getLastSVNBranch(projectUrl, project.getTechnicalLabel());
-                            ProjectManager.getInstance().setMainProjectBranch(project, lastBranch);
-                        }
+                    if (StringUtils.isBlank(branch)) {
+                        branch = preferenceManipulator.getLastSVNBranch(new JSONObject(project.getEmfProject().getUrl()).getString("location"), project.getTechnicalLabel());
                     }
+                    ProjectManager.getInstance().setMainProjectBranch(project, branch);
                 }
                 if (project == null) {
                     throw new LoginException(Messages.getString("RepositoryService.projectNotFound", projectName)); //$NON-NLS-1$
                 }
                 repositoryContext.setProject(project);
+                if (CommonsPlugin.isHeadless() || CommonsPlugin.isScriptCmdlineMode()) {
+                    repositoryFactory.logOnProject(project, new NullProgressMonitor());
+                } else {
+                    final Project logProject = project;
+                    ProgressMonitorDialog dialog = new ProgressMonitorDialog(Display.getDefault().getActiveShell());
+                    Exception ex[] = new Exception[1];
+                    IRunnableWithProgress runnable = new IRunnableWithProgress() {
 
-                repositoryFactory.logOnProject(project, new NullProgressMonitor());
+                        @Override
+                        public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+                            try {
+                                repositoryFactory.logOnProject(logProject, monitor);
+                            } catch (Exception e) {
+                                ex[0] = e;
+                            }
+                        }
+                    };
+                    try {
+                        dialog.run(true, false, runnable);
+                    } catch (InvocationTargetException | InterruptedException e) {
+                        ExceptionHandler.process(e);
+                    }
+                    if (ex[0] != null) {
+                        throw ex[0];
+                    }
+                }
             } catch (final PersistenceException e) {
                 if (e instanceof OperationCancelException) {
                     Display.getDefault().syncExec(new Runnable() {
@@ -528,24 +551,23 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
                     Display.getDefault().syncExec(() -> MessageDialog.openInformation(Display.getDefault().getActiveShell(),
                             Messages.getString("LoginDialog.logonDenyTitle"), e.getLocalizedMessage()));
                 } else {
-                    MessageBoxExceptionHandler.process(e, DisplayUtils.getDefaultShell(false));
+                    process(e);
                 }
                 repositoryFactory.logOffProject();
                 LoginHelper.isAutoLogonFailed = true;
             } catch (LoginException e) {
-                MessageBoxExceptionHandler.process(e, DisplayUtils.getDefaultShell(false));
-                repositoryFactory.logOffProject();
+                if (!LoginException.RESTART.equals(e.getKey())) {
+                    process(e);
+                    repositoryFactory.logOffProject();
+                }
                 LoginHelper.isAutoLogonFailed = true;
             } catch (BusinessException e) {
-                MessageBoxExceptionHandler.process(e, DisplayUtils.getDefaultShell(false));
+                process(e);
                 repositoryFactory.logOffProject();
                 LoginHelper.isAutoLogonFailed = true;
-            } catch (CoreException e) {
-                MessageBoxExceptionHandler.process(e, DisplayUtils.getDefaultShell(false));
+            } catch (Exception e) {
+                process(e);
                 repositoryFactory.logOffProject();
-                LoginHelper.isAutoLogonFailed = true;
-            } catch (JSONException e) {
-                ExceptionHandler.process(e);
                 LoginHelper.isAutoLogonFailed = true;
             }
 
@@ -556,6 +578,16 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
             return true;
         }
         return false;
+    }
+
+    private void process(Exception ex) {
+        CommonExceptionHandler.process(ex);
+
+        if (CommonsPlugin.isHeadless() || CommonsPlugin.isJUnitTest()) {
+            return;
+        }
+
+        MessageBoxExceptionHandler.showMessage(ex, DisplayUtils.getDefaultShell(false));
     }
 
     private String getAppArgValue(String arg, String defaultValue) {
@@ -842,7 +874,7 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
         String branchSelection = ProjectManager.getInstance().getMainProjectBranch(
                 ProjectManager.getInstance().getCurrentProject());
         if (branchSelection != null) {
-            if (branchSelection.startsWith(SVNConstant.NAME_TAGS)) {
+            if (branchSelection.startsWith(GITConstant.NAME_TAGS)) {
                 MessageDialog.openInformation(shell, Messages.getString("RepositoryService.projectReadonlyTitle"), //$NON-NLS-1$
                         Messages.getString("RepositoryService.projectReadonly")); //$NON-NLS-1$
             }
@@ -866,25 +898,14 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
     }
 
     @Override
-    public List<String> getProjectBranch(Project project, boolean onlyLocalIfPossible) {
+    public List<String> getProjectBranch(Project project, boolean onlyLocalIfPossible) throws Exception {
         List<String> branchesList = new ArrayList<String>();
         if (!isInitedProviderService) {
             initProviderService();
         }
         if (project != null) {
-            try {
-                if (!project.isLocal() && svnProviderService != null && svnProviderService.isSVNProject(project)) {
-                    branchesList.add(SVNConstant.NAME_TRUNK);
-                    String[] branchList = svnProviderService.getBranchList(project);
-                    if (branchList != null) {
-                        branchesList.addAll(Arrays.asList(branchList));
-                    }
-                }
-                if (!project.isLocal() && gitProviderService != null && gitProviderService.isGITProject(project)) {
-                    branchesList.addAll(Arrays.asList(gitProviderService.getBranchList(project, onlyLocalIfPossible)));
-                }
-            } catch (PersistenceException e) {
-                CommonExceptionHandler.process(e);
+            if (!project.isLocal() && gitProviderService != null && gitProviderService.isGITProject(project)) {
+                branchesList.addAll(Arrays.asList(gitProviderService.getBranchList(project, onlyLocalIfPossible)));
             }
         }
         return branchesList;
@@ -893,14 +914,6 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
     private void initProviderService() {
         if (PluginChecker.isRemoteProviderPluginLoaded()) {
             GlobalServiceRegister gsr = GlobalServiceRegister.getDefault();
-            try {
-                if (gsr.isServiceRegistered(ISVNProviderService.class)) {
-                    svnProviderService = (ISVNProviderService) GlobalServiceRegister.getDefault()
-                            .getService(ISVNProviderService.class);
-                }
-            } catch (Exception e) {
-                ExceptionHandler.process(e);
-            }
             try {
                 if (gsr.isServiceRegistered(IGITProviderService.class)) {
                     gitProviderService = (IGITProviderService) GlobalServiceRegister.getDefault()
@@ -990,16 +1003,6 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
         return NetworkErrorRetryDialog.BUTTON_RETRY_INDEX == result;
     }
 
-    @Override
-    public boolean isSVN() {
-        if (svnProviderService == null && PluginChecker.isSVNProviderPluginLoaded()) {
-            svnProviderService = GlobalServiceRegister.getDefault().getService(ISVNProviderService.class);
-        }
-        if (svnProviderService != null) {
-            return svnProviderService.isProjectInSvnMode();
-        }
-        return false;
-    }
 
     @Override
     public boolean isGIT() {

@@ -592,7 +592,7 @@
                 	}
                 }
                 %>
-			}
+			}//PositionalUtil end
 
 			PositionalUtil_<%=cid%> positionalUtil_<%=cid%>=new PositionalUtil_<%=cid%>();
 			positionalUtil_<%=cid%>.setUseStar(useStar_<%=cid%>);
@@ -809,6 +809,10 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			<%
 			}
 			%>
+			
+			resourceMap.put("byteReader_<%=cid %>", byteReader_<%=cid %>);
+			resourceMap.put("reader_<%=cid %>", reader_<%=cid %>);
+			
 				<%
             	if("BYTES".equals(patternUnits)&&(("").equals(rowSeparator) || ("\"\"").equals(rowSeparator))){
                 %>
@@ -858,6 +862,10 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 				<%
 				}
 				%>	
+				
+				resourceMap.put("byteReader_<%=cid %>", byteReader_<%=cid %>);
+				resourceMap.put("reader_<%=cid %>", reader_<%=cid %>);
+				
                 <%
             	if("BYTES".equals(patternUnits)&&(("").equals(rowSeparator) || ("\"\"").equals(rowSeparator)) ){
                 %>

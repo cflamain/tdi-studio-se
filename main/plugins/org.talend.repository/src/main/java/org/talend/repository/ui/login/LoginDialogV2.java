@@ -14,6 +14,7 @@ package org.talend.repository.ui.login;
 
 import java.util.List;
 
+import org.eclipse.core.runtime.preferences.ConfigurationScope;
 import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.resource.ColorRegistry;
@@ -42,13 +43,18 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
+import org.osgi.service.prefs.BackingStoreException;
+import org.osgi.service.prefs.Preferences;
 import org.talend.commons.exception.CommonExceptionHandler;
+import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.utils.system.EnvironmentUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.general.ConnectionBean;
 import org.talend.core.model.general.Project;
+import org.talend.core.service.ICloudSignOnService;
 import org.talend.core.ui.branding.IBrandingConfiguration;
 import org.talend.core.ui.branding.IBrandingService;
+import org.talend.core.ui.workspace.ChooseWorkspaceData;
 import org.talend.registration.license.LicenseManagement;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.ui.login.connections.ConnectionUserPerReader;
@@ -60,6 +66,8 @@ import org.talend.repository.ui.login.connections.ConnectionUserPerReader;
  *
  */
 public class LoginDialogV2 extends TrayDialog {
+    
+    private static final String FIRST_RUN_SSO_FEATURE = "LoginDialogV2.firstRunSSOFeature";
 
     public static final String FONT_TALEND_FOR_LOGIN_UI = "FONT_TALEND_FOR_LOGIN_UI"; //$NON-NLS-1$
 
@@ -93,6 +101,9 @@ public class LoginDialogV2 extends TrayDialog {
     public static final Color RED_COLOR = org.talend.commons.ui.runtime.ColorConstants.RED_COLOR;
 
     public static final Color VERTICAL_SEPERATOR_LINE_COLOR = org.talend.commons.ui.runtime.ColorConstants.VERTICAL_SEPERATOR_LINE_COLOR;
+    
+    protected IBrandingService brandingService = GlobalServiceRegister.getDefault().getService(
+            IBrandingService.class);
 
     protected double realHeightRate;
 
@@ -114,7 +125,7 @@ public class LoginDialogV2 extends TrayDialog {
 
     private ConnectionUserPerReader perReader;
 
-    private Composite base;
+    protected Composite base;
 
     private StackLayout stackLayout;
 
@@ -274,11 +285,17 @@ public class LoginDialogV2 extends TrayDialog {
             loginPage = getFirstTimeStartupPageIfNeeded();
         }
 
-        if (loginPage == null) {
-            loginPage = new LoginProjectPage(base, this, SWT.NONE);
-        }
-
         try {
+            if (loginPage == null && isShowSSOPage()) {
+                loginPage = new LoginWithCloudPage(base, this, SWT.NONE);
+            }
+            if (loginPage == null) {
+                if ( ICloudSignOnService.get() != null && ICloudSignOnService.get().isSignViaCloud()) {
+                    loginPage = new LoginProjectPage(base, this, SWT.NONE, true);
+                } else {
+                    loginPage = new LoginProjectPage(base, this, SWT.NONE); 
+                }                
+            }
             loginPage.preShowPage();
         } catch (Throwable e) {
             CommonExceptionHandler.process(e);
@@ -297,18 +314,23 @@ public class LoginDialogV2 extends TrayDialog {
             }
         }
 
-        // try to find if there are projects in workspace
-        Project[] projects = LoginHelper.getInstance().getProjects(LoginHelper.createDefaultLocalConnection());
-        if (projects == null || projects.length == 0) {
-            List<ConnectionBean> storedConnections = LoginHelper.getInstance().getStoredConnections();
-            if (storedConnections == null
-                    || storedConnections.isEmpty()
-                    || (storedConnections.size() == 1 && !LoginHelper.isRemotesConnection(storedConnections.get(0)) && LoginHelper
-                            .isWorkspaceSame(storedConnections.get(0)))) {
-                // for local license case
-                loginPage = new LoginFirstTimeStartupActionPage(base, this, SWT.NONE);
-            }
+        if (isShowSSOPage()) {
+            loginPage = new LoginWithCloudPage(base, this, SWT.NONE);
+        } else {
+            // try to find if there are projects in workspace
+          Project[] projects = LoginHelper.getInstance().getProjects(LoginHelper.createDefaultLocalConnection());
+          if (projects == null || projects.length == 0) {
+              List<ConnectionBean> storedConnections = LoginHelper.getInstance().getStoredConnections();
+              if (storedConnections == null
+                      || storedConnections.isEmpty()
+                      || (storedConnections.size() == 1 && !LoginHelper.isRemotesConnection(storedConnections.get(0)) && LoginHelper
+                              .isWorkspaceSame(storedConnections.get(0)))) {
+                  // for local license case
+                  loginPage = new LoginProjectPage(base, this, SWT.NONE);
+              }
+          } 
         }
+
         return loginPage;
     }
 
@@ -552,5 +574,39 @@ public class LoginDialogV2 extends TrayDialog {
         }
 
     }
+    
+    protected boolean isShowSSOPage() {
+        try {
+            if (brandingService.isPoweredbyTalend()) {
+                if (ICloudSignOnService.get() != null) {
+                    if (isFirstRunSSOFeature()) {
+                        saveFirstRunSSOFeature();
+                        return true;
+                    }
+                    if (ICloudSignOnService.get().isNeedShowSSOPage()) {
+                        return true;
+                    }
+                } 
+            }
+        } catch (Exception ex) {
+            ExceptionHandler.process(ex);
+        }
+        return false;
+    }
 
+    protected boolean isFirstRunSSOFeature() {
+        Preferences node = new ConfigurationScope().getNode(ChooseWorkspaceData.ORG_TALEND_WORKSPACE_PREF_NODE);
+        boolean showWelcomeInfo = node.getBoolean(FIRST_RUN_SSO_FEATURE, true);
+        return showWelcomeInfo;
+    }
+
+    private void saveFirstRunSSOFeature() {
+        Preferences node = new ConfigurationScope().getNode(ChooseWorkspaceData.ORG_TALEND_WORKSPACE_PREF_NODE);
+        node.putBoolean(FIRST_RUN_SSO_FEATURE, false);
+        try {
+            node.flush();
+        } catch (BackingStoreException e) {
+            ExceptionHandler.process(e);
+        }
+    }
 }

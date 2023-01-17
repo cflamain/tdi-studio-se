@@ -174,7 +174,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 					if (nestRoot != null) {
 						boolean isDefaultNameSpaceAtRoot = "".equals(nestRoot.getQName().getNamespace().getPrefix());
 						for (org.dom4j.Element tmp: (java.util.List<org.dom4j.Element>) nestRoot.elements()) {
-							if (("").equals(tmp.getQName().getNamespace().getURI()) && ("").equals(tmp.getQName().getNamespace().getPrefix()) && isDefaultNameSpaceAtRoot) {
+							if (isDefaultNameSpaceAtRoot && ("").equals(tmp.getQName().getNamespace().getURI()) && ("").equals(tmp.getQName().getNamespace().getPrefix())) {
 								tmp.setQName(org.dom4j.DocumentHelper.createQName(tmp.getName(), nestRoot.getQName().getNamespace()));
 							}
 							replaceDefaultNameSpace(tmp);

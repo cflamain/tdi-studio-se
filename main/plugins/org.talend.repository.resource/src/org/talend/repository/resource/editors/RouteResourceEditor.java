@@ -95,7 +95,7 @@ public class RouteResourceEditor extends TextEditor {
                 }
             };
             rwu.setAvoidUnloadResources(false);
-            rwu.setAvoidSvnUpdate(false);
+            rwu.setAvoidUpdate(false);
             rwu.setAvoidUpdateLocks(false);
             factory.executeRepositoryWorkUnit(rwu);
             rwu.throwPersistenceExceptionIfAny();

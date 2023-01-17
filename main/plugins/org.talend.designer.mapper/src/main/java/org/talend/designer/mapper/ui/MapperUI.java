@@ -260,6 +260,8 @@ public class MapperUI {
                     }
                     uiManager.setMapperResponse(SWT.CANCEL);
                     uiManager.prepareClosing(uiManager.getMapperResponse());
+                } else if (uiManager.getMapperResponse() == SWT.OK) {
+                    mapperManager.pendoMapperTrack();
                 }
                 if (!mapperManager.componentIsReadOnly() && mapperManager.isDataChanged()
                         && !mapperManager.getUiManager().isCloseWithoutPrompt()) {

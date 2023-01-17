@@ -30,7 +30,7 @@ public final class ReturnVariables {
      * after current subjob
      */
     public static final String AFTER = "AFTER";
-
+    
     private ReturnVariables() {
         new AssertionError();
     }

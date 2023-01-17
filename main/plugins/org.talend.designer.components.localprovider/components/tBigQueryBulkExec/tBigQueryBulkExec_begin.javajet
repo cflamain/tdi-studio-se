@@ -302,7 +302,32 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",ee_<%=cid%>.getMessage());
 
 			com.google.cloud.storage.BlobInfo blobInfo_<%=cid%> = com.google.cloud.storage.BlobInfo.
 							newBuilder(<%=bucketName%>, file_<%=cid%>.getName()).build();
-			storage_<%=cid%>.create(blobInfo_<%=cid%>, java.nio.file.Files.readAllBytes(file_<%=cid%>.toPath()));
+			// by default 512MB (or max file length)
+			byte[] buffer_<%=cid%> = new byte[(int) java.lang.Math.min(java.nio.file.Files.size(file_<%=cid%>.toPath()), 512 * 1024 * 1024)];
+			try (com.google.cloud.WriteChannel writer_<%=cid%> = storage_<%=cid%>.writer(
+					blobInfo_<%=cid%>,
+					com.google.cloud.storage.Storage.BlobWriteOption.crc32cMatch(),
+					com.google.cloud.storage.Storage.BlobWriteOption.md5Match());
+				java.io.InputStream inputStreamForUpload_<%=cid%> = java.nio.file.Files.newInputStream(file_<%=cid%>.toPath())) {
+				int curFileLimit_<%=cid%>;
+				while ((curFileLimit_<%=cid%> = inputStreamForUpload_<%=cid%>.read(buffer_<%=cid%>)) >= 0) {
+					writer_<%=cid%>.write(java.nio.ByteBuffer.wrap(buffer_<%=cid%>, 0, curFileLimit_<%=cid%>));
+				}
+			} catch (IOException e_<%=cid%>) {
+				<%
+				if(isLog4jEnabled){
+				%>
+					log.error("<%=cid%> - Exception in component <%=cid%>:" + e_<%=cid%>.getMessage());
+				<%
+				}
+				if (("true").equals(dieOnError)) {
+				%>
+					throw e_<%=cid%>;
+				<%
+				}
+				%>
+			}
+
 			<%
 			if(isLog4jEnabled){
 			%>

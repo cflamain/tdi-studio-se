@@ -12,9 +12,6 @@
  <extension
        point="org.eclipse.ui.startup">
     <startup
-          class="org.talend.designer.core.DesignerCorePreparation">
-    </startup>
-    <startup
           class="org.talend.designer.core.ui.editor.ProcessShowJobStartup">
     </startup>
  </extension>
@@ -230,7 +227,7 @@
                         allowMultiple="false"
                         category="org.talend.core.root"
                         class="org.talend.designer.core.ui.hierarchy.JobHierarchyViewPart"
-                        icon="platform:/plugin/org.eclipse.jdt.ui/icons/full/eview16/class_hi.gif"
+                        icon="icons/class_hi.gif"
                         id="org.talend.designer.core.ui.hierarchy.JobHierarchyViewPart"
                         name="%jobHierarchyView">
                   </view>
@@ -936,13 +933,6 @@
           </buildProvider>
        </extension>
        <extension
-             point="org.talend.core.repository.login.task">
-          <loginTask
-                class="org.talend.designer.core.ui.preferences.PreferencePreInitailizeTask"
-                priority="normal">
-          </loginTask>
-       </extension>
-       <extension
              id="TalendHelpUI"
              name="org.talend.designer.core.ui.help.TalendHelpUI"
              point="org.eclipse.ui.helpSupport">
@@ -950,4 +940,47 @@
                 class="org.talend.designer.core.ui.help.TalendHelpUI">
           </config>
        </extension>
+       <extension
+             point="org.talend.core.runtime.analysisTask">
+          <analysisTask
+                class="org.talend.designer.core.model.analysistask.ItemComponentMissingAnalysisTask"
+                description="Check if there exist component missing"
+                id="org.talend.designer.core.model.analysistask.ItemComponentMissingAnalysisTask"
+                name="ItemComponentMissingAnalysisTask">
+          </analysisTask>
+          <analysisTask
+                class="org.talend.designer.core.model.analysistask.ChildJobMissingAnalysisTask"
+                description="Check if there exist child job missing"
+                id="org.talend.designer.core.model.analysistask.ChildJobMissingAnalysisTask"
+                name="ChildJobMissingAnalysisTask">
+          </analysisTask>
+          <analysisTask
+                class="org.talend.designer.core.model.analysistask.UnresolvedRoutineDependencyAnalysisTask"
+                description="Check beans/routines missing dependencies"
+                id="org.talend.designer.core.model.analysistask.UnresolvedRoutineDependencyAnalysisTask"
+                name="UnresolvedRoutineDependencyAnalysisTask">
+          </analysisTask>
+          <analysisTask
+                class="org.talend.designer.core.model.analysistask.UnresolvedComponentsDependenciesAnalysisTask"
+                description="Check missing components dependencies"
+                id="org.talend.designer.core.model.analysistask.UnresolvedComponentsDependenciesAnalysisTask"
+                name="UnresolvedComponentsDependenciesAnalysisTask">
+          </analysisTask>
+          <analysisTask
+                class="org.talend.designer.core.model.analysistask.DuplicatedRouteIdUsageAnalysisTask"
+                description="Check duplicated routeid usage"
+                id="org.talend.designer.core.model.analysistask.DuplicatedRouteIdUsageAnalysisTask"
+                name="DuplicatedRouteIdUsageAnalysisTask">
+          </analysisTask>
+		  <analysisTask
+                class="org.talend.designer.core.model.analysistask.CustomComponentsDepRiskAnalysisTask"
+                description="Check if custom components are used"
+                id="org.talend.designer.core.model.analysistask.CustomComponentsDepRiskAnalysisTask"
+                name="CustomComponentsDepRiskAnalysisTask">
+          </analysisTask>
+       </extension>
+       <extension
+   		 	point="org.eclipse.ui.themes">
+      		<themeElementCategory label="placeholder" id="org.talend.designer.core"/>
+	   </extension>
 </plugin>

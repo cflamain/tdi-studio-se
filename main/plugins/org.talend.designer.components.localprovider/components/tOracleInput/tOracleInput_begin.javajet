@@ -133,7 +133,7 @@ imports="
 				}
 <%
 			}
-			if(!"ORACLE_8".equals(dbVersion)){
+			
 %>
 				java.sql.Statement stmtGetTZ_<%=cid%> = conn_<%=cid%>.createStatement();
 				java.sql.ResultSet rsGetTZ_<%=cid%> = stmtGetTZ_<%=cid%>.executeQuery("select sessiontimezone from dual");
@@ -150,12 +150,12 @@ imports="
                                     ((oracle.jdbc.OracleConnection)conn_<%=cid%>).setSessionTimeZone(sessionTimezone_<%=cid%>);
                                 }
 <%
-			}
+			
 		}
 
 		public void afterUseExistConnection(INode node) {
-			String dbVersion =  ElementParameterParser.getValue(node, "__DB_VERSION__");
-			if(!"ORACLE_8".equals(dbVersion)){%>
+			
+			%>
                 boolean isTimeZoneNull_<%=cid%> = false;
 				boolean isConnectionWrapped_<%=cid%> = !(conn_<%=cid%> instanceof oracle.jdbc.OracleConnection) && conn_<%=cid%>.isWrapperFor(oracle.jdbc.OracleConnection.class);
 				oracle.jdbc.OracleConnection unwrappedOraConn_<%=cid%> = null;
@@ -182,7 +182,7 @@ imports="
                     }
 				}
 			<%
-			}
+			
 	    }
 
 		public void createStatement(INode node) {
@@ -259,7 +259,7 @@ imports="
 				dbVersion = ElementParameterParser.getValue(node, "__DB_VERSION__");
 			}
 	    	boolean supportTSTZ = false;
-	    	if("ORACLE_11".equals(dbVersion) || "ORACLE_12".equals(dbVersion) || "ORACLE_10".equals(dbVersion) || "ORACLE_18".equals(dbVersion) ){
+	    	if("ORACLE_11".equals(dbVersion) || "ORACLE_12".equals(dbVersion) || "ORACLE_18".equals(dbVersion) ){
 	    		supportTSTZ = true;
 	    	}
 	    	if(isTSWithTZ && supportTSTZ){

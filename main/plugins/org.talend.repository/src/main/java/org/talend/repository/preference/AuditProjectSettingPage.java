@@ -39,7 +39,9 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
+import org.talend.analysistask.ItemAnalysisReportManager;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.exception.ExceptionMessageDialog;
 import org.talend.commons.ui.runtime.image.EImage;
@@ -54,7 +56,8 @@ import org.talend.core.database.EDatabaseTypeName;
 import org.talend.core.database.conn.version.EDatabaseVersion4Drivers;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.runtime.projectsetting.ProjectPreferenceManager;
-import org.talend.core.service.ICommandLineService;
+import org.talend.core.service.IAuditService;
+import org.talend.repository.ProjectManager;
 import org.talend.repository.RepositoryPlugin;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
@@ -106,6 +109,8 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
 
     private Map<Integer, String> currentParameters = new HashMap<Integer, String>();
 
+    private boolean isProjectAuditEnabled = false;
+
     /*
      * (non-Javadoc)
      *
@@ -116,7 +121,22 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         Composite composite = new Composite(parent, SWT.NULL);
         GridLayout layout = new GridLayout(1, false);
         composite.setLayout(layout);
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IAuditService.class)) {
+            IAuditService service = (IAuditService) GlobalServiceRegister.getDefault().getService(IAuditService.class);
+            if (service != null) {
+                // server enabled can create project audit area
+                createProjectAuditArea(composite);
+                isProjectAuditEnabled = true;
+            }
+        }
+        createProjectAnalysisArea(composite);
+        return composite;
+    }
 
+    private void createProjectAuditArea(Composite parent) {
+        Composite composite = new Composite(parent, SWT.NONE);
+        composite.setLayout(new GridLayout(1, false));
+        composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         generateButton = new Button(composite, SWT.NONE);
         generateButton.setText(Messages.getString("AuditProjectSettingPage.generateButtonText")); //$NON-NLS-1$
 
@@ -132,7 +152,33 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         prefManager = new ProjectPreferenceManager(AuditManager.AUDIT_RESOURCES, true);
         addListeners();
         init();
-        return composite;
+    }
+
+    private void createProjectAnalysisArea(Composite parent) {
+        Composite composite = new Composite(parent, SWT.NONE);
+        composite.setLayout(new GridLayout(1, false));
+        composite.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        Group analysisGroup = new Group(composite, SWT.NONE);
+        analysisGroup.setText(Messages.getString("AuditProjectSettingPage.analysis.groupTitle")); //$NON-NLS-1$
+        GridDataFactory.fillDefaults().span(1, 1).align(SWT.FILL, SWT.BEGINNING).grab(true, false).applyTo(analysisGroup);
+        analysisGroup.setLayout(new GridLayout(1, false));
+        Label analysisLabel = new Label(analysisGroup, SWT.NONE);
+        analysisLabel.setText(Messages.getString("AuditProjectSettingPage.analysis.infoText")); //$NON-NLS-1$
+        Label listItemLabel = new Label(analysisGroup, SWT.NONE);
+        listItemLabel.setText(Messages.getString("AuditProjectSettingPage.analysis.listItemText")); //$NON-NLS-1$
+        Label noteLabel = new Label(analysisGroup, SWT.NONE);
+        noteLabel.setText(Messages.getString("AuditProjectSettingPage.analysis.noteText")); //$NON-NLS-1$
+        Button analysisButton = new Button(analysisGroup, SWT.NONE);
+        analysisButton.setText(Messages.getString("AuditProjectSettingPage.analysis.buttonLabel")); //$NON-NLS-1$
+        analysisButton.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                ItemAnalysisReportManager.getInstance()
+                        .generateAnalysisReport(ProjectManager.getInstance().getCurrentProject().getTechnicalLabel());
+            }
+
+        });
     }
 
     protected Composite createDbConfigGroup(Composite parent) {
@@ -222,7 +268,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                             t[0] = Thread.currentThread();
                             monitor.beginTask(Messages.getString("AuditProjectSettingPage.generateAuditReportProgressBar"), //$NON-NLS-1$
                                     IProgressMonitor.UNKNOWN);
-                            ICommandLineService service = getCommandLineService();
+                            IAuditService service = getAuditService();
                             if (service != null) {
                                 if (dbChecked) {
                                     if (dbResults.isOk()) {
@@ -361,7 +407,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
 
             @Override
             public void widgetSelected(SelectionEvent e) {
-                ICommandLineService service = getCommandLineService();
+                IAuditService service = getAuditService();
                 if (service != null && savedInDBButton.getSelection()) {
                     try {
                         TypedReturnCode<java.sql.Connection> dbResults = getConnectionReturnCode();
@@ -422,7 +468,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
                             t[0] = Thread.currentThread();
                             monitor.beginTask(Messages.getString("AuditProjectSettingPage.generateAuditReportProgressBar"), //$NON-NLS-1$
                                     IProgressMonitor.UNKNOWN);
-                            ICommandLineService service = getCommandLineService();
+                            IAuditService service = getAuditService();
                             if (service != null && dbChecked) {
                                 if (dbResults.isOk()) {
                                     try {
@@ -486,7 +532,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
     }
 
     private void save() {
-        if (prefManager != null) {
+        if (isProjectAuditEnabled && prefManager != null) {
             prefManager.setValue(AuditManager.AUDIT_DBTYPE, dbTypeCombo.getText());
             prefManager.setValue(AuditManager.AUDIT_DBVERSION, dbVersionCombo.getText());
             prefManager.setValue(AuditManager.AUDIT_DRIVER, driverText.getText());
@@ -500,14 +546,16 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
     }
 
     private void performDefaultStatus() {
-        savedInDBButton.setSelection(false);
-        dbTypeCombo.deselectAll();
-        dbVersionCombo.deselectAll();
-        driverText.setText(""); //$NON-NLS-1$
-        urlText.setText("");//$NON-NLS-1$
-        usernameText.setText("");//$NON-NLS-1$
-        passwordText.setText("");//$NON-NLS-1$
-        hideControl(true);
+        if (isProjectAuditEnabled) {
+            savedInDBButton.setSelection(false);
+            dbTypeCombo.deselectAll();
+            dbVersionCombo.deselectAll();
+            driverText.setText(""); //$NON-NLS-1$
+            urlText.setText("");//$NON-NLS-1$
+            usernameText.setText("");//$NON-NLS-1$
+            passwordText.setText("");//$NON-NLS-1$
+            hideControl(true);
+        }
     }
 
     private boolean selectGeneratePath() {
@@ -543,7 +591,7 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
     }
 
     private TypedReturnCode<java.sql.Connection> getConnectionReturnCode() {
-        ICommandLineService service = getCommandLineService();
+        IAuditService service = getAuditService();
         if (service != null) {
             return service.checkConnection(getCurrentDBVersion(), urlText.getText(), driverText.getText(), usernameText.getText(),
                     passwordText.getText());
@@ -551,9 +599,9 @@ public class AuditProjectSettingPage extends ProjectSettingPage {
         return new TypedReturnCode<java.sql.Connection>();
     }
 
-    private ICommandLineService getCommandLineService() {
-        if (GlobalServiceRegister.getDefault().isServiceRegistered(ICommandLineService.class)) {
-            return (ICommandLineService) GlobalServiceRegister.getDefault().getService(ICommandLineService.class);
+    private IAuditService getAuditService() {
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IAuditService.class)) {
+            return (IAuditService) GlobalServiceRegister.getDefault().getService(IAuditService.class);
         }
         return null;
     }

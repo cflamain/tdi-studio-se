@@ -46,33 +46,6 @@
       </property>      
    </product>
 </extension>
-   <extension
-         point="org.eclipse.ui.intro.config">
-      <config
-            introId="org.talend.rcp.tos.intro"
-            content="introContent.xml"
-            id="org.talend.rcp.tos.configId">
-         <presentation
-               home-page-id="root">
-            <implementation
-                  kind="html"
-                  os="win32,linux,macosx">
-            </implementation>
-         </presentation>
-      </config>
-   </extension>
-      <extension
-         point="org.eclipse.ui.intro">
-      <intro
-            class="org.eclipse.ui.intro.config.CustomizableIntroPart"
-            icon="platform:/plugin/org.talend.rcp/icons/appli_16x16.gif"
-            id="org.talend.rcp.tos.intro">
-      </intro>
-      <introProductBinding
-            introId="org.talend.rcp.tos.intro"
-            productId="org.talend.rcp.branding.tos.product">
-      </introProductBinding>
-   </extension> 
     <extension point="org.eclipse.ui.splashHandlers">
         <splashHandlerProductBinding productId="org.talend.rcp.branding.tos.product" splashId="org.talend.rcp.splashHandler"/>
     </extension>

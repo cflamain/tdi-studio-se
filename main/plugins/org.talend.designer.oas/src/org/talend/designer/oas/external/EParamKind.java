@@ -9,7 +9,8 @@ public enum EParamKind {
     FORM("form"),
     HEADER("header"),
     MATRIX("matrix"),
-    MULTIPART("multipart")
+    MULTIPART("multipart"),
+    EMPTY("")
     
     ;
 

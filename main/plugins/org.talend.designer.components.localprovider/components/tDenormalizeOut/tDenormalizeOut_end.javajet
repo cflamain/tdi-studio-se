@@ -175,8 +175,8 @@ while(<%=inputColumn%>_iterator_<%=cid %>.hasNext()){
 		}
 		
 	}
-	
-	denormalize_row_<%=cid %>.<%=inputColumn %> = sb_<%=cid %>.toString();
+	if (sb_<%=cid %> != null)
+		denormalize_row_<%=cid %>.<%=inputColumn %> = sb_<%=cid %>.toString();
 	
 	sb_<%=cid %> = null;
 	

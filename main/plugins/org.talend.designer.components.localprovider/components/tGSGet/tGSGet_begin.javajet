@@ -424,11 +424,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 					}
 				}
 
-				java.io.FileOutputStream out_<%=cid%> = new java.io.FileOutputStream(file_<%=cid%>);
-				out_<%=cid%>.write(obj_<%=cid%>.getContent());
-
-				out_<%=cid%>.flush();
-				out_<%=cid%>.close();
+				try (java.io.FileOutputStream out_<%=cid%> = new java.io.FileOutputStream(file_<%=cid%>)) {
+				obj_<%=cid %>.downloadTo(out_<%=cid%>);
+				}
 			}
 <%
 	}

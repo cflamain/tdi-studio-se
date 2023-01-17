@@ -11,13 +11,12 @@
 //
 // ============================================================================
 package org.talend.repository.model.migration;
-import org.apache.commons.lang.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.core.model.migration.AbstractItemMigrationTask;
 import org.talend.core.model.properties.Item;
@@ -52,18 +51,24 @@ public class ResetItemLabelMigrationTask extends AbstractItemMigrationTask imple
         if(label == null){
             return ExecutionResult.NOTHING_TO_DO;
         }
+        boolean modified = false;
         try {
             boolean isAvailable = WorkspaceUtils.checkNameIsOK(label);
             if(!isAvailable){
                 property.setLabel(handler.getPropertyLabel(StringUtils.trimToNull(label)));
                 property.setDisplayName(StringUtils.trimToNull(label));
                 repositoryFactory.save(item, true);
+                modified = true;
             }
         } catch (PersistenceException e) {
             return ExecutionResult.FAILURE;
         }
 
-        return ExecutionResult.SUCCESS_WITH_ALERT;
+        if (modified) {
+            return ExecutionResult.SUCCESS_WITH_ALERT;
+        } else {
+            return ExecutionResult.NOTHING_TO_DO;
+        }
     }
 
     @Override

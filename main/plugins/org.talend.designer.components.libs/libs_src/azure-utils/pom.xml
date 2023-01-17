@@ -6,7 +6,16 @@
 
     <groupId>org.talend.components.lib</groupId>
     <artifactId>azure-utils</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://github.com/Talend/tdi-studio-se/blob/master/main/plugins/org.talend.designer.components.libs/libs_src/azure-utils/LICENSE</url>
+            <distribution>may be downloaded from the Maven repository</distribution>
+        </license>
+    </licenses>
+
     <build>
         <plugins>
             <plugin>

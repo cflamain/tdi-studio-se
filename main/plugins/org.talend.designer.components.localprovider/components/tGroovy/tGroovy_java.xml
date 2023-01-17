@@ -58,7 +58,7 @@
 
    <CODEGENERATION>
    	<IMPORTS>
-   		<IMPORT NAME="Groovy_Module" MODULE="groovy-all-2.4.6.jar" MVN="mvn:org.talend.libraries/groovy-all-2.4.6/6.0.0" REQUIRED="true" />
+   		<IMPORT NAME="Groovy_Module" MODULE="groovy-4.0.6.jar" MVN="mvn:org.apache.groovy/groovy/4.0.6" REQUIRED="true" />
    	</IMPORTS>
    </CODEGENERATION>
 

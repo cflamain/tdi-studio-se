@@ -34,13 +34,13 @@
 		for (INode ne : nodes) {
 			if (connection.equals(ne.getUniqueName())) {
 				authType = ElementParameterParser.getValue(ne, "__AUTH_TYPE__");
-        break;
+				break;
 			}
 		}
 	}
 
 if ("USER_ACCOUNT_HMAC".equals(authType)){
-	%>
+%>
 	org.jets3t.service.impl.rest.httpclient.GoogleStorageService service_<%=cid%> = null;
 	try {
 		<%
@@ -53,15 +53,12 @@ if ("USER_ACCOUNT_HMAC".equals(authType)){
 				log.info("<%=cid%> - Get an free connection from " + "<%=connection%>" + ".");
 			<%
 			}
-		}else{
-		%>
-
-	       	<%
+		} else {
 			String passwordFieldName = "__SECRET_KEY__";
 			final String GoogleTracker = org.talend.core.utils.TrackerUtil.getGoogleTracker();
-	       	%>
+%>
 
-		   <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+			<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
 
 			org.jets3t.service.security.GSCredentials credentials_<%=cid%> = new org.jets3t.service.security.GSCredentials(<%=accessKey%>,decryptedPassword_<%=cid%>);
 			service_<%=cid%> = new org.jets3t.service.impl.rest.httpclient.GoogleStorageService(credentials_<%=cid%>," <%=GoogleTracker%>",null);
@@ -229,32 +226,36 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 			}
 			%>
 		}
-	<%
+<%
 	}else{
-	%>
+%>
 		com.google.cloud.storage.Blob blob_<%=cid%> = storage_<%=cid%>.get(<%=srcBucketName%>, <%=sourceObjectKey%>);
 		String targetName_<%=cid%> = blob_<%=cid%>.getName();
-		<% if(!useSrcPath) { %>
+<%
+		if(!useSrcPath) {
+%>
 			targetName_<%=cid%> = targetFolder_<%=cid%>+targetName_<%=cid%>.substring(targetName_<%=cid%>.lastIndexOf('/') + 1);
-		<% } %>
-		<%
+<%
+		} else {
+%>
+			targetName_<%=cid%> = targetFolder_<%=cid%>+targetName_<%=cid%>;
+<%
+		}
 		if(isRename){
-		%>
+%>
 			targetName_<%=cid%> = targetFolder_<%=cid%>+<%=newObjectKey%>;
-		<%
+<%
 		}
-		%>
+%>
 		com.google.cloud.storage.CopyWriter copyWriter_<%=cid%> = blob_<%=cid%>.copyTo(<%=targetBucket%>, targetName_<%=cid%>);
-		<%
+<%
 		if("MOVE".equals(actionType) ){
-		%>
+%>
 			blob_<%=cid%>.delete();
-		<%
+<%
 		}
-		%>
-	<%
 	}
-	%>
+%>
 	globalMap.put("<%=cid %>_SOURCE_BUCKET",<%=srcBucketName%>);
 	globalMap.put("<%=cid %>_SOURCE_OBJECTKEY",<%=sourceObjectKey%>);
 

@@ -67,7 +67,7 @@ public class JsonPathMigrationTask extends AbstractItemMigrationTask {
             ExceptionHandler.process(e);
             return ExecutionResult.FAILURE;
         }
-        return ExecutionResult.SUCCESS_NO_ALERT;
+        return modified ? ExecutionResult.SUCCESS_NO_ALERT : ExecutionResult.NOTHING_TO_DO;
     }
 
 }

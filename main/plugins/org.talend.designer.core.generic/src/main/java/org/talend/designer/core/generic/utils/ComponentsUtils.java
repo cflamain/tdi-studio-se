@@ -643,14 +643,15 @@ public class ComponentsUtils {
             String value = (String) paramValue;
             // If property is not initialized by client and value is not context mode and is not in wizard then add
             // double quotes.
-            if (needInitializeProperty && !(element instanceof FakeElement || ContextParameterUtils.isContainContextParam(value))) {
+            if (needInitializeProperty
+                    && !(element instanceof FakeElement || ContextParameterUtils.isContainContextParam(value))) {
                 if (value == null) {
                     value = StringUtils.EMPTY;
                 }
-                if(fieldType == EParameterFieldType.MEMO_SQL){
-                	value = StringUtils.trimToEmpty(value);
-                }else{
-                	value = unescapeForJava(value);
+                if (fieldType == EParameterFieldType.MEMO_SQL) {
+                    value = StringUtils.trimToEmpty(value);
+                } else if (isUnescapeAbleType(fieldType)) {
+                    value = unescapeForJava(value);
                 }
                 paramValue = TalendQuoteUtils.addPairQuotesIfNotExist(value);
                 property.setValue(paramValue);
@@ -662,6 +663,13 @@ public class ComponentsUtils {
             }
         }
         return paramValue;
+    }
+
+    private static boolean isUnescapeAbleType(EParameterFieldType fieldType) {
+        if (EParameterFieldType.isPassword(fieldType) || EParameterFieldType.HIDDEN_TEXT.equals(fieldType)) {
+            return false;
+        }
+        return true;
     }
 
     public static String unescapeForJava(String input) {

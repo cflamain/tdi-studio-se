@@ -7,6 +7,15 @@
     <groupId>org.talend.components.lib</groupId>
     <artifactId>talend-proxy</artifactId>
     <version>1.0.2</version>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+            <distribution>may be downloaded from the Maven repository</distribution>
+        </license>
+    </licenses>
+
     <build>
         <plugins>
             <plugin>
@@ -48,7 +57,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
+            <version>1.7.34</version>
         </dependency>
     </dependencies>
 

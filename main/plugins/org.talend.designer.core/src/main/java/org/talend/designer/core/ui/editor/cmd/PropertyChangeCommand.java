@@ -52,6 +52,7 @@ import org.talend.core.utils.TalendQuoteUtils;
 import org.talend.designer.core.IDbMapDesignerService;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
+import org.talend.designer.core.model.components.ElementParameter;
 import org.talend.designer.core.model.components.EmfComponent;
 import org.talend.designer.core.model.components.Expression;
 import org.talend.designer.core.model.process.jobsettings.JobSettingsConstants;
@@ -236,8 +237,15 @@ public class PropertyChangeCommand extends Command {
             } else {
                 toUpdate = true;
                 Object value = elem.getPropertyValue(propName);
+                boolean isFromUpdateNodeCommand = false;
+                if (currentParam instanceof ElementParameter) {
+                    ElementParameter ep = (ElementParameter) currentParam;
+                    isFromUpdateNodeCommand = ep.isFromUpdateNodeCommand();
+                }
                 if (value == null || (!value.toString().endsWith("xsd") && !value.toString().endsWith("xsd\""))) {
-                    elem.setPropertyValue(propertyTypeName, EmfComponent.BUILTIN);
+                    if (!isFromUpdateNodeCommand) {
+                        elem.setPropertyValue(propertyTypeName, EmfComponent.BUILTIN);
+                    }
 
                     /**
                      * For tCreateTable, DbType changed need to clean repository connection id stored, or it will get
@@ -248,9 +256,12 @@ public class PropertyChangeCommand extends Command {
                         elem.setPropertyValue(EParameterName.REPOSITORY_PROPERTY_TYPE.getName(), "");
                     }
                 }
-                for (IElementParameter param : elem.getElementParameters()) {
-                    if (param.getRepositoryProperty() == null || param.getRepositoryProperty().equals(currentParam.getName())) {
-                        param.setRepositoryValueUsed(false);
+                if (!isFromUpdateNodeCommand) {
+                    for (IElementParameter param : elem.getElementParameters()) {
+                        if (param.getRepositoryProperty() == null
+                                || param.getRepositoryProperty().equals(currentParam.getName())) {
+                            param.setRepositoryValueUsed(false);
+                        }
                     }
                 }
             }
@@ -327,7 +338,7 @@ public class PropertyChangeCommand extends Command {
                 }
                 INode targetNode = connection.getTarget();
                 String componentName = targetNode.getComponent().getName();
-                if (componentName.matches("tELT.*Map")) { //$NON-NLS-1$
+                if (componentName.matches("tELT.*Map") && !"tELTSAPMap".equalsIgnoreCase(componentName)) { //$NON-NLS-1$//$NON-NLS-2$
                     if (GlobalServiceRegister.getDefault().isServiceRegistered(IDbMapDesignerService.class)) {
                         IDbMapDesignerService service = GlobalServiceRegister.getDefault().getService(
                                 IDbMapDesignerService.class);

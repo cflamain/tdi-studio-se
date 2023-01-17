@@ -35,7 +35,6 @@
 		<talend.job.applyContextToChildren>@JobApplyContextToChildren@</talend.job.applyContextToChildren>
 		<talend.product.version>@ProductVersion@</talend.product.version>
 		<talend.job.finalName>@JobFinalName@</talend.job.finalName>
-
 		<!-- for global properties -->
 		<current.int-resources.dir>${basedir}/src/main/resources</current.int-resources.dir>
 		<output.resources.dir>${talend.job.name}/src/main/resources</output.resources.dir>
@@ -305,6 +304,32 @@
 			        </plugin>
 			    </plugins>
 			</build>
+		</profile>
+		<profile>
+		    <id>include-microservice-prometheus-dependencies</id>
+		    <activation>
+		        <property>
+		            <name>studio.prometheus.metrics</name>
+		            <value>true</value>
+		        </property>
+		    </activation>
+		    <dependencies>
+		        <dependency>
+		            <groupId>io.micrometer</groupId>
+		            <artifactId>micrometer-registry-prometheus</artifactId>
+		            <version>1.8.0</version>
+		            </dependency>
+		        <dependency>
+		            <groupId>io.prometheus.jmx</groupId>
+		            <artifactId>collector</artifactId>
+		            <version>0.16.1</version>
+		        </dependency>
+		        <dependency>
+		            <groupId>org.springframework.boot</groupId>
+		            <artifactId>spring-boot-starter-security</artifactId>
+		            <version>2.6.8</version>
+		        </dependency>
+		    </dependencies>
 		</profile>
 	</profiles>
 </project>

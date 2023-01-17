@@ -28,6 +28,7 @@ import org.talend.sqlbuilder.dbstructure.nodes.CatalogNode;
 import org.talend.sqlbuilder.dbstructure.nodes.DatabaseNode;
 import org.talend.sqlbuilder.dbstructure.nodes.INode;
 import org.talend.sqlbuilder.dbstructure.nodes.TableNode;
+import org.talend.sqlbuilder.repository.utility.EMFRepositoryNodeManager;
 import org.talend.sqlbuilder.repository.utility.SQLBuilderRepositoryNodeManager;
 import org.talend.sqlbuilder.sessiontree.model.SessionTreeNode;
 
@@ -82,8 +83,12 @@ public class SessionTreeNodeManager {
         if (sessionTreeNode != null && !sessionTreeNode.isConnectionClosed()) {
             return sessionTreeNode;
         }
+        DatabaseConnection copyConnection = EMFRepositoryNodeManager.getInstance().getCopyConnection();
+        if (copyConnection == null) {
+            copyConnection = connection;
+        }
         // If the node is not existent,creates one and cache it.
-        sessionTreeNode = SessionTreeNodeUtils.getSessionTreeNode(connection, root, selectedContext);
+        sessionTreeNode = SessionTreeNodeUtils.getSessionTreeNode(copyConnection, root, selectedContext);
         map.put(connection, sessionTreeNode);
         return sessionTreeNode;
     }

@@ -5,6 +5,8 @@
     org.talend.designer.codegen.config.CodeGeneratorArgument
     org.talend.core.model.process.IElementParameter
     org.talend.core.model.utils.NodeUtil 
+    java.util.List
+	java.util.Map
   " 
 %>
 <%@ include file="../templates/Log4j/Log4jFileUtil.javajet"%> 
@@ -36,6 +38,8 @@ String timeoutValue = ElementParameterParser.getValue(node, "__CONNECTION_TIMEOU
 boolean useRemoteVerification = ("true").equals(ElementParameterParser.getValue(node, "__REMOTE_VERIFICATION__"));
 boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 boolean useStrictReplyParsing = ("true").equals(ElementParameterParser.getValue(node, "__USE_STRICT_REPLY_PARSING__"));
+boolean isConfigClient = "true".equals(ElementParameterParser.getValue(node, "__CONFIG_CLIENT__"));
+List<Map<String, String>> clientParams = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__CLIENT_PARAMETERS__");
 String passwordFieldName = "";
 
 if (useProxy) {

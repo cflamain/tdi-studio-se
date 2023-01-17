@@ -277,7 +277,7 @@ public class OracleExplainPlanExecution extends AbstractSQLExecution {
             }
 
             stmt = connection.createStatement();
-            stmt.execute("EXPLAIN PLAN SET statement_id = '" + idp + "' FOR " + sqlStatement); //$NON-NLS-1$ //$NON-NLS-2$
+            stmt.executeQuery("EXPLAIN PLAN SET statement_id = '" + idp + "' FOR " + sqlStatement); //$NON-NLS-1$ //$NON-NLS-2$
             stmt.close();
             stmt = null;
 

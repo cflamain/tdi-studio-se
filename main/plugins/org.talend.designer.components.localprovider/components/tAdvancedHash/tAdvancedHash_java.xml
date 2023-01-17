@@ -44,38 +44,16 @@
     </PARAMETER>
    </PARAMETERS>
 
-   <CODEGENERATION>
+<CODEGENERATION>
     <IMPORTS>
-      <IMPORT
-        NAME="Advanced_Persistent_Lookup"
-        MODULE="advancedPersistentLookupLib-1.2.jar" MVN="mvn:org.talend.libraries/advancedPersistentLookupLib-1.2/6.0.0" 
-        UrlPath="platform:/plugin/org.talend.libraries.persist.lookup/lib/advancedPersistentLookupLib-1.2.jar" 
-        REQUIRED="true"
-      />
-      <IMPORT
-        NAME="ApacheCommonsCollection32"
-        MODULE="commons-collections-3.2.2.jar" MVN="mvn:commons-collections/commons-collections/3.2.2"  UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-collections-3.2.2.jar"
-        REQUIRED="true"
-        BundleID=""
-      />
-      <IMPORT
-        NAME="Jboss"
-        MODULE="jboss-serialization.jar" MVN="mvn:org.talend.libraries/jboss-serialization/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.jboss/lib/jboss-serialization.jar"
-        REQUIRED="true"
-      />
-      <IMPORT
-        NAME="Trove"
-        MODULE="trove.jar" MVN="mvn:org.talend.libraries/trove/6.0.0" 
-        REQUIRED="true"
-      />
-      <IMPORT
-        NAME="Log4j"
-        MODULE="log4j-1.2.17.jar" MVN="mvn:log4j/log4j/1.2.17"  UrlPath="platform:/plugin/org.talend.libraries.apache/lib/log4j-1.2.17.jar"
-        REQUIRED="true"
-        BundleID=""
-      />
+        <IMPORT NAME="Advanced_Persistent_Lookup" MODULE="advancedPersistentLookupLib-1.4.jar" MVN="mvn:org.talend.libraries/advancedPersistentLookupLib-1.4/6.0.0" UrlPath="platform:/plugin/org.talend.libraries.persist.lookup/lib/advancedPersistentLookupLib-1.4.jar" REQUIRED="true"/>
+        <IMPORT NAME="ApacheCommonsCollection32" MODULE="commons-collections-3.2.2.jar" MVN="mvn:commons-collections/commons-collections/3.2.2" UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-collections-3.2.2.jar" REQUIRED="true" BundleID=""/>
+        <IMPORT NAME="Jboss_Marshalling" MODULE="jboss-marshalling-2.0.12.Final.jar" MVN="mvn:org.jboss.marshalling/jboss-marshalling/2.0.12.Final" REQUIRED="true"/>
+        <IMPORT NAME="Jboss_River" MODULE="jboss-marshalling-river-2.0.12.Final.jar" MVN="mvn:org.jboss.marshalling/jboss-marshalling-river/2.0.12.Final" REQUIRED="true"/>
+        <IMPORT NAME="Trove" MODULE="trove.jar" MVN="mvn:org.talend.libraries/trove/6.0.0" REQUIRED="true"/>
+        <IMPORT NAME="reload4j-1.2.22" MODULE="reload4j-1.2.22.jar" MVN="mvn:ch.qos.reload4j/reload4j/1.2.22" REQUIRED="true" BundleID=""/>
     </IMPORTS>
-  </CODEGENERATION>
+</CODEGENERATION>
 
    <RETURNS>
       <RETURN NAME="NB_LINE" TYPE="id_Integer" AVAILABILITY="AFTER"/>

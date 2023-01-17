@@ -39,6 +39,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
+import org.talend.commons.ui.runtime.exception.ExceptionMessageDialog;
 import org.talend.commons.ui.runtime.image.ImageProvider;
 import org.talend.commons.utils.network.NetworkUtil;
 import org.talend.core.GlobalServiceRegister;
@@ -50,6 +51,7 @@ import org.talend.repository.i18n.Messages;
 import org.talend.repository.ui.login.connections.network.LoginNetworkPreferencePage;
 import org.talend.repository.ui.login.connections.network.proxy.LoginProxyPreferencePage;
 import org.talend.repository.ui.login.connections.settings.UpdatesitePreferencePage;
+import org.talend.repository.ui.login.connections.settings.WorkspacePreferencePage;
 
 /**
  * DOC smallet class global comment. Detailled comment <br/>
@@ -81,6 +83,8 @@ public class ConnectionsDialog extends TitleAreaDialog {
 
     private boolean hasAuthorizationError = false;
 
+    private boolean ssoMode = false;
+
     public ConnectionsDialog(Shell parentShell) {
         super(parentShell);
         setShellStyle(getShellStyle() | SWT.RESIZE);
@@ -90,13 +94,19 @@ public class ConnectionsDialog extends TitleAreaDialog {
         setTitleAreaColor(new RGB(255, 255, 255));
     }
 
-    public ConnectionsDialog(Shell parentShell, ConnectionBean defaultConnectionSelected, boolean hasAuthorizationError) {
+    public ConnectionsDialog(Shell parentShell, ConnectionBean defaultConnectionSelected, boolean hasAuthorizationError,
+            boolean ssoMode) {
         super(parentShell);
         setShellStyle(getShellStyle() | SWT.RESIZE);
         setTitleImage();
         setTitleAreaColor(new RGB(255, 255, 255));
         this.defaultConnectionSelected = defaultConnectionSelected;
         this.hasAuthorizationError = hasAuthorizationError;
+        this.ssoMode = ssoMode;
+    }
+
+    public boolean isSsoMode() {
+        return this.ssoMode;
     }
 
     protected void setTitleImage() {
@@ -209,10 +219,28 @@ public class ConnectionsDialog extends TitleAreaDialog {
         pd.getPreferenceManager().addToRoot(new PreferenceNode("timeoutPage", networkPage));
 
         IStudioLiteP2Service p2Service = IStudioLiteP2Service.get();
-        if (p2Service != null) {
+        if (p2Service != null && IBrandingService.get().isPoweredbyTalend()) {
             UpdatesitePreferencePage updateSitePage = new UpdatesitePreferencePage();
-            updateSitePage.setTitle("Update site");
+            updateSitePage.setTitle(Messages.getString("ConnectionsDialog.ui.pref.updateSettings"));
             pd.getPreferenceManager().addToRoot(new PreferenceNode("updateSitePage", updateSitePage));
+        }
+
+        if (ssoMode) {
+            WorkspacePreferencePage workspacePage = new WorkspacePreferencePage() {
+
+                @Override
+                public void restart() throws Exception {
+                    Shell parentShell = getParentShell();
+                    if (parentShell != null) {
+                        parentShell.close();
+                    } else {
+                        Exception e = new Exception(Messages.getString("WorkspacePreferencePage.ex.startManually"));
+                        ExceptionMessageDialog.openError(null, Messages.getString("WorkspacePreferencePage.ex.err"), e.getMessage(),
+                                e);
+                    }
+                }
+            };
+            pd.getPreferenceManager().addToRoot(new PreferenceNode("workspace", workspacePage));
         }
 
         int open = pd.open();

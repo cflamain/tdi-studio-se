@@ -30,20 +30,29 @@ import org.talend.commons.exception.CommonExceptionHandler;
 import org.talend.commons.utils.generation.JavaUtils;
 import org.talend.commons.utils.resource.FileExtensions;
 import org.talend.core.model.general.ModuleNeeded;
+import org.talend.core.model.process.Element;
+import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.IProcess;
 import org.talend.core.model.process.IProcess2;
+import org.talend.core.model.process.JobInfo;
 import org.talend.core.model.process.ProcessUtils;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.properties.Property;
 import org.talend.core.model.repository.ERepositoryObjectType;
+import org.talend.core.runtime.maven.MavenArtifact;
+import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.maven.MavenUrlHelper;
 import org.talend.core.runtime.process.ITalendProcessJavaProject;
 import org.talend.core.runtime.process.LastGenerationInfo;
 import org.talend.core.runtime.process.TalendProcessOptionConstants;
 import org.talend.core.runtime.repository.build.IMavenPomCreator;
+import org.talend.core.runtime.util.ModuleAccessHelper;
+import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.utils.BigDataJobUtil;
 import org.talend.designer.core.utils.JavaProcessUtil;
+import org.talend.designer.maven.model.TalendMavenConstants;
 import org.talend.designer.maven.tools.creator.CreateMavenJobPom;
+import org.talend.designer.maven.utils.PomIdsHelper;
 import org.talend.designer.maven.utils.PomUtil;
 import org.talend.designer.runprocess.IBigDataProcessor;
 import org.talend.designer.runprocess.ProcessorConstants;
@@ -60,6 +69,8 @@ public abstract class BigDataJavaProcessor extends MavenJavaProcessor implements
 
     protected String windowsAddition, unixAddition;
 
+    IProcess process;
+    
     /**
      * DOC rdubois BigDataJavaProcessor constructor comment.
      *
@@ -69,6 +80,19 @@ public abstract class BigDataJavaProcessor extends MavenJavaProcessor implements
      */
     public BigDataJavaProcessor(IProcess process, Property property, boolean filenameFromLabel) {
         super(process, property, filenameFromLabel);
+        this.process = process;
+        BigDataJobUtil bdUtil = new BigDataJobUtil(process);
+        if (bdUtil.isSparkWithHDInsight() || bdUtil.isSparkWithSynapse()) {
+            Element e = (Element) process;
+            IElementParameter paramActivate = e.getElementParameter(EParameterName.LOG4J_ACTIVATE.getName());
+            if (paramActivate != null) {
+                paramActivate.setValue(false);
+            }
+            IElementParameter paramRunActivate = e.getElementParameter(EParameterName.LOG4J_RUN_ACTIVATE.getName());
+            if (paramRunActivate != null) {
+                paramRunActivate.setValue(false);
+            }
+        }
     }
 
     protected abstract JobScriptsManager createJobScriptsManager(ProcessItem processItem,
@@ -172,9 +196,13 @@ public abstract class BigDataJavaProcessor extends MavenJavaProcessor implements
         }
 
         commandSegments.add(command);
-        if(!ignoreCustomJVMSetting) {
-        	commandSegments.addAll(extractJavaVMArguments());
+        
+        if (!ignoreCustomJVMSetting) {
+            commandSegments.addAll(extractJavaVMArguments());
         }
+
+        commandSegments.addAll(ModuleAccessHelper.getModuleAccessVMArgsForProcessor(this));
+
         return commandSegments;
     }
 
@@ -278,39 +306,107 @@ public abstract class BigDataJavaProcessor extends MavenJavaProcessor implements
         if (isExport) {
             // In an export mode, we add the job jar which is located in the current working directory
             libJars.append("./" + makeupJobJarName()); //$NON-NLS-1$
+            // to fix TBD-13419, need to add the subjob jar name to the -libjars parameter
+            libJars.append(makeupSubjobJarNameStr4Export()); //$NON-NLS-1$
             if (!needAllLibJars) {
                 // to avoid issue TPSVC-4826
                 libJars.append(","); //$NON-NLS-1$
             }
         } else {
             if (needAllLibJars) {
-                // In a local mode,we must append the routines/beans/udfs jars which are located in the target
-                // directory.
-                ITalendProcessJavaProject routineProject = TalendJavaProjectManager
-                        .getTalendCodeJavaProject(ERepositoryObjectType.ROUTINES);
-                IFile routinesJar = routineProject.getTargetFolder().getFile(
-                        JavaUtils.ROUTINE_JAR_NAME + "-" + PomUtil.getDefaultMavenVersion() + FileExtensions.JAR_FILE_SUFFIX); //$NON-NLS-1$
-                libJars.append(routinesJar.getLocation().toPortableString() + ","); //$NON-NLS-1$
-
+                libJars.append(getCodesClassPath(ERepositoryObjectType.ROUTINES));
                 if (ProcessUtils.isRequiredBeans(process)) {
-                    ITalendProcessJavaProject beansProject = TalendJavaProjectManager
-                            .getTalendCodeJavaProject(ERepositoryObjectType.BEANS);
-                    IFile beansJar = beansProject.getTargetFolder().getFile(
-                            JavaUtils.BEANS_JAR_NAME + "-" + PomUtil.getDefaultMavenVersion() + FileExtensions.JAR_FILE_SUFFIX); //$NON-NLS-1$
-                    libJars.append(beansJar.getLocation().toPortableString() + ","); //$NON-NLS-1$
+                    libJars.append(getCodesClassPath(ERepositoryObjectType.BEANS));
                 }
-
                 getCodesJarClassPaths(getProperty().getItem()).forEach(s -> libJars.append(s).append(",")); //$NON-NLS-1$
             }
 
             // ... and add the jar of the job itself also located in the target directory/
             libJars.append(getTalendJavaProject().getTargetFolder().getLocation().toPortableString() + "/" + makeupJobJarName()); //$NON-NLS-1$
+            // to fix TBD-13419, need to add the subjob jar name to the -libjars parameter
+            libJars.append(makeupSubjobJarNameStr4Local());
         }
         list.add(libJars.toString());
         return list;
     }
 
-    protected String makeUpClassPathString() {
+    private String getCodesClassPath(ERepositoryObjectType type) {
+        String jarName;
+        String baseName;
+        String artifactId;
+        if (ERepositoryObjectType.ROUTINES == type) {
+            jarName = JavaUtils.ROUTINE_JAR_NAME;
+            baseName = TalendMavenConstants.DEFAULT_CODE;
+            artifactId = TalendMavenConstants.DEFAULT_ROUTINES_ARTIFACT_ID;
+        } else {
+            jarName = JavaUtils.BEANS_JAR_NAME;
+            baseName = TalendMavenConstants.DEFAULT_BEAN;
+            artifactId = TalendMavenConstants.DEFAULT_BEANS_ARTIFACT_ID;
+        }
+        // In a local mode, get routines/beans jars in the target directory.
+        ITalendProcessJavaProject routineProject = TalendJavaProjectManager.getTalendCodeJavaProject(type);
+        IFile routinesJar = routineProject.getTargetFolder()
+                .getFile(jarName + "-" + PomUtil.getDefaultMavenVersion() + FileExtensions.JAR_FILE_SUFFIX); //$NON-NLS-1$
+        if (routinesJar.exists()) {
+            return routinesJar.getLocation().toPortableString() + ","; //$NON-NLS-1$
+        }
+        // get jar from m2
+        MavenArtifact artifact = new MavenArtifact();
+        artifact.setGroupId(PomIdsHelper.getCodesGroupId(baseName));
+        artifact.setArtifactId(artifactId);
+        artifact.setVersion(PomIdsHelper.getCodesVersion());
+        artifact.setType(MavenConstants.TYPE_JAR);
+        return PomUtil.getArtifactFullPath(artifact) + ","; //$NON-NLS-1$
+    }
+
+    /**
+     * Makes up the subjob(s) jar name string for local, that should be like: 
+     * 1) "" (no subjobs) 
+     * 2) ",<project_folder>/poms/jobs/process/<subjob_name_versiono>/target/<subjob_name_versiono>.jar" (standard subjob) 
+     * 3) ",<project_folder>/poms/jobs/process_mr/<subjob_name_version>/target/<subjob_name_versiono>.jar" (spark subjob)
+     *
+     * @return
+     */
+    protected String makeupSubjobJarNameStr4Local() {
+        String subjobJarNameStr = ""; //$NON-NLS-1$
+        Set<JobInfo> jobInfos = getBuildChildrenJobs();
+        if (!jobInfos.isEmpty()) {
+            Iterator<JobInfo> it = jobInfos.iterator();
+            while (it.hasNext()) {
+                JobInfo jobInfo = it.next();
+                subjobJarNameStr += "," //$NON-NLS-1$
+                        + TalendJavaProjectManager.getTalendJobJavaProject(jobInfo.getProcessItem().getProperty())
+                                .getTargetFolder()
+                                .getLocation()
+                                .toPortableString()
+                        + "/" + jobInfo.getJobName().toLowerCase() + "_" + jobInfo.getJobVersion().replace(".", "_") //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+                        + ".jar"; //$NON-NLS-1$
+            }
+        }
+        return subjobJarNameStr;
+    }
+
+	/**
+	 * Makes up the subjob(s) jar name string for export, that should be like: 
+	 * 1) "" (no subjobs) 
+	 * 2) ",./subjob1_0_1.jar" (with subjobs) 
+	 *
+	 * @return
+	 */
+    protected String makeupSubjobJarNameStr4Export() {
+        String subjobJarNameStr = ""; //$NON-NLS-1$
+        Set<JobInfo> jobInfos = getBuildChildrenJobs();
+        if (!jobInfos.isEmpty()) {
+            Iterator<JobInfo> it = jobInfos.iterator();
+            while (it.hasNext()) {
+                JobInfo jobInfo = it.next();
+                subjobJarNameStr += ",./" + jobInfo.getJobName().toLowerCase() + "_" + jobInfo.getJobVersion().replace(".", "_") + ".jar"; //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+            }
+        }
+        return subjobJarNameStr;
+    }
+
+	protected String makeUpClassPathString() {
         StringBuffer sb = new StringBuffer();
         try {
             sb.append(getLibsClasspath());

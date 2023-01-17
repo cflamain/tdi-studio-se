@@ -45,7 +45,6 @@ import org.talend.designer.maven.launch.MavenPomCommandLauncher;
 import org.talend.designer.maven.model.MavenSystemFolders;
 import org.talend.designer.maven.model.TalendMavenConstants;
 import org.talend.designer.maven.tools.MavenPomSynchronizer;
-import org.talend.designer.maven.utils.PomUtil;
 import org.talend.repository.ProjectManager;
 import org.talend.utils.io.FilesUtils;
 
@@ -348,24 +347,14 @@ public class TalendProcessJavaProject implements ITalendProcessJavaProject {
         }
         if (childModulePomFile.getLocation().toFile().exists()) { // existed
             MavenPomCommandLauncher mavenLauncher = null;
-            try {
-                // by default is compile
-                if (goals == null || goals.trim().length() == 0 || goals.equals(TalendMavenConstants.GOAL_COMPILE)
-                        || goals.equals(TalendMavenConstants.GOAL_TEST_COMPILE)) {
-                    buildWholeCodeProject();
-                } else {
-                    mavenLauncher = new MavenPomCommandLauncher(childModulePomFile, goals);
-                    mavenLauncher.setArgumentsMap(argumentsMap);
-                    mavenLauncher.execute(monitor);
-                }
-            } finally {
-                // package, install and deploy
-                if (TalendMavenConstants.GOAL_PACKAGE.equals(goals) || TalendMavenConstants.GOAL_INSTALL.equals(goals)
-                        || TalendMavenConstants.GOAL_DEPLOY.equals(goals)) {
-                    PomUtil.restorePomFile(this);
-                    // in case of there has modified joblet's pom for loop dependencies
-                    PomUtil.restoreJobletPoms();
-                }
+            // by default is compile
+            if (goals == null || goals.trim().length() == 0 || goals.equals(TalendMavenConstants.GOAL_COMPILE)
+                    || goals.equals(TalendMavenConstants.GOAL_TEST_COMPILE)) {
+                buildWholeCodeProject();
+            } else {
+                mavenLauncher = new MavenPomCommandLauncher(childModulePomFile, goals);
+                mavenLauncher.setArgumentsMap(argumentsMap);
+                mavenLauncher.execute(monitor);
             }
         } else {
             throw new RuntimeException("The pom.xml is not existed. Can't build the job: " + module); //$NON-NLS-1$

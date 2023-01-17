@@ -119,7 +119,7 @@ public class ElementParameter2ParameterType {
     }
 
     public static void setParameterValue(ParametersType paType, String paramName, Object value) {
-        if (value == null) {
+        if (value == null || paType == null) {
             return;
         }
         EList listParamType = paType.getElementParameter();
@@ -373,6 +373,9 @@ public class ElementParameter2ParameterType {
      */
     public static void loadElementParameters(ParametersType processType, ParametersType projectPaType, EParameterName paramName) {
         EList listParamType = projectPaType.getElementParameter();
+        if (processType == null) {
+            processType = TalendFileFactory.eINSTANCE.createParametersType();
+        }
         for (int j = 0; j < listParamType.size(); j++) {
             ElementParameterType pType = (ElementParameterType) listParamType.get(j);
             EList processParameters = processType.getElementParameter();

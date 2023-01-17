@@ -54,11 +54,24 @@ public class TableElementParameter extends TaCoKitElementParameter {
         super(element);
         final List<String> columnNames = new ArrayList<>(columns.size());
         final List<String> displayNames = new ArrayList<>(columns.size());
+        List<String> changable = new ArrayList<>();
         for (final IElementParameter param : columns) {
             columnNames.add(param.getName());
             displayNames.add(param.getDisplayName());
             TaCoKitUtil.fillDefaultItemsList(param, null);
+            
+            if (ElementParameter.class.isInstance(param)) {
+                Object fieldType = ElementParameter.class.cast(param).getTaggedValue("org.talend.sdk.component.field.changable");
+                if(fieldType!=null) {
+                    changable.add(param.getName());
+                }
+            }
         }
+        
+        if(changable != null && !changable.isEmpty()) {
+            this.setTaggedValue("org.talend.sdk.component.field.changable", changable);
+        }
+        
         setListItemsDisplayName(displayNames.toArray(new String[0]));
         setListItemsDisplayCodeName(columnNames.toArray(new String[0]));
         setListItemsValue(columns.toArray(new ElementParameter[0]));

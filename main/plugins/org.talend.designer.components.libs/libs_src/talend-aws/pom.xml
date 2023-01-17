@@ -2,12 +2,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.talend.components.lib</groupId>
+	<groupId>org.talend.components</groupId>
 	<artifactId>talend-aws</artifactId>
-	<version>1.0</version>
+	<version>1.2</version>
 	<packaging>jar</packaging>
 
 	<name>talend-aws</name>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+			<distribution>may be downloaded from the Maven repository</distribution>
+		</license>
+	</licenses>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -41,8 +49,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk</artifactId>
-			<version>1.11.848</version>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>1.12.315</version>
 		</dependency>
 	</dependencies>
 	<build>

@@ -41,15 +41,19 @@ public class RenameConnectionName4tSQSOutput extends AbstractJobMigrationTask {
 			return ExecutionResult.NOTHING_TO_DO;
 		}
 		try {
-			renameConnections(item, processType);
-			return ExecutionResult.SUCCESS_WITH_ALERT;
+            boolean modified = renameConnections(item, processType);
+            if (modified) {
+                return ExecutionResult.SUCCESS_WITH_ALERT;
+            } else {
+                return ExecutionResult.NOTHING_TO_DO;
+            }
 		} catch (Exception e) {
 			ExceptionHandler.process(e);
 			return ExecutionResult.FAILURE;
 		}
 	}
 
-	private void renameConnections(Item item, ProcessType processType) throws PersistenceException {
+    private boolean renameConnections(Item item, ProcessType processType) throws PersistenceException {
 
 		ProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
 
@@ -88,6 +92,7 @@ public class RenameConnectionName4tSQSOutput extends AbstractJobMigrationTask {
 		if (modified) {
 			factory.save(item, true);
 		}
+        return modified;
 
 	}
 	

@@ -172,7 +172,7 @@ public class AutoConversionTypesEditor extends FieldEditor {
                 }
             }
         };
-        repositoryWorkUnit.setAvoidSvnUpdate(true);
+        repositoryWorkUnit.setAvoidUpdate(true);
         repositoryWorkUnit.setAvoidUnloadResources(true);
         ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(repositoryWorkUnit);
     }

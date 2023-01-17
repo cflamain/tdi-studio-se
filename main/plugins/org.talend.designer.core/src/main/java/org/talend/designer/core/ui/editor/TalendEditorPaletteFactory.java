@@ -456,49 +456,6 @@ public final class TalendEditorPaletteFactory {
                             componentSet)));
                     needSort = false;
                 }
-
-                // 2.2 search from help document
-                boolean shouldSearchFromHelpAPI = PaletteSettingsPreferencePage.isPaletteSearchFromHelp();
-                if (shouldSearchFromHelpAPI) {
-                    String helpKeyword = keyword;
-                    if (helpKeyword != null) {
-                        helpKeyword = helpKeyword.trim();
-                    }
-                    Set<String> componentNames = getRelatedComponentNamesFromHelp(helpKeyword);
-                    if (componentNames != null && 0 < componentNames.size()) {
-                        int limit = PaletteSettingsPreferencePage.getPaletteSearchResultLimitFromHelp();
-                        int i = 0;
-                        Iterator<String> nameIter = componentNames.iterator();
-                        while (nameIter.hasNext()) {
-                            if (limit <= i) {
-                                break;
-                            }
-                            String componentName = nameIter.next();
-                            Map<String, Set<IComponent>> map = componentNameMap.get(componentName.toLowerCase());
-                            if (map == null) {
-                                continue;
-                            }
-                            Set<IComponent> findedComponents = map.get(componentName);
-                            if (findedComponents != null && !findedComponents.isEmpty()) {
-                                for (IComponent iComponent : findedComponents) {
-                                    if (limit <= i) {
-                                        break;
-                                    }
-                                    if (ComponentUtilities.isComponentVisible(iComponent) && !iComponent.isTechnical()
-                                            && filterComponent(iComponent, componentsHandler)) {
-                                        componentSet.add(iComponent);
-                                        i++;
-                                    }
-                                }
-                                // componentSet.addAll(findedComponents);
-                            }
-                        }
-
-                        if (0 < i) {
-                            needSort = false;
-                        }
-                    }
-                }
             }
         } else if (compFac != null) {
             componentSet = new LinkedHashSet<IComponent>();
@@ -665,8 +622,12 @@ public final class TalendEditorPaletteFactory {
                 String paletteType = compFac.getComponentsHandler().extractComponentsCategory().getName();
                 LinkedHashSet<IComponent> delegateCompSet = new LinkedHashSet<IComponent>();
                 List<IComponent> delegateComponents = new ArrayList<IComponent>(service.getDelegateComponents(paletteType));
-                addComponentsByNameFilter(compFac, delegateCompSet, delegateComponents, lowerCasedKeyword);
-                componentSet.addAll(delegateCompSet);
+                if (StringUtils.isNotBlank(lowerCasedKeyword)) {
+                    addComponentsByNameFilter(compFac, delegateCompSet, delegateComponents, lowerCasedKeyword);
+                    componentSet.addAll(delegateCompSet);
+                } else {
+                    componentSet.addAll(delegateComponents);
+                }
             }
 
         }
@@ -1295,8 +1256,7 @@ public final class TalendEditorPaletteFactory {
         }
         preferenceStore.setValue(PALETTE_STATE + family, value);
 
-        for (Iterator iter = paletteItem.getChildren().iterator(); iter.hasNext();) {
-            Object object = iter.next();
+        for (Object object : paletteItem.getChildren()) {
             if (object instanceof PaletteDrawer) {
                 PaletteDrawer paletteDrawer = (PaletteDrawer) object;
                 saveFamilyState(viewer, preferenceStore, paletteDrawer);
@@ -1559,9 +1519,9 @@ public final class TalendEditorPaletteFactory {
         paGroup.getChildren().clear();
         List list = palette.getChildren();
         if (list.size() > 0) {
-            for (int i = 0; i < list.size(); i++) {
-                if (list.get(i) instanceof PaletteGroup) {
-                    PaletteGroup entry = (PaletteGroup) list.get(i);
+            for (Object element : list) {
+                if (element instanceof PaletteGroup) {
+                    PaletteGroup entry = (PaletteGroup) element;
                     if (entry instanceof TalendPaletteGroup) {
                         continue;
                     }

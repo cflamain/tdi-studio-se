@@ -84,26 +84,30 @@
 
 
 		<!-- GOOGLE DATAPROC -->
-		<PARAMETER NAME="GOOGLE_PROJECT_ID" FIELD="TEXT" REQUIRED="true"
-			NUM_ROW="16" GROUP="CONN">
-			<DEFAULT>""</DEFAULT>
+		<PARAMETER NAME="GOOGLE_PROJECT_ID" REPOSITORY_VALUE="GOOGLE_PROJECT_ID" FIELD="TEXT" REQUIRED="true"
+			NUM_ROW="16" GROUP="CONN"
+			SHOW_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')">
+			<DEFAULT>"my-google-project"</DEFAULT>
 		</PARAMETER>
-		<PARAMETER NAME="GOOGLE_CLUSTER_ID" FIELD="TEXT" REQUIRED="true"
-			NUM_ROW="17" GROUP="CONN">
-			<DEFAULT>""</DEFAULT>
+		<PARAMETER NAME="GOOGLE_CLUSTER_ID" REPOSITORY_VALUE="GOOGLE_CLUSTER_ID" FIELD="TEXT" REQUIRED="true"
+			NUM_ROW="17" GROUP="CONN"
+			SHOW_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')">
+			<DEFAULT>"my-cluster-id"</DEFAULT>
 		</PARAMETER>
-		<PARAMETER NAME="GOOGLE_REGION" FIELD="TEXT" REQUIRED="true"
-			NUM_ROW="18" GROUP="CONN">
-			<DEFAULT>""</DEFAULT>
+		<PARAMETER NAME="GOOGLE_REGION" REPOSITORY_VALUE="GOOGLE_REGION" FIELD="TEXT" REQUIRED="true"
+			NUM_ROW="18" GROUP="CONN"
+			SHOW_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')">
+			<DEFAULT>"global"</DEFAULT>
 		</PARAMETER>
-		<PARAMETER NAME="GOOGLE_JARS_BUCKET" FIELD="TEXT" REQUIRED="true"
-			NUM_ROW="19" GROUP="CONN">
-			<DEFAULT>""</DEFAULT>
+		<PARAMETER NAME="GOOGLE_JARS_BUCKET" REPOSITORY_VALUE="GOOGLE_JARS_BUCKET" FIELD="TEXT" REQUIRED="true"
+			NUM_ROW="19" GROUP="CONN"
+			SHOW_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')">
+			<DEFAULT>"gs://my-bucket/talend/jars"</DEFAULT>
 		</PARAMETER>
 
 		<PARAMETER NAME="AUTH_TYPE" NUM_ROW="20" REQUIRED="true"
 				   FIELD="CLOSED_LIST" GROUP="CONN"
-				   SHOW_IF="((DISTRIB[DISTRIBUTION, HIVE_VERSION].isGoogleDataprocDistribution[]) AND USE_EXISTING_CONNECTION=='false') OR (USE_EXISTING_CONNECTION=='true' AND DISTRIB[#LINK@NODE.CONNECTION.DISTRIBUTION, #LINK@NODE.CONNECTION.HIVE_VERSION].isGoogleDataprocDistribution[])">
+				   SHOW_IF="(CONNECTION_MODE=='DATAPROC') AND (USE_EXISTING_CONNECTION=='false')">
 			<ITEMS DEFAULT="USER_ACCOUNT_HMAC">
 				<ITEM NAME="USER_ACCOUNT_HMAC" VALUE="USER_ACCOUNT_HMAC"/>
 				<ITEM NAME="SERVICE_ACCOUNT" VALUE="SERVICE_ACCOUNT"/>
@@ -113,22 +117,24 @@
 	    <PARAMETER
 			NAME="ACCESS_KEY" FIELD="TEXT" REQUIRED="true"
 			NUM_ROW="20"  GROUP="CONN"
-			SHOW_IF="(DISTRIB[DISTRIBUTION, HIVE_VERSION].isGoogleDataprocDistribution[]) AND (AUTH_TYPE=='USER_ACCOUNT_HMAC')">
+			SHOW_IF="(isShow[AUTH_TYPE]) AND (AUTH_TYPE=='USER_ACCOUNT_HMAC') AND (CONNECTION_MODE=='DATAPROC')">
 	      <DEFAULT>""</DEFAULT>
 	    </PARAMETER>
 	    <PARAMETER
 			NAME="SECRET_KEY" FIELD="PASSWORD" REQUIRED="true"
 			NUM_ROW="21"  GROUP="CONN"
-			SHOW_IF="(DISTRIB[DISTRIBUTION, HIVE_VERSION].isGoogleDataprocDistribution[]) AND (AUTH_TYPE=='USER_ACCOUNT_HMAC')">
+			SHOW_IF="(isShow[AUTH_TYPE]) AND (AUTH_TYPE=='USER_ACCOUNT_HMAC') AND (CONNECTION_MODE=='DATAPROC')">
 	        <DEFAULT>""</DEFAULT>
 	    </PARAMETER>
 
 		<PARAMETER NAME="DEFINE_PATH_TO_GOOGLE_CREDENTIALS" FIELD="CHECK" REQUIRED="true"
-			NUM_ROW="51" GROUP="AUTHENTICATION">
+			NUM_ROW="51" GROUP="AUTHENTICATION"
+			SHOW_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')">
 			<DEFAULT>false</DEFAULT>
 		</PARAMETER>
 		<PARAMETER NAME="PATH_TO_GOOGLE_CREDENTIALS" FIELD="FILE" REQUIRED="true"
-			NUM_ROW="51" GROUP="AUTHENTICATION">
+			NUM_ROW="51" GROUP="AUTHENTICATION"
+			SHOW_IF="((isShow[DEFINE_PATH_TO_GOOGLE_CREDENTIALS]) AND DEFINE_PATH_TO_GOOGLE_CREDENTIALS=='true' AND CONNECTION_MODE=='DATAPROC')">
 			<DEFAULT>""</DEFAULT>
 		</PARAMETER>
 		<!-- END GOOGLE DATAPROC -->
@@ -180,35 +186,13 @@
 
 	<CODEGENERATION>
 		<IMPORTS>
-			<!-- MICROSOFT HD INSIGHT 3.1 -->
-            <IMPORT NAME="talend-bigdata-launcher-1.1.0-20160405" MODULE="talend-bigdata-launcher-1.1.0-20160405.jar" MVN="mvn:org.talend.libraries/talend-bigdata-launcher-1.1.0-20160405/6.0.0" 
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="cxf-api-2.7.7" MODULE="cxf-api-2.7.7.jar" MVN="mvn:org.talend.libraries/cxf-api-2.7.7/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.apache.cxf/lib/cxf-api-2.7.7.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="cxf-rt-bindings-xml-2.7.7" MODULE="cxf-rt-bindings-xml-2.7.7.jar" MVN="mvn:org.talend.libraries/cxf-rt-bindings-xml-2.7.7/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.apache.cxf/lib/cxf-rt-bindings-xml-2.7.7.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="cxf-rt-core-2.7.7" MODULE="cxf-rt-core-2.7.7.jar" MVN="mvn:org.talend.libraries/cxf-rt-core-2.7.7/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.apache.cxf/lib/cxf-rt-core-2.7.7.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="cxf-rt-frontend-jaxrs-2.7.7" MODULE="cxf-rt-frontend-jaxrs-2.7.7.jar" MVN="mvn:org.talend.libraries/cxf-rt-frontend-jaxrs-2.7.7/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.apache.cxf/lib/cxf-rt-frontend-jaxrs-2.7.7.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="cxf-rt-transports-http-2.7.7" MODULE="cxf-rt-transports-http-2.7.7.jar" MVN="mvn:org.talend.libraries/cxf-rt-transports-http-2.7.7/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.apache.cxf/lib/cxf-rt-transports-http-2.7.7.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="json-simple" MODULE="json_simple-1.1.jar" MVN="mvn:org.talend.libraries/json_simple-1.1/6.0.0" 
-                UrlPath="platform:/plugin/org.talend.libraries.jackson/lib/json_simple-1.1.jar"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="javax.ws.rs-api-2.0-m10" MODULE="javax.ws.rs-api-2.0-m10.jar" MVN="mvn:org.talend.libraries/javax.ws.rs-api-2.0-m10/6.0.0" 
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="WSDL4J-1_6_3" MODULE="wsdl4j-1.6.3.jar" MVN="mvn:wsdl4j/wsdl4j/1.6.3" 
-                BundleID="org.apache.servicemix.bundles.wsdl4j" REQUIRED="false"
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-            <IMPORT NAME="azure-storage-1.2.0" MODULE="azure-storage-1.2.0.jar" MVN="mvn:org.talend.libraries/azure-storage-1.2.0/6.0.0" 
-                REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (DISTRIBUTION=='MICROSOFT_HD_INSIGHT') AND (DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportOldImportMode[])" />
-			<!-- #################### -->
+			<!-- Dataproc 2.x -->	
+			<IMPORT MODULE_GROUP="DATAPROC-LAUNCHER-DI" 
+                   REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='DATAPROC')" REQUIRED="false"/>
+            
+            <!-- Spark universal 3.1.x -->
+            <IMPORT MODULE_GROUP="UNIVERSAL-SPARK-3.1.X" 
+                   REQUIRED_IF="(USE_EXISTING_CONNECTION=='false') AND (CONNECTION_MODE=='STANDALONE') AND DISTRIB[DISTRIBUTION, HIVE_VERSION].doSupportUniversalLocalMode[]" REQUIRED="false"/>	
 		</IMPORTS>
 	</CODEGENERATION>
 

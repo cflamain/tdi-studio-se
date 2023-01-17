@@ -103,7 +103,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
         store.setDefault(TalendDesignerPrefConstants.VIEW_OPTIONS, "default"); //$NON-NLS-1$
         store.setDefault(TalendDesignerPrefConstants.DISPLAY_SUBJOBS, true);
         store.setDefault(TalendDesignerPrefConstants.COMPONENT_ASSIST, true);
-        store.setDefault(TalendDesignerPrefConstants.GENERATE_CODE_WHEN_OPEN_JOB, false);
         // When updating jobs or joblets, check only the last version, and checked by default
         store.setDefault(TalendDesignerPrefConstants.CHECK_ONLY_LAST_VERSION, true);
 
@@ -162,10 +161,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 
         store.setDefault(TalendDesignerPrefConstants.NOT_SHOW_WARNING_WHEN_DELETE_LINK_WITH_JOBLETTRIGGERLINKCOMPONENT, false);
 
-        if (PluginChecker.isSVNProviderPluginLoaded()) {
-            store.setDefault(ITalendCorePrefConstants.SVN_UPDATE_INFO_AUTO_CHECK, true);
-            store.setDefault(ITalendCorePrefConstants.SVN_UPDATE_INFO_AUTO_CHECK_TIME_INTERVAL, 1);
-        }
         if (PluginChecker.isRemoteProviderPluginLoaded()) {
             store.setDefault(ITalendCorePrefConstants.AUTO_REFRESH_LOCKS, true);
             store.setDefault(ITalendCorePrefConstants.PERFORMANCE_TAC_CONNECTION_TIMEOUT,
@@ -173,7 +168,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
             store.setDefault(ITalendCorePrefConstants.PERFORMANCE_TAC_READ_TIMEOUT, NetworkConfiguration.READ_TIMEOUT_DEFAULT);
         }
 
-        store.setDefault(ITalendCorePrefConstants.NEXUS_TIMEOUT, 20000);
         store.setDefault(ITalendCorePrefConstants.NEXUS_REFRESH_FREQUENCY, 0);
 
         store.setDefault(ITalendCorePrefConstants.NEXUS_SHARE_LIBS, false);
@@ -211,8 +205,6 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 
         // for palette settings
         store.setDefault(TalendDesignerPrefConstants.PALETTE_SETTINGS_RECENTLY_USED_LIST_SIZE, 12);
-        store.setDefault(TalendDesignerPrefConstants.PALETTE_SETTINGS_SEARCH_FROM_HELP, true);
-        store.setDefault(TalendDesignerPrefConstants.PALETTE_SETTINGS_SEARCH_RESULT_LIMIT_FROM_HELP, 10);
 
         store.setDefault(ITalendCorePrefConstants.PERFORMANCE_JAVA_PROCESS_CODE_FORMATE_TIMEOUT, 30);
         // Exchange

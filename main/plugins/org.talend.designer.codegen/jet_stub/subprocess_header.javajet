@@ -20,6 +20,7 @@
 		org.talend.core.model.process.IHashConfiguration
 		org.talend.core.model.process.IHashableColumn
 		org.talend.core.model.utils.NodeUtil
+		org.talend.core.model.utils.TalendTextUtils
 	"
 	class="SubProcessHeader"
 	skeleton="subprocess_header_java.skeleton"
@@ -31,6 +32,8 @@
 	boolean stat = codeGenArgument.isStatistics();
 	boolean containsTPartitioner = subTree.getRootNode().getProcess().getNodesOfType("tPartitioner").size() > 0 ? true : false;
     boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(subTree.getRootNode().getProcess(), "__LOG4J_ACTIVATE__"));
+    boolean isLog4j2Enabled = ("true").equals(ElementParameterParser.getValue(subTree.getRootNode().getProcess(), "__LOG4J2_ACTIVATE__"));//log4j2 enable
+    String MDC_CLASS = "org.slf4j.MDC";
 %>
 
 <%
@@ -183,6 +186,48 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 				public <%= typeToGenerate %> get<%=column.getLabel().substring(0, 1).toUpperCase()%><%=column.getLabel().substring(1)%> () {
 					return this.<%=column.getLabel()%>;
 				}
+
+				public Boolean <%=column.getLabel()%>IsNullable(){
+				    return <%=column.isNullable()%>;
+				}
+				public Boolean <%=column.getLabel()%>IsKey(){
+				    return <%=column.isKey()%>;
+				}
+				public Integer <%=column.getLabel()%>Length(){
+				    return <%=column.getLength()%>;
+				}
+				public Integer <%=column.getLabel()%>Precision(){
+				    return <%=column.getPrecision()%>;
+				}
+				public String <%=column.getLabel()%>Default(){
+				<% if (column.getDefault() == null) { %>
+					return null;
+				<% } else { %>
+					return "<%=TalendTextUtils.escapeJavaText(TalendTextUtils.removeQuotes(column.getDefault()))%>";
+				<% } %>
+				}
+				public String <%=column.getLabel()%>Comment(){
+				<% if (column.getComment() == null) { %>
+				    return null;
+				<% } else { %>
+				    return "<%=TalendTextUtils.escapeJavaText(TalendTextUtils.removeQuotes(column.getComment()))%>";
+				<% } %>
+				}
+				public String <%=column.getLabel()%>Pattern(){
+				<% if (column.getPattern() == null) { %>
+				    return null;
+				<% } else { %>
+					return "<%=TalendTextUtils.escapeJavaText(TalendTextUtils.removeQuotes(column.getPattern()))%>";
+				<% } %>
+				}
+				public String <%=column.getLabel()%>OriginalDbColumnName(){
+				<% if (column.getOriginalDbColumnName() == null) { %>
+				    return null;
+				<% } else { %>
+					return "<%=TalendTextUtils.escapeJavaText(TalendTextUtils.removeQuotes(column.getOriginalDbColumnName()))%>";
+				<% } %>
+				}
+
 				<%
 				if((conn.getLineStyle() == EConnectionType.FLOW_REF) && conn.getTarget().getUniqueName().startsWith("tXMLMap") && "id_Document".equals(javaType.getId())) {
 				%>
@@ -364,6 +409,26 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return strReturn;
 	}
+	
+	private String readString(org.jboss.marshalling.Unmarshaller unmarshaller) throws IOException{
+		String strReturn = null;
+		int length = 0;
+        length = unmarshaller.readInt();
+		if (length == -1) {
+			strReturn = null;
+		} else {
+			if(length > commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %>.length) {
+				if(length < 1024 && commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %>.length == 0) {
+   					commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %> = new byte[1024];
+				} else {
+   					commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %> = new byte[2 * length];
+   				}
+			}
+			unmarshaller.readFully(commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %>, 0, length);
+			strReturn = new String(commonByteArray_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %>, 0, length, utf8Charset);
+		}
+		return strReturn;
+	}
 
     private void writeString(String str, ObjectOutputStream dos) throws IOException{
 		if(str == null) {
@@ -374,11 +439,21 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 			dos.write(byteArray);
     	}
     }
+    
+    private void writeString(String str, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(str == null) {
+			marshaller.writeInt(-1);
+		} else {
+            byte[] byteArray = str.getBytes(utf8Charset);
+            marshaller.writeInt(byteArray.length);
+            marshaller.write(byteArray);
+    	}
+    }
 <%
 					} else if(!hasString2 && (isLookup && !hashableColumnsNames.contains(column.getLabel()))){
 						hasString2 = true;
 %>
-
+	
 	private String readString(DataInputStream dis, ObjectInputStream ois) throws IOException{
 		String strReturn = null;
 		int length = 0;
@@ -391,6 +466,30 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 			strReturn = new String(byteArray, utf8Charset);
 		}
 		return strReturn;
+	}
+	
+	private String readString(DataInputStream dis, org.jboss.marshalling.Unmarshaller unmarshaller) throws IOException{
+		String strReturn = null;
+		int length = 0;
+        length = unmarshaller.readInt();
+		if (length == -1) {
+			strReturn = null;
+		} else {
+			byte[] byteArray = new byte[length];
+			unmarshaller.read(byteArray);
+			strReturn = new String(byteArray, utf8Charset);
+		}
+		return strReturn;
+	}
+	
+	private void writeString(String str, DataOutputStream dos, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(str == null) {
+			marshaller.writeInt(-1);
+		} else {
+            byte[] byteArray = str.getBytes(utf8Charset);
+            marshaller.writeInt(byteArray.length);
+            marshaller.write(byteArray);
+    	}
 	}
 
 	private void writeString(String str, DataOutputStream dos, ObjectOutputStream oos) throws IOException{
@@ -420,6 +519,18 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return dateReturn;
 	}
+	
+	private java.util.Date readDate(org.jboss.marshalling.Unmarshaller unmarshaller) throws IOException{
+		java.util.Date dateReturn = null;
+        int length = 0;
+        length = unmarshaller.readByte();
+		if (length == -1) {
+			dateReturn = null;
+		} else {
+	    	dateReturn = new Date(unmarshaller.readLong());
+		}
+		return dateReturn;
+	}
 
     private void writeDate(java.util.Date date1, ObjectOutputStream dos) throws IOException{
 		if(date1 == null) {
@@ -427,6 +538,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 			dos.writeByte(0);
 	    	dos.writeLong(date1.getTime());
+    	}
+    }
+    
+    private void writeDate(java.util.Date date1, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(date1 == null) {
+			marshaller.writeByte(-1);
+		} else {
+			marshaller.writeByte(0);
+			marshaller.writeLong(date1.getTime());
     	}
     }
 <%
@@ -445,6 +565,18 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return dateReturn;
 	}
+	
+	private java.util.Date readDate(DataInputStream dis, org.jboss.marshalling.Unmarshaller unmarshaller ) throws IOException{
+		java.util.Date dateReturn = null;
+		int length = 0;
+        length = unmarshaller.readByte();
+		if (length == -1) {
+			dateReturn = null;
+		} else {
+	    	dateReturn = new Date(unmarshaller.readLong());
+		}
+		return dateReturn;
+	}
 
 	private void writeDate(java.util.Date date1, DataOutputStream dos, ObjectOutputStream oos) throws IOException{
 		if(date1 == null) {
@@ -452,6 +584,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 			dos.writeByte(0);
 	    	dos.writeLong(date1.getTime());
+    	}
+	}
+	
+	private void writeDate(java.util.Date date1, DataOutputStream dos, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(date1 == null) {
+			marshaller.writeByte(-1);
+		} else {
+			marshaller.writeByte(0);
+			marshaller.writeLong(date1.getTime());
     	}
 	}
 <%
@@ -473,6 +614,20 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return byteArrayReturn;
 	}
+	
+	private byte[] readByteArray(org.jboss.marshalling.Unmarshaller dis) throws IOException{
+		byte[] byteArrayReturn;
+		int length = 0;
+        length = dis.readInt();
+		if (length == -1) {
+			byteArrayReturn = null;
+		} else {
+			byte[] byteArray = new byte[length];
+			dis.readFully(byteArray);
+			byteArrayReturn = byteArray;
+		}
+		return byteArrayReturn;
+	}
 
     private void writeByteArray(byte[] byteArray, ObjectOutputStream dos) throws IOException{
 		if(byteArray == null) {
@@ -480,6 +635,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 	    	dos.writeInt(byteArray.length);
 			dos.write(byteArray);
+    	}
+    }
+    
+    private void writeByteArray(byte[] byteArray, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(byteArray == null) {
+			marshaller.writeInt(-1);
+		} else {
+			marshaller.writeInt(byteArray.length);
+			marshaller.write(byteArray);
     	}
     }
 <%
@@ -499,6 +663,20 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return byteArrayReturn;
 	}
+	
+	private byte[] readByteArray(DataInputStream dis, org.jboss.marshalling.Unmarshaller unmarshaller ) throws IOException{
+		byte[] byteArrayReturn;
+        int length = 0;
+        length = unmarshaller.readInt();
+		if (length == -1) {
+			byteArrayReturn = null;
+		} else {
+			byte[] byteArray = new byte[length];
+			unmarshaller.read(byteArray);
+			byteArrayReturn = byteArray;
+		}
+		return byteArrayReturn;
+	}
 
 	private void writeByteArray(byte[] byteArray, DataOutputStream dos, ObjectOutputStream oos) throws IOException{
 		if(byteArray == null) {
@@ -506,6 +684,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 	    	dos.writeInt(byteArray.length);
 			dos.write(byteArray);
+    	}
+	}
+	
+	private void writeByteArray(byte[] byteArray, DataOutputStream dos, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(byteArray == null) {
+			marshaller.writeInt(-1);
+		} else {
+			marshaller.writeInt(byteArray.length);
+			marshaller.write(byteArray);
     	}
 	}
 <%
@@ -528,6 +715,18 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return intReturn;
 	}
+	
+	private Integer readInteger(org.jboss.marshalling.Unmarshaller dis) throws IOException{
+		Integer intReturn;
+        int length = 0;
+        length = dis.readByte();
+		if (length == -1) {
+			intReturn = null;
+		} else {
+	    	intReturn = dis.read<%= typeToGenerate %>();
+		}
+		return intReturn;
+	}
 
 	private void writeInteger(Integer intNum, ObjectOutputStream dos) throws IOException{
 		if(intNum == null) {
@@ -535,6 +734,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 			dos.writeByte(0);
 	    	dos.write<%= typeToGenerate %>(intNum);
+    	}
+	}
+	
+	private void writeInteger(Integer intNum, org.jboss.marshalling.Marshaller marshaller) throws IOException{
+		if(intNum == null) {
+			marshaller.writeByte(-1);
+		} else {
+			marshaller.writeByte(0);
+			marshaller.write<%= typeToGenerate %>(intNum);
     	}
 	}
 <%
@@ -552,6 +760,18 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		}
 		return intReturn;
 	}
+	
+	private Integer readInteger(DataInputStream dis, org.jboss.marshalling.Unmarshaller unmarshaller) throws IOException{
+		Integer intReturn;
+        int length = 0;
+        length = unmarshaller.readByte();
+		if (length == -1) {
+			intReturn = null;
+		} else {
+			intReturn = unmarshaller.read<%= typeToGenerate %>();
+		}
+		return intReturn;
+	}
 
 	private void writeInteger(Integer intNum, DataOutputStream dos, ObjectOutputStream oos) throws IOException{
 		if(intNum == null) {
@@ -559,6 +779,15 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 		} else {
 			dos.writeByte(0);
 	    	dos.write<%= typeToGenerate %>(intNum);
+    	}
+	}
+	
+	private void writeInteger(Integer intNum, DataOutputStream dos,org.jboss.marshalling.Marshaller marshaller ) throws IOException{
+		if(intNum == null) {
+			marshaller.writeByte(-1);
+		} else {
+			marshaller.writeByte(0);
+			marshaller.write<%= typeToGenerate %>(intNum);
     	}
 	}
 <%
@@ -663,12 +892,183 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
 
 
     }
+    
+    public void <%= isLookup ? "readKeys" : "read" %>Data(org.jboss.marshalling.Unmarshaller dis) {
+
+		synchronized(commonByteArrayLock_<%=codeGenArgument.getCurrentProjectName() %>_<%=codeGenArgument.getJobName() %>) {
+
+        	try {
+
+        		int length = 0;
+		<%
+		 hasAtLeastOneRead = false;
+		 hasAtLeastOneObjectType = false;
+		if (metadata !=null) {
+			for (IMetadataColumn column: metadata.getListColumns()) {
+			  if (!isLookup || hashableColumnsNames.contains(column.getLabel())) {
+			  	hasAtLeastOneRead = true;
+				JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+			 	String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
+
+				if (JavaTypesManager.isJavaPrimitiveType(column.getTalendType(), column.isNullable())) {
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					%>
+			        this.<%=column.getLabel() %> = dis.read<%= typeToGenerate %>();
+					<%
+				} else if(typeToGenerate.equals("String")) {
+					%>
+					this.<%=column.getLabel() %> = readString(dis);
+					<%
+				} else if(typeToGenerate.equals("java.util.Date")) {
+					%>
+					this.<%=column.getLabel() %> = readDate(dis);
+					<%
+				} else if(typeToGenerate.equals("byte[]")) {
+					%>
+					this.<%=column.getLabel() %> = readByteArray(dis);
+					<%
+				} else if(javaType.isObjectBased() || typeToGenerate.equals("Geometry") || typeToGenerate.equals("Dynamic")) {
+			 		hasAtLeastOneObjectType = true;
+			 		if("id_Document".equals(javaType.getId()) || "id_Dynamic".equals(javaType.getId())) {
+			 			typeToGenerate = javaType.getNullableClass().getCanonicalName();
+			 		}
+					%>
+						this.<%=column.getLabel() %> = (<%= typeToGenerate %>) dis.readObject();
+					<%
+				} else {
+					typeToGenerate =JavaTypesManager.getTypeToGenerate(column.getTalendType(), false);
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					if(typeToGenerate.equals("Int")){
+					%>
+						this.<%=column.getLabel() %> = readInteger(dis);
+					<%
+					} else {
+					%>
+			            length = dis.readByte();
+           				if (length == -1) {
+           	    			this.<%=column.getLabel() %> = null;
+           				} else {
+           			    	this.<%=column.getLabel() %> = dis.read<%= typeToGenerate %>();
+           				}
+					<%
+					}
+				}
+			  }
+			}
+    	}
+	    if(hasAtLeastOneRead) {
+	    %>
+        	} catch (IOException e) {
+	            throw new RuntimeException(e);
+        <%
+        }
+        %>
+
+		<%
+		if(hasAtLeastOneObjectType) {
+		%>
+			} catch(ClassNotFoundException eCNFE) {
+				 throw new RuntimeException(eCNFE);
+		<%
+		}
+		%>
+
+        }
+
+		<%
+		if(!hasAtLeastOneRead) {
+		%>
+			finally {}
+		<%
+		}
+		%>
+
+      }
+
+
+    }
 
     public void <%= isLookup ? "writeKeys" : "write" %>Data(ObjectOutputStream dos) {
         try {
 
 		<%
 		boolean hasAtLeastOneWrite = false;
+		hasAtLeastOneObjectType = false;
+		if (metadata !=null) {
+			for (IMetadataColumn column: metadata.getListColumns()) {
+			  if (!isLookup || hashableColumnsNames.contains(column.getLabel())) {
+				JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+				hasAtLeastOneWrite = true;
+			 	String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
+				%>
+					// <%=typeToGenerate %>
+				<%
+				if (JavaTypesManager.isJavaPrimitiveType(column.getTalendType(), column.isNullable())) {
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					%>
+		            	dos.write<%= typeToGenerate %>(this.<%=column.getLabel() %>);
+					<%
+				} else if(typeToGenerate.equals("String")) {
+					%>
+						writeString(this.<%=column.getLabel() %>,dos);
+					<%
+				} else if(typeToGenerate.equals("java.util.Date")) {
+					%>
+						writeDate(this.<%=column.getLabel() %>,dos);
+					<%
+				} else if(typeToGenerate.equals("byte[]")) {
+					%>
+						writeByteArray(this.<%=column.getLabel() %>,dos);
+					<%
+				} else if(javaType.isObjectBased() || typeToGenerate.equals("Geometry") || typeToGenerate.equals("Dynamic")) {
+					%>
+       			    	dos.writeObject(this.<%=column.getLabel() %>);
+					<%
+				} else {
+					typeToGenerate =JavaTypesManager.getTypeToGenerate(column.getTalendType(), false);
+					typeToGenerate = typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					if(typeToGenerate.equals("Int")){
+					%>
+						writeInteger(this.<%=column.getLabel() %>,dos);
+					<%
+					} else {
+					%>
+						if(this.<%=column.getLabel() %> == null) {
+			                dos.writeByte(-1);
+						} else {
+               				dos.writeByte(0);
+           			    	dos.write<%= typeToGenerate %>(this.<%=column.getLabel() %>);
+		            	}
+					<%
+					}
+				}
+			  }
+			}
+    	}
+	    if(hasAtLeastOneWrite) {
+	    %>
+        	} catch (IOException e) {
+	            throw new RuntimeException(e);
+        <%
+        }
+        %>
+        }
+
+        <%
+		if(!hasAtLeastOneWrite) {
+		%>
+			finally {}
+		<%
+		}
+		%>
+
+    }
+    
+    public void <%= isLookup ? "writeKeys" : "write" %>Data(org.jboss.marshalling.Marshaller dos) {
+        try {
+
+		<%
+		hasAtLeastOneWrite = false;
 		hasAtLeastOneObjectType = false;
 		if (metadata !=null) {
 			for (IMetadataColumn column: metadata.getListColumns()) {
@@ -836,6 +1236,94 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
         %>
 
     }
+    
+    public void readValuesData(DataInputStream dis, org.jboss.marshalling.Unmarshaller objectIn) {
+        try {
+			int length = 0;
+		<%
+		hasAtLeastOneRead = false;
+		hasAtLeastOneObjectType = false;
+		if (metadata !=null) {
+			for (IMetadataColumn column: metadata.getListColumns()) {
+			  if (!hashableColumnsNames.contains(column.getLabel())) {
+				JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+				hasAtLeastOneRead = true;
+			 	String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
+
+				if (JavaTypesManager.isJavaPrimitiveType(column.getTalendType(), column.isNullable())) {
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					%>
+			            this.<%=column.getLabel() %> = objectIn.read<%= typeToGenerate %>();
+					<%
+				} else if(typeToGenerate.equals("String")) {
+					%>
+						this.<%=column.getLabel() %> = readString(dis,objectIn);
+					<%
+				} else if(typeToGenerate.equals("byte[]")) {
+					%>
+						this.<%=column.getLabel() %> = readByteArray(dis,objectIn);
+					<%
+				} else if(typeToGenerate.equals("java.util.Date")) {
+					%>
+						this.<%=column.getLabel() %> = readDate(dis,objectIn);
+					<%
+				} else if(typeToGenerate.equals("Object") || typeToGenerate.equals("Geometry") || typeToGenerate.equals("BigDecimal") || typeToGenerate.equals("List") || typeToGenerate.equals("Dynamic") || typeToGenerate.equals("Document")) {
+			 		hasAtLeastOneObjectType = true;
+			 		if("id_Document".equals(javaType.getId()) || "id_Dynamic".equals(javaType.getId())) {
+			 			typeToGenerate = javaType.getNullableClass().getCanonicalName();
+			 		}
+					%>
+       			    	this.<%=column.getLabel() %> = (<%= typeToGenerate %>) objectIn.readObject();
+					<%
+				} else {
+					typeToGenerate =JavaTypesManager.getTypeToGenerate(column.getTalendType(), false);
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					if(typeToGenerate.equals("Int")){
+					%>
+						this.<%=column.getLabel() %> = readInteger(dis,objectIn);
+					<%
+					} else {
+					%>
+			            length = objectIn.readByte();
+           				if (length == -1) {
+           	    			this.<%=column.getLabel() %> = null;
+           				} else {
+           			    	this.<%=column.getLabel() %> = objectIn.read<%= typeToGenerate %>();
+           				}
+					<%
+					}
+				}
+			  }
+			}
+    	}
+    	if(hasAtLeastOneRead) {
+	    %>
+        	} catch (IOException e) {
+	            throw new RuntimeException(e);
+        <%
+        }
+        %>
+
+		<%
+		if(hasAtLeastOneObjectType) {
+		%>
+			} catch(ClassNotFoundException eCNFE) {
+				 throw new RuntimeException(eCNFE);
+		<%
+		}
+		%>
+
+        }
+
+		<%
+    	if(!hasAtLeastOneRead) {
+	    %>
+        	finally {}
+        <%
+        }
+        %>
+
+    }
 
     /**
      * Return a byte array which represents Values data.
@@ -910,6 +1398,83 @@ public static class <%=conn.getName() %>Struct<%=templateOrigin %> implements ro
         }
         %>
 
+    }
+    
+    public void writeValuesData(DataOutputStream dos, org.jboss.marshalling.Marshaller objectOut){
+                try {
+
+		<%
+		hasAtLeastOneWrite = false;
+		if (metadata !=null) {
+			for (IMetadataColumn column: metadata.getListColumns()) {
+			  if (!hashableColumnsNames.contains(column.getLabel())) {
+				JavaType javaType = JavaTypesManager.getJavaTypeFromId(column.getTalendType());
+				hasAtLeastOneWrite = true;
+			 	String typeToGenerate = JavaTypesManager.getTypeToGenerate(column.getTalendType(), column.isNullable());
+				if (JavaTypesManager.isJavaPrimitiveType(column.getTalendType(), column.isNullable())) {
+					typeToGenerate=typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					%>
+					objectOut.write<%= typeToGenerate %>(this.<%=column.getLabel() %>);
+					<%
+				} else if(typeToGenerate.equals("String")) {
+					%>
+						writeString(this.<%=column.getLabel() %>, dos, objectOut);
+					<%
+				} else if(typeToGenerate.equals("byte[]")) {
+					%>
+						writeByteArray(this.<%=column.getLabel() %>, dos, objectOut);
+					<%
+				} else if(typeToGenerate.equals("java.util.Date")) {
+					%>
+						writeDate(this.<%=column.getLabel() %>, dos, objectOut);
+					<%
+				} else if(typeToGenerate.equals("Object") || typeToGenerate.equals("Geometry") || typeToGenerate.equals("BigDecimal") || typeToGenerate.equals("List") || typeToGenerate.equals("Dynamic") || typeToGenerate.equals("Document")) {
+					%>
+       			    	objectOut.writeObject(this.<%=column.getLabel() %>);
+					<%
+				} else {
+					typeToGenerate =JavaTypesManager.getTypeToGenerate(column.getTalendType(), false);
+					typeToGenerate = typeToGenerate.substring(0,1).toUpperCase()+typeToGenerate.substring(1);
+					if(typeToGenerate.equals("Int")){
+					%>
+					writeInteger(this.<%=column.getLabel() %>, dos, objectOut);
+					<%
+					} else {
+					%>
+						if(this.<%=column.getLabel() %> == null) {
+							objectOut.writeByte(-1);
+						} else {
+							objectOut.writeByte(0);
+							objectOut.write<%= typeToGenerate %>(this.<%=column.getLabel() %>);
+		            	}
+					<%
+					}
+				}
+			  }
+			}
+    	}
+
+    	if(hasAtLeastOneRead) {
+	    %>
+        	} catch (IOException e) {
+	            throw new RuntimeException(e);
+        <%
+        }
+        %>
+        	}
+        <%
+    	if(!hasAtLeastOneRead) {
+	    %>
+        	finally {}
+        <%
+        }
+        %>
+    }
+
+
+    
+    public boolean supportMarshaller(){
+        return true;
     }
 
     <%
@@ -1040,6 +1605,11 @@ public void <%=subTree.getName() %>Process(final java.util.Map<String, Object> g
 	globalMap.put("<%=subTree.getName() %>_SUBPROCESS_STATE", 0);
 
  final boolean execStat = this.execStat;
+	<%if(isLog4jEnabled && isLog4j2Enabled) {%>
+		<%=MDC_CLASS%>.put("_subJobName", "<%=subTree.getName() %>");
+		<%=MDC_CLASS%>.put("_subJobPid", TalendString.getAsciiRandomString(6));
+	<%}%>
+
 <%
 	boolean isParallelize = false;
 	for (INode node : subTree.getNodes()) {
@@ -1078,6 +1648,7 @@ public void <%=subTree.getName() %>Process(final java.util.Map<String, Object> g
 
 				this.isRunning = true;
 				String currentComponent = "";
+				String cLabel = null;
 				<%
 				   	if(NodeUtil.hasVirtualComponent(subTree.getNodes())){
 					   %>
@@ -1111,6 +1682,7 @@ public void <%=subTree.getName() %>Process(final java.util.Map<String, Object> g
 		int iterateLoop = 0;
 	<%}%>
 	String currentComponent = "";
+	String cLabel =  null;
 	java.util.Map<String, Object> resourceMap = new java.util.HashMap<String, Object>();
 
 	try {

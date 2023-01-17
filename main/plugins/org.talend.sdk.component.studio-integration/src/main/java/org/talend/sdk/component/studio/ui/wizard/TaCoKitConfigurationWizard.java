@@ -20,7 +20,11 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.jface.wizard.IWizardPage;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.PlatformUI;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.exception.ExceptionMessageDialog;
 import org.talend.core.model.properties.ConnectionItem;
@@ -148,11 +152,11 @@ public abstract class TaCoKitConfigurationWizard extends CheckLastVersionReposit
         addPage(wizardPropertiesPage);
         final PropertyNode root = new PropertyTreeCreator(new WizardTypeMapper()).createPropertyTree(configTypeNode);
         TaCoKitPageBuildHelper helper = new TaCoKitPageBuildHelper(this.runtimeData);
-        if (root.hasLeaves(Metadatas.MAIN_FORM)) {
-            helper.infer(Metadatas.MAIN_FORM);
-        }
         if (root.hasLeaves(Metadatas.ADVANCED_FORM)) {
             helper.infer(Metadatas.ADVANCED_FORM);
+        }
+        if (root.hasLeaves(Metadatas.MAIN_FORM)) {
+            helper.infer(Metadatas.MAIN_FORM);
         }
         helper.terminate();
         if (root.hasLeaves(Metadatas.MAIN_FORM)) {
@@ -179,6 +183,17 @@ public abstract class TaCoKitConfigurationWizard extends CheckLastVersionReposit
     }*/
 
     @Override
+    public void createPageControls(Composite pageContainer) {
+        super.createPageControls(pageContainer);
+        Shell windowShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+        Point windowLocation = windowShell.getLocation();
+        Shell wizardShell = getShell();
+        wizardShell.pack();
+        wizardShell.setLocation(windowLocation.x + (windowShell.getBounds().width - wizardShell.getBounds().width) / 2,
+                windowLocation.y + (windowShell.getBounds().height - wizardShell.getBounds().height) / 2);
+    }
+
+    @Override
     public boolean performFinish() {
         // if both are null, then nothing to do and "perform finish" operation is always accepted
         if (mainPage == null && advancedPage == null) {
@@ -199,6 +214,7 @@ public abstract class TaCoKitConfigurationWizard extends CheckLastVersionReposit
             IWorkspaceRunnable operation = createFinishOperation();
             ISchedulingRule schedulingRule = workspace.getRoot();
             workspace.run(operation, schedulingRule, IWorkspace.AVOID_UPDATE, new NullProgressMonitor());
+            updateRelatedItems();
             closeLockStrategy();
             return true;
         } catch (Exception e) {
@@ -210,6 +226,11 @@ public abstract class TaCoKitConfigurationWizard extends CheckLastVersionReposit
             ExceptionMessageDialog.openError(getShell(), Messages.getString("TaCoKitConfiguration.wizard.exception.title"), //$NON-NLS-1$
                     message, e);
         }
+        return false;
+    }
+
+    protected boolean updateRelatedItems() {
+        // nothing to do
         return false;
     }
 

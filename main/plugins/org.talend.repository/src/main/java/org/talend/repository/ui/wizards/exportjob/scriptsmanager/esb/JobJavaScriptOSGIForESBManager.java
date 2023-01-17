@@ -34,7 +34,9 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -55,6 +57,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.emf.common.util.EList;
+import org.eclipse.jdt.internal.compiler.batch.Main;
 import org.osgi.framework.Bundle;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
@@ -81,6 +84,7 @@ import org.talend.core.runtime.maven.MavenArtifact;
 import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.process.ITalendProcessJavaProject;
 import org.talend.core.runtime.process.LastGenerationInfo;
+import org.talend.core.runtime.process.TalendProcessOptionConstants;
 import org.talend.core.runtime.repository.build.BuildExportManager;
 import org.talend.core.service.ITaCoKitDependencyService;
 import org.talend.core.ui.branding.IBrandingService;
@@ -104,6 +108,7 @@ import org.talend.repository.RepositoryPlugin;
 import org.talend.repository.documentation.ExportFileResource;
 import org.talend.repository.ui.wizards.exportjob.scriptsmanager.JobJavaScriptsManager;
 import org.talend.repository.utils.EmfModelUtils;
+import org.talend.repository.utils.EsbConfigUtils;
 import org.talend.repository.utils.TemplateProcessor;
 
 import aQute.bnd.header.Parameters;
@@ -216,18 +221,31 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
                 complianceLevel = "1.7";
             } else if (javaVersion.startsWith("1.8")) {
                 complianceLevel = "1.8";
-            } else if (javaVersion.startsWith("9")) {
-                complianceLevel = "9";
-            } else if (javaVersion.startsWith("10")) {
-                complianceLevel = "10";
-            } else if (javaVersion.startsWith("11")) {
-                complianceLevel = "11";
-            }
+            } else {
+                Matcher m = Pattern.compile("([0-9]+).*").matcher(javaVersion);
+                if (m.find()) {
+                    complianceLevel = m.group(1);
+                }
+    	    }
         }
         complianceParameter = " -" + complianceLevel + " -maxProblems 100000 -nowarn";
         
-        try (InputStream is = RepositoryPlugin.getDefault().getBundle().getEntry("/resources/osgi-exclude.properties") //$NON-NLS-1$
-                .openStream()) {
+        File propFile = null;
+        File esbConfigurationLocation = EsbConfigUtils.getEclipseEsbFolder();
+
+        if (esbConfigurationLocation != null && esbConfigurationLocation.exists() && esbConfigurationLocation.isDirectory()) {
+            propFile = new File(esbConfigurationLocation.getAbsolutePath(), OSGI_EXCLUDE_PROP_FILENAME);
+        }
+
+        InputStream is = null;
+        try {
+            if (propFile != null && propFile.exists() && propFile.isFile()) {
+                is = new FileInputStream(propFile);
+            } else {
+                is = RepositoryPlugin.getDefault().getBundle().getEntry("/resources/" + OSGI_EXCLUDE_PROP_FILENAME)
+                        .openStream();
+            }
+            
             final Properties p = new Properties();
             p.load(is);
             for (Enumeration<?> e = p.propertyNames(); e.hasMoreElements();) {
@@ -388,7 +406,7 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         Set<ModuleNeeded> neededModules = LastGenerationInfo.getInstance().getModulesNeededWithSubjobPerJob(processId,
                 processVersion);
         for (ModuleNeeded module : neededModules) {
-            if (isCompiledLib(module)) {
+            if (isCompiledLib(module) || isRESTRequestNeededLibs(module)) {
                 addModuleNeededsInMap(getCompiledModules(), processId, processVersion, module);
             } else if (isRequireBundleLib(module)) {
                 addModuleNeededsInMap(getRequireBundleModules(), processId, processVersion, module);
@@ -396,6 +414,10 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
                 addModuleNeededsInMap(getExcludedModules(), processId, processVersion, module);
             }
         }
+    }
+
+    private boolean isRESTRequestNeededLibs(ModuleNeeded module) {
+        return module.getModuleName().startsWith("delight-rhino-sandbox") || module.getModuleName().startsWith("rhino");
     }
 
     @Override
@@ -630,6 +652,20 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         return null;
     }
 
+    private static NodeType getRESTClientComponent(ProcessItem processItem) {
+        NodeType nodeType = EmfModelUtils.getComponentByName(processItem, "tRESTClient");
+        if (nodeType != null) {
+            return nodeType;
+        }
+        for (JobInfo subjobInfo : ProcessorUtilities.getChildrenJobInfo(processItem)) {
+            nodeType = EmfModelUtils.getComponentByName(subjobInfo.getProcessItem(), "tRESTClient");
+            if (nodeType != null) {
+                return nodeType;
+            }
+        }
+        return null;
+    }
+
     protected static String getPackageName(ProcessItem processItem) {
         return JavaResourcesHelper.getProjectFolderName(processItem)
                 + PACKAGE_SEPARATOR
@@ -727,6 +763,10 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         endpointInfo.put("unwrapJsonResponse", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("UNWRAP_JSON_RESPONSE", restRequestComponent)); //$NON-NLS-1$
 
+        // Attributes to Elements
+        endpointInfo.put("attributesToElements", //$NON-NLS-1$
+                EmfModelUtils.computeCheckElementValue("ATTRIBUTES_TO_ELEMENTS", restRequestComponent)); //$NON-NLS-1$
+        
         // Convert JSON to string (big double values)
         endpointInfo.put("convertTypesToStrings", //$NON-NLS-1$
                 EmfModelUtils.computeCheckElementValue("CONVERT_JSON_VALUES_TO_STRING", restRequestComponent)); //$NON-NLS-1$
@@ -1183,6 +1223,13 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         return analyzer;
     }
 
+    private boolean usesMssql(ProcessItem processItem) {
+        IDesignerCoreService service = CorePlugin.getDefault().getDesignerCoreService();
+        return service.getProcessFromProcessItem(processItem, false)
+                .getNeededLibraries(TalendProcessOptionConstants.MODULES_DEFAULT).stream()
+                .anyMatch(lib -> lib.matches("mssql-jdbc.jar"));
+    }
+    
     protected void addOsgiDependencies(Analyzer analyzer, ExportFileResource libResource, ProcessItem processItem)
             throws IOException {
         analyzer.setProperty(Analyzer.EXPORT_SERVICE, "routines.system.api.TalendJob;name=" + processItem.getProperty().getLabel() + ";type=" + "job");
@@ -1221,11 +1268,32 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
                 requireBundle = "tesb-xacml-rt"; //$NON-NLS-1$
             }
         }
+
+        // https://jira.talendforge.org/browse/APPINT-34077
+        if (ERepositoryObjectType.getType(processItem.getProperty()).equals(ERepositoryObjectType.PROCESS)) {
+            for (JobInfo subjobInfo : ProcessorUtilities.getChildrenJobInfo(processItem)) {
+                if (EmfModelUtils.getComponentByName(subjobInfo.getProcessItem(), "tESBConsumer") != null) { //$NON-NLS-1$
+                    importPackages.add("org.apache.cxf.databinding"); //$NON-NLS-1$
+                    break;
+                }
+            }
+        }
+
+        // https://jira.talendforge.org/browse/APPINT-34443
+        NodeType restClientComponent = getRESTClientComponent(processItem);
+        if (null != restClientComponent) {
+            importPackages.add("org.apache.cxf.endpoint");
+            importPackages.add("org.apache.cxf.service.model");
+        }
+
         if (ERepositoryObjectType.PROCESS_MR == ERepositoryObjectType.getItemType(processItem)) {
             importPackages.add("org.talend.cloud"); //$NON-NLS-1$
         }
 
-
+        if(usesMssql(processItem)) {
+            importPackages.add("com.microsoft.sqlserver.jdbc");
+        }
+        
         if (requireBundle != null && !requireBundle.isEmpty()) {
             requireBundle += (", org.ops4j.pax.logging.pax-logging-api");
         } else {
@@ -1369,8 +1437,9 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ByteArrayOutputStream err = new ByteArrayOutputStream();
         try {
-            org.eclipse.jdt.core.compiler.batch.BatchCompiler.compile(src.concat(complianceParameter), new PrintWriter(out),
-                    new PrintWriter(err), null);
+            Compiler c = new Compiler(new PrintWriter(out), new PrintWriter(err));
+            c.compile(Locale.forLanguageTag("und"), c.tokenize(src.concat(complianceParameter)));
+           
             String errString = new String(err.toByteArray());
             String[] errBlocks = errString.split(COMPILER_LOG_DELIMITER);
             String reg = COMPILER_LOG_REGEX;
@@ -1404,5 +1473,28 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
             map.put(module.getModuleName(), module.getMavenUri());
         }
         return map;
+    }
+    
+    @SuppressWarnings("restriction")
+    private class Compiler extends org.eclipse.jdt.internal.compiler.batch.Main {
+
+        public boolean compile(Locale locale, String[] commandLineArguments) {
+            relocalize(locale);
+            return super.compile(commandLineArguments);
+    	}
+    	
+        private void relocalize(Locale locale) {
+            this.compilerLocale = locale;
+            try {
+                this.bundle = ResourceBundleFactory.getBundle(locale);
+	        } catch(MissingResourceException e) {
+	            System.out.println("Missing resource : " + Main.bundleName.replace('.', '/') + ".properties for locale " + locale); //$NON-NLS-1$//$NON-NLS-2$
+	            throw e;
+	        }
+        }
+    	
+    	public Compiler (PrintWriter outWriter, PrintWriter errWriter) {
+            super(outWriter, errWriter, false, null, null);
+    	}
     }
 }

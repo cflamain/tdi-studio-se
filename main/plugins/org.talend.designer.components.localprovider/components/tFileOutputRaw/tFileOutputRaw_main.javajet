@@ -34,6 +34,8 @@
 		for(IConnection incomingConn : incomingConns) {
 			if(incomingConn.getLineStyle().hasConnectionCategory(IConnectionCategory.DATA)) {
 %>
+				java.io.InputStream fis_<%=cid%> = null;
+				java.io.FileOutputStream fos_<%=cid%> = null;
 				try {
 					Object content_<%=cid%> = <%=incomingConn.getName()%>.<%=columnList.get(0).getLabel()%>;
 
@@ -48,8 +50,8 @@
 						} else if(content_<%=cid%> instanceof byte[]) {
 							org.apache.commons.io.FileUtils.writeByteArrayToFile(file_<%=cid%>, (byte[])content_<%=cid%>);
 						} else if(content_<%=cid%> instanceof java.io.InputStream) {
-							java.io.InputStream fis_<%=cid%> = (java.io.InputStream) content_<%=cid%>;
-							java.io.FileOutputStream fos_<%=cid%> = new java.io.FileOutputStream(file_<%=cid%>);
+							fis_<%=cid%> = (java.io.InputStream) content_<%=cid%>;
+							fos_<%=cid%> = new java.io.FileOutputStream(file_<%=cid%>);
 							byte[] buffer_<%=cid%> = new byte[65536];
 							int nb_<%=cid%> = 0;
 							while (true) {
@@ -59,8 +61,6 @@
 							      }		 
 							      fos_<%=cid%>.write(buffer_<%=cid%>, 0, nb_<%=cid%>);
 							}
-							fis_<%=cid%>.close();
-							fos_<%=cid%>.close();
 						} else {
 						    org.apache.commons.io.FileUtils.writeStringToFile(file_<%=cid%>, content_<%=cid%>.toString(), <%=encoding%>);
 						}
@@ -83,6 +83,33 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 						}
 					}
 %>
+				} finally {
+					if(fis_<%=cid%> != null) {
+						try {
+							fis_<%=cid%>.close();
+						} catch (java.io.IOException fisIOE_<%=cid%>) {
+<%
+							if(isLog4jEnabled) {
+%>
+								log.warn("<%=cid%> - " + fisIOE_<%=cid%>.getMessage());
+<%
+							}
+%>
+						}
+					}
+					if(fos_<%=cid%> != null) {
+						try {
+							fos_<%=cid%>.close();
+						} catch (java.io.IOException fosIOE_<%=cid%>) {
+<%
+							if(isLog4jEnabled) {
+%>
+								log.warn("<%=cid%> - " + fosIOE_<%=cid%>.getMessage());
+<%
+							}
+%>
+						}
+					}
 				}
 <%
 			}

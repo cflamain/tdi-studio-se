@@ -4,7 +4,15 @@
 	<groupId>org.talend</groupId>
 	<artifactId>talend-httputil</artifactId>
 	<name>talend-httputil</name>
-	<version>1.0.6</version>
+	<version>1.0.7</version>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+			<distribution>may be downloaded from the Maven repository</distribution>
+		</license>
+	</licenses>
 
 	<properties>
 		<talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
@@ -20,7 +28,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.11.4</version>
+            <version>2.13.4.2</version>
         </dependency>
         
         <dependency>
@@ -28,14 +36,6 @@
             <artifactId>json-lib</artifactId>
             <version>2.4</version>
         </dependency>
-        
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.0</version>
-			<type>jar</type>
-			<optional>true</optional>
-		</dependency>
 	</dependencies>
 
 	<distributionManagement>

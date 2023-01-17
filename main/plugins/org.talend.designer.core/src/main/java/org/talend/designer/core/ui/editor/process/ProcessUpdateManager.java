@@ -131,7 +131,6 @@ import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.update.UpdateCheckResult;
 import org.talend.designer.core.ui.editor.update.UpdateManagerUtils;
 import org.talend.designer.core.ui.preferences.TalendDesignerPrefConstants;
-import org.talend.designer.core.utils.ConnectionUtil;
 import org.talend.designer.core.utils.SAPParametersUtils;
 import org.talend.metadata.managment.ui.utils.ConnectionContextHelper;
 import org.talend.repository.UpdateRepositoryUtils;
@@ -1930,7 +1929,9 @@ public class ProcessUpdateManager extends AbstractUpdateManager {
                         if (item != null && item instanceof ConnectionItem) {
                             source = UpdateRepositoryUtils.getRepositorySourceName(item);
                             repositoryConnection = ((ConnectionItem) item).getConnection();
-                            if (repositoryConnection != null && repositoryConnection.getId() == null) {
+                            if (repositoryConnection != null && (repositoryConnection.getId() == null ||
+                            // TUP-36653:set the connection id for generic connection
+                                    repositoryConnection.getCompProperties() != null)) {
                                 repositoryConnection.setId(((ConnectionItem) item).getProperty().getId());
                             }
                         }
@@ -1981,6 +1982,7 @@ public class ProcessUpdateManager extends AbstractUpdateManager {
                                 }
                             }
                         }
+                        IElementParameter useStrParam = node.getElementParameter("USE_STRING_PROPERTIES");
                         // if the repository connection exists then test the values
                         for (IElementParameter param : node.getElementParameters()) {
                             if (needBuildIn) {
@@ -1999,6 +2001,8 @@ public class ProcessUpdateManager extends AbstractUpdateManager {
                             String repositoryValue = getReposiotryValueForOldJDBC(node, repositoryConnection, param);
                             String relatedComponent = node.getComponent().getName();
                             if ((repositoryValue != null) && (param.isShow(node.getElementParameters())
+                                    || useStrParam != null && ("PROPERTIES_STRING".equals(repositoryValue)
+                                            || "ENTRY_PROPERTIES".equals(repositoryValue))
                                     || (node instanceof INode
                                             && ((INode) node).getComponent().getName().equals("tESBProviderRequest"))
                                     || (node instanceof INode
@@ -2190,6 +2194,18 @@ public class ProcessUpdateManager extends AbstractUpdateManager {
                                                 if (!sameValues) {
                                                     break;
                                                 }
+                                            } else if ("ENTRY_PROPERTIES".equals(param.getName()) && oldList != null //$NON-NLS-1$
+                                                    && objectValue instanceof List) {
+                                                sameValues = compareMapList(objectValue, oldList,
+                                                        new String[] { "KEY", "VALUE" });
+                                            } else if ("MAPPING_JSONPATH".equals(param.getName()) && oldList != null
+                                                    && objectValue instanceof List) {
+                                                sameValues = compareMapList(objectValue, oldList,
+                                                        new String[] { "SCHEMA_COLUMN", "QUERY" });
+                                            } else if ("MAPPINGXPATH".equals(param.getName()) && oldList != null
+                                                    && objectValue instanceof List) {
+                                                sameValues = compareMapList(objectValue, oldList,
+                                                        new String[] { "SCHEMA_COLUMN", "QUERY", "NODECHECK" });
                                             }
                                         } else
                                         // check the value
@@ -2438,6 +2454,27 @@ public class ProcessUpdateManager extends AbstractUpdateManager {
         }
 
         return propertiesResults;
+    }
+
+    public boolean compareMapList(Object objectValue, List<Map<String, Object>> oldList, String[] keys) {
+        List objectList = (List) objectValue;
+        if (oldList.size() != objectList.size()) {
+            return false;
+        } else {
+            for (int i = 0; i < oldList.size(); i++) {
+                boolean sameValues = true;
+                Map<String, Object> oldMap = oldList.get(i);
+                Map<String, Object> objectMap = (Map<String, Object>) objectList.get(i);
+                for (int j = 0; j < keys.length; j++) {
+                    String key = keys[j];
+                    sameValues &= oldMap.get(key).equals(objectMap.get(key));
+                    if (sameValues == false) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private String getReposiotryValueForOldJDBC(Node node, Connection repositoryConnection, IElementParameter param) {

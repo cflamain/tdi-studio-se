@@ -13,6 +13,7 @@ imports="
 	String cid = node.getUniqueName();
 	List<IMetadataTable> metadatas = node.getMetadataList();
 	boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+	boolean useTwelveHourFormat = ("true").equals(ElementParameterParser.getValue(node, "__USE_12_HOUR_FORMAT__"));
 	if ((metadatas!=null)&&(metadatas.size()>0)) {
 	    IMetadataTable metadata = metadatas.get(0);
 	    if (metadata!=null) {
@@ -22,6 +23,10 @@ imports="
 			if(metadata.isDynamicSchema()) {
 			%>
 			class BigQueryOutputHelper_<%=cid%> {
+				private final boolean useTwelveHourFormat;
+				public BigQueryOutputHelper_<%=cid%>(boolean useTwelveHourFormat) {
+					this.useTwelveHourFormat = useTwelveHourFormat;
+				}
 				public void writeData(routines.system.Dynamic column, String[] row, int offset) {
 					for (int i = 0; i < column.getColumnCount(); i++) {
 						if (column.getColumnValue(i) != null) {
@@ -52,24 +57,30 @@ imports="
 					}
 				}
 				public String getPattern(String typeName) {
+					String hourFormat;
+					if(useTwelveHourFormat) {
+						hourFormat = "hh";
+					} else {
+						hourFormat = "HH";
+					}
 					if(typeName == null) {
-						return "yyyy-MM-dd hh:mm:ss.SSS";
+						return "yyyy-MM-dd " + hourFormat + ":mm:ss.SSS";
 					}
 					switch(typeName.toUpperCase()) {
 					case "TIMESTAMP":
-						return "yyyy-MM-dd hh:mm:ss.SSSXXX";
+						return "yyyy-MM-dd " + hourFormat + ":mm:ss.SSSXXX";
 					case "DATE":
 						return "yyyy-MM-dd";
 					case "TIME":
-						return "hh:mm:ss.SSS";
+						return hourFormat + ":mm:ss.SSS";
 					case "DATETIME":
-						return "yyyy-MM-dd hh:mm:ss.SSS";
+						return "yyyy-MM-dd " + hourFormat + ":mm:ss.SSS";
 					default:
-						return "yyyy-MM-dd hh:mm:ss.SSS";
+						return "yyyy-MM-dd " + hourFormat + ":mm:ss.SSS";
 					}
 				}
 			}
-			BigQueryOutputHelper_<%=cid%> bigQueryHelper_<%=cid%> = new BigQueryOutputHelper_<%=cid%>();
+			BigQueryOutputHelper_<%=cid%> bigQueryHelper_<%=cid%> = new BigQueryOutputHelper_<%=cid%>(<%=useTwelveHourFormat%>);
 			<%
 			}
 			

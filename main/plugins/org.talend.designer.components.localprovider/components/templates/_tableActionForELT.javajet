@@ -3,7 +3,7 @@
 <%
 Boolean isParallelize ="true".equalsIgnoreCase(ElementParameterParser.getValue(node, "__PARALLELIZE__"));
 if (!isParallelize) {
-	manager = getELTManager(dbmsId, cid, node);
+	manager = getELTManager(dbmsId, cid, node, autoWrapColumnName);
     
     String ending="";
     
@@ -199,9 +199,47 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                     }
                 }
                 rsTable_<%=cid%>.close();
-			<%
-			} else {
-            %>
+                <%
+            } else if (SNOWFLAKE.equalsIgnoreCase(dbmsId)) {
+                boolean useExistSnowflakeConn = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+                String dbnameSnowflake = null;
+                if (useExistSnowflakeConn) {
+                    List< ? extends INode> nodes =  node.getProcess().getNodesOfType("tSnowflakeConnection");
+                    String connectionSnowflake = ElementParameterParser.getValue(node,"__CONNECTION__");
+                    for (INode ne : nodes) {
+                        if (connectionSnowflake.equals(ne.getUniqueName())) {
+                            dbnameSnowflake = ElementParameterParser.getValue(ne, "__DBNAME__");
+                            break;
+                        }
+                    }
+                } else {
+                    dbnameSnowflake = ElementParameterParser.getValue(node, "__DBNAME__");
+                }
+                dbnameSnowflake = ("".equals(dbnameSnowflake)) ? null : dbnameSnowflake;
+                %>
+                java.sql.DatabaseMetaData dbMetaData_<%=cid%> = conn_<%=cid%>.getMetaData();
+                <%if (dbnameSnowflake != null) {%>
+                    java.sql.ResultSet rsTable_<%=cid%> = dbMetaData_<%=cid%>.getTables(<%=dbnameSnowflake%>, null, null, new String[]{"TABLE"});
+                    <%
+                } else {%>
+                    java.sql.ResultSet rsTable_<%=cid%> = dbMetaData_<%=cid%>.getTables(conn_<%=cid%>.getCatalog(), null, null, new String[]{"TABLE"});
+                    <%
+                }%>
+                boolean whetherExist_<%=cid%> = false;
+                String tempTableName = <%=table%>;
+                if(tempTableName.startsWith("\"") && tempTableName.endsWith("\"")) {
+                    tempTableName = tempTableName.substring(1, tempTableName.length() - 1);
+                }
+                while(rsTable_<%=cid%>.next()) {
+                    String table_<%=cid%> = rsTable_<%=cid%>.getString("TABLE_NAME");
+                    if(table_<%=cid%>.equals(tempTableName)) {
+                        whetherExist_<%=cid%> = true;
+                        break;
+                    }
+                }
+                rsTable_<%=cid%>.close();
+                <%
+            } else {%>
                 java.sql.DatabaseMetaData dbMetaData_<%=cid%> = conn_<%=cid%>.getMetaData();
                 java.sql.ResultSet rsTable_<%=cid%> = dbMetaData_<%=cid%>.getTables(null, null, null, new String[]{"TABLE"});
                 boolean whetherExist_<%=cid%> = false;

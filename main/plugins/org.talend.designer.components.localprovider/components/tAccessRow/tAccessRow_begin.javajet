@@ -33,6 +33,7 @@ imports="
 			} else {
 				String driverClass = "net.ucanaccess.jdbc.UcanaccessDriver";
 		    %>
+		    	System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
 				String driverClass_<%=cid%> = "<%=driverClass %>";
 				java.lang.Class.forName(driverClass_<%=cid%>);
 				<%this.setURL(node);%>

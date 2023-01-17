@@ -303,12 +303,127 @@
 
 	<CODEGENERATION>
 		<IMPORTS>
-			<IMPORT MODULE_GROUP="GOOGLE-DATAPROC-MANAGE-LIB-DATAPROC14"
-				REQUIRED="true" />
+			<!--
+			Former BD dataproc-1.4 module group deps
+			-->
+			<IMPORT NAME="talend-bigdata-launcher-core"
+				MODULE="talend-bigdata-launcher-core-2.0.14.jar" MVN="mvn:org.talend.bigdata.libs/talend-bigdata-launcher-core/2.0.14" REQUIRED="true"/>
+			<IMPORT NAME="talend-bigdata-launcher-dataproc"
+				MODULE="talend-bigdata-launcher-dataproc-2.0.14.jar" MVN="mvn:org.talend.bigdata.libs/talend-bigdata-launcher-dataproc/2.0.14" REQUIRED="true"/>
+			<IMPORT NAME="talend-bigdata-launcher-jobserver"
+				MODULE="talend-bigdata-launcher-jobserver-2.0.14.jar" MVN="mvn:org.talend.bigdata.libs/talend-bigdata-launcher-jobserver/2.0.14" REQUIRED="true"/>
+			<IMPORT NAME="google-auth-library-credentials"
+				MODULE="google-auth-library-credentials-0.16.2.jar" MVN="mvn:com.google.auth/google-auth-library-credentials/0.16.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-services-storage"
+				MODULE="google-api-services-storage-v1-rev20181109-1.27.0.jar" MVN="mvn:com.google.apis/google-api-services-storage/v1-rev20181109-1.27.0" REQUIRED="true"/>
+			<IMPORT NAME="google-api-services-dataproc"
+				MODULE="google-api-services-dataproc-v1-rev132-1.25.0.jar" MVN="mvn:com.google.apis/google-api-services-dataproc/v1-rev132-1.25.0" REQUIRED="true"/>
+			<IMPORT NAME="google-cloud-core"
+				MODULE="google-cloud-core-1.73.0.jar" MVN="mvn:com.google.cloud/google-cloud-core/1.73.0" REQUIRED="true"/>
+			<IMPORT NAME="google-cloud-storage"
+				MODULE="google-cloud-storage-1.73.0.jar" MVN="mvn:com.google.cloud/google-cloud-storage/1.73.0" REQUIRED="true"/>
+			<IMPORT NAME="gax"
+				MODULE="gax-1.47.1.jar" MVN="mvn:com.google.api/gax/1.47.1" REQUIRED="true"/>
+			<IMPORT NAME="gax-httpjson"
+				MODULE="gax-httpjson-0.64.1.jar" MVN="mvn:com.google.api/gax-httpjson/0.64.1" REQUIRED="true"/>
+			<IMPORT NAME="threetenbps"
+				MODULE="threetenbp-1.3.3.jar" MVN="mvn:org.threeten/threetenbp/1.3.3" REQUIRED="true"/>
+			<IMPORT NAME="api-common"
+				MODULE="api-common-1.8.1.jar" MVN="mvn:com.google.api/api-common/1.8.1" REQUIRED="true"/>
+			<IMPORT NAME="google-cloud-core-http"
+				MODULE="google-cloud-core-http-1.73.0.jar" MVN="mvn:com.google.cloud/google-cloud-core-http/1.73.0" REQUIRED="true"/>
+			<IMPORT NAME="google-auth-library-oauth2-http"
+				MODULE="google-auth-library-oauth2-http-0.16.2.jar" MVN="mvn:com.google.auth/google-auth-library-oauth2-http/0.16.2" REQUIRED="true"/>
+			<IMPORT NAME="google-auth-library-oauth2-http"
+				MODULE="google-auth-library-oauth2-http-0.16.2.jar" MVN="mvn:com.google.auth/google-auth-library-oauth2-http/0.16.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client"
+				MODULE="google-api-client-1.30.1.jar" MVN="mvn:com.google.api-client/google-api-client/1.30.1" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-appengine"
+				MODULE="google-api-client-appengine-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-appengine/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-servlet"
+				MODULE="google-api-client-servlet-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-servlet/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-gson"
+				MODULE="google-api-client-gson-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-gson/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-jackson2"
+				MODULE="google-api-client-jackson2-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-jackson2/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-java6"
+				MODULE="google-api-client-java6-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-java6/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-protobuf"
+				MODULE="google-api-client-protobuf-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-protobuf/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-api-client-xml"
+				MODULE="google-api-client-xml-1.30.2.jar" MVN="mvn:com.google.api-client/google-api-client-xml/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="animal-sniffer-annotations"
+				MODULE="animal-sniffer-annotations-1.14.jar" MVN="mvn:org.codehaus.mojo/animal-sniffer-annotations/1.14" REQUIRED="true"/>
+			<IMPORT NAME="checker-compat-qual"
+				MODULE="checker-compat-qual-2.5.2.jar" MVN="mvn:org.checkerframework/checker-compat-qual/2.5.2" REQUIRED="true"/>
+			<IMPORT NAME="error_prone_annotations"
+				MODULE="error_prone_annotations-2.1.3.jar" MVN="mvn:com.google.errorprone/error_prone_annotations/2.1.3" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client-apache"
+				MODULE="google-http-client-apache-2.1.0.jar" MVN="mvn:com.google.http-client/google-http-client-apache/2.1.0" REQUIRED="true"/>
+			<IMPORT NAME="j2objc-annotations"
+				MODULE="j2objc-annotations-1.3.jar" MVN="mvn:com.google.j2objc/j2objc-annotations/1.3" REQUIRED="true"/>
+			<IMPORT NAME="jdo2-api"
+				MODULE="jdo2-api-2.3-eb.jar" MVN="mvn:javax.jdo/jdo2-api/2.3-eb" REQUIRED="true"/>
+			<IMPORT NAME="jetty"
+				MODULE="jetty-6.1.26.jar" MVN="mvn:org.mortbay.jetty/jetty/6.1.26" REQUIRED="true"/>
+			<IMPORT NAME="jetty-util"
+				MODULE="jetty-util-6.1.26.jar" MVN="mvn:org.mortbay.jetty/jetty-util/6.1.26" REQUIRED="true"/>
+			<IMPORT NAME="jsr305"
+				MODULE="jsr305-3.0.2.jar" MVN="mvn:com.google.code.findbugs/jsr305/3.0.2" REQUIRED="true"/>
+			<IMPORT NAME="opencensus-api"
+				MODULE="opencensus-api-0.21.0.jar" MVN="mvn:io.opencensus/opencensus-api/0.21.0" REQUIRED="true"/>
+			<IMPORT NAME="opencensus-contrib-http-util"
+				MODULE="opencensus-contrib-http-util-0.21.0.jar" MVN="mvn:io.opencensus/opencensus-contrib-http-util/0.21.0" REQUIRED="true"/>
+			<IMPORT NAME="protobuf-java"
+				MODULE="protobuf-java-3.19.6.jar" MVN="mvn:com.google.protobuf/protobuf-java/3.19.6" REQUIRED="true"/>
+			<IMPORT NAME="transaction-api"
+				MODULE="transaction-api-1.1.jar" MVN="mvn:javax.transaction/transaction-api/1.1" REQUIRED="true"/>
+			<IMPORT NAME="xpp3"
+				MODULE="xpp3-1.1.4c.jar" MVN="mvn:xpp3/xpp3/1.1.4c" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client"
+				MODULE="google-http-client-1.30.1.jar" MVN="mvn:com.google.http-client/google-http-client/1.30.1" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client-appengine"
+				MODULE="google-http-client-appengine-1.30.2.jar" MVN="mvn:com.google.http-client/google-http-client-appengine/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client-gson"
+				MODULE="google-http-client-gson-1.30.2.jar" MVN="mvn:com.google.http-client/google-http-client-gson/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client-jackson2"
+				MODULE="google-http-client-jackson2-1.30.1.jar" MVN="mvn:com.google.http-client/google-http-client-jackson2/1.30.1" REQUIRED="true"/>
+			<IMPORT NAME="google-http-client-protobuf"
+				MODULE="google-http-client-protobuf-1.30.2.jar" MVN="mvn:com.google.http-client/google-http-client-protobuf/1.30.2" REQUIRED="true"/>
+			<IMPORT NAME="google-oauth-client-1.33.3.jar"
+				MODULE="google-oauth-client-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client/1.33.3" REQUIRED="true"/>
+			<IMPORT NAME="google-oauth-client-appengine"
+				MODULE="google-oauth-client-appengine-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client-appengine/1.33.3" REQUIRED="true"/>
+			<IMPORT NAME="google-oauth-client-java6"
+				MODULE="google-oauth-client-java6-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client-java6/1.33.3" REQUIRED="true"/>
+			<IMPORT NAME="google-oauth-client-jetty"
+				MODULE="google-oauth-client-jetty-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client-jetty/1.33.3" REQUIRED="true"/>
+			<IMPORT NAME="google-oauth-client-servlet"
+				MODULE="google-oauth-client-servlet-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client-servlet/1.33.3" REQUIRED="true"/>
+			<IMPORT NAME="grpc-context"
+				MODULE="grpc-context-1.19.0.jar" MVN="mvn:io.grpc/grpc-context/1.19.0" REQUIRED="true"/>
+			<IMPORT NAME="gson"
+				MODULE="gson-2.8.9.jar" MVN="mvn:com.google.code.gson/gson/2.8.9" REQUIRED="true"/>
+			<IMPORT NAME="json"
+				MODULE="json-20170516.jar" MVN="mvn:org.json/json/20170516" REQUIRED="true"/>
+			<IMPORT NAME="guava"
+				MODULE="guava-30.0-jre.jar" MVN="mvn:com.google.guava/guava/30.0-jre" REQUIRED="true"/>
+			<IMPORT NAME="jackson-core"
+				MODULE="jackson-core-2.13.4.jar" MVN="mvn:com.fasterxml.jackson.core/jackson-core/2.13.4" REQUIRED="true"/>
+			<IMPORT NAME="jackson-core-asl"
+				MODULE="jackson-core-asl-1.9.16-TALEND.jar" MVN="mvn:org.codehaus.jackson/jackson-core-asl/1.9.16-TALEND" REQUIRED="true"/>
+			<IMPORT NAME="jackson-mapper-asl"
+				MODULE="jackson-mapper-asl-1.9.16-TALEND.jar" MVN="mvn:org.codehaus.jackson/jackson-mapper-asl/1.9.16-TALEND" REQUIRED="true"/>
+			<IMPORT NAME="commons-lang"
+				MODULE="commons-lang-2.6.jar" MVN="mvn:commons-lang/commons-lang/2.6" REQUIRED="true"/>
+
+			<!--
+			component's dependency
+			-->
 			<IMPORT NAME="commons-codec"
 				MODULE="commons-codec-1.14.jar" MVN="mvn:commons-codec/commons-codec/1.14" REQUIRED="true"/>
-			<IMPORT NAME="log4j"
-				MODULE="log4j-1.2.17.jar" MVN="mvn:log4j/log4j/1.2.17" REQUIRED="true"/>
+			<IMPORT NAME="reload4j-1.2.22"
+				MODULE="reload4j-1.2.22.jar" MVN="mvn:ch.qos.reload4j/reload4j/1.2.22" REQUIRED="true"/>
 		</IMPORTS>
 	</CODEGENERATION>
 

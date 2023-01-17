@@ -143,7 +143,7 @@ class ComponentModelTest {
     void getModuleNeeded() {
         final ComponentId id = new ComponentId("id", "family", "plugin", "group:plugin:1", "XML", "XMLInput");
         final ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         final ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         final ComponentModel componentModel = new ComponentModel(idx, detail) {
@@ -176,7 +176,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);
@@ -190,7 +190,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);
@@ -204,7 +204,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);
@@ -218,7 +218,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);
@@ -240,7 +240,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Processor", 1, emptyList(), null,
                 emptyList(), emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);
@@ -257,7 +257,7 @@ class ComponentModelTest {
 
         ComponentId id = new ComponentId("id", "family", "plugin", "plugin", "XML", "XMLInput");
         ComponentIndex idx =
-                new ComponentIndex(id, "XML Input", null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
+                new ComponentIndex(id, "XML Input", null, null, null, null, 1, Arrays.asList("Local", "File"), null, emptyMap());
         ComponentDetail detail = new ComponentDetail(id, "XML Input", null, "Input", 1, emptyList(), null, emptyList(),
                 emptyList(), emptyList(), null);
         ComponentModel componentModel = new ComponentModel(idx, detail);

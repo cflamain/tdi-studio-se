@@ -20,12 +20,15 @@ import java.util.Map;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.util.EList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.talend.core.model.properties.ContextItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.constants.FileConstants;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.designer.core.model.utils.emf.talendfile.ContextType;
 import org.talend.repository.items.importexport.handlers.ImportExportHandlersManager;
 import org.talend.repository.items.importexport.handlers.model.ImportItem;
 import org.talend.repository.items.importexport.manager.ResourcesManager;
@@ -76,6 +79,24 @@ public class MdmEeDemoImportTest extends DemosImportTest {
 		List<File> demoContextItemsFiles = getDemoItemFileList(rootPath + File.separator + contextItemPath);
 		Assert.assertTrue(demoContextItemsFiles.size() > 0);
 		Assert.assertEquals(demoContextItemsFiles.size(), currentContextItemsSize);
+
+        // TUP-35909:test the ContextType content
+        List<ContextItem> contextItemList = null;
+        contextItemList = ProxyRepositoryFactory.getInstance().getContextItem();
+        for (ContextItem contextItem : contextItemList) {
+            if (contextItem.getProperty().getDisplayName().equals("MDM")) {
+                EList contexts = ((ContextItem) contextItem).getContext();
+                for (Object context : contexts) {
+                    if (context instanceof ContextType) {
+                        List<Object> contextParamList = ((ContextType) context).getContextParameter();
+                        // default
+                        Assert.assertNotNull("Name of ContextType should not be null", ((ContextType) context).getName());
+                        // KEY_LOGS_DIRECTORY,MYSQL_DBNAME_TO_MIGRATE,MYSQL_HOST_or_IP ...
+                        Assert.assertTrue("contextParameter items should be more than 0", contextParamList.size() > 0);
+                    }
+                }
+            }
+        }
 
 		// test the metadata items under MDM_EE_Demo.zip
 		int currentConnectionItemsSize = ProxyRepositoryFactory.getInstance().getAll(ERepositoryObjectType.METADATA)

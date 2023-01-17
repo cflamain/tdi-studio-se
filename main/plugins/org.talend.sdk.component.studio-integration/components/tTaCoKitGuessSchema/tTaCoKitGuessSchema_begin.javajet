@@ -63,39 +63,37 @@ System.setOut(new java.io.PrintStream(new java.io.OutputStream() {
 }));
 
 <%
-    if ("input".equalsIgnoreCase(tacokitComponentType)) {
-        final CodeGeneratorArgument codeGenArgument = CodeGeneratorArgument.class.cast(argument);
-        final INode node = INode.class.cast(codeGenArgument.getArgument());
-        if(node == null) {
-            throw new IllegalArgumentException("node cannot be null");
-        }
-        final String cid = node.getUniqueName();
-        final String originalName = (String)node.getElementParameter(EParameterName.COMPONENT_NAME.getName()).getValue();
-        final String family = (String)node.getElementParameter(EParameterName.FAMILY.getName()).getValue();
-        final String version = (String)node.getElementParameter(EParameterName.VERSION.getName()).getValue();
+    final CodeGeneratorArgument codeGenArgument = CodeGeneratorArgument.class.cast(argument);
+    final INode node = INode.class.cast(codeGenArgument.getArgument());
+    if(node == null) {
+        throw new IllegalArgumentException("node cannot be null");
+    }
+    final String cid = node.getUniqueName();
+    final String originalName = (String)node.getElementParameter(EParameterName.COMPONENT_NAME.getName()).getValue();
+    final String family = (String)node.getElementParameter(EParameterName.FAMILY.getName()).getValue();
+    final String version = (String)node.getElementParameter(EParameterName.VERSION.getName()).getValue();
 %>
-        <%@include file="../../jet_stub/generic/configuration.javajet"%>
-
-<%  } else { %>
-         // Enforce max batch size to 1 for guess schema
-         globalMap.put("MAX_BATCH_SIZE_<%=guessSchemaCid%>", 1);
-        <%@include file="./tTaCoKitGuessSchema_begin_for_processor.javajet"%>
-<%  } %>
+    <%@include file="../../jet_stub/generic/configuration.javajet"%>
 
     org.talend.sdk.component.runtime.di.schema.TaCoKitGuessSchema tacokitGuessSchema =
                             new org.talend.sdk.component.runtime.di.schema.TaCoKitGuessSchema(out, configuration_<%=guessSchemaCid%>,
                                                                                     "<%=pluginName%>",
                                                                                     "<%=guessSchemaFamily%>",
                                                                                     "<%=guessSchemaOriginalName%>",
-                                                                                    <% if(actionName == null || actionName.isEmpty()){%> null <%}else {%> "<%=actionName%>" <%}%>
+                                                                                    <% if(actionName == null || actionName.isEmpty()){%> null <%}else {%> "<%=actionName%>" <%}%>,
+                                                                                    "<%=guessSchemaVersion%>"
                                                                                     );
-    <% if ("input".equalsIgnoreCase(tacokitComponentType)) {  %>
-            try {
-                tacokitGuessSchema.guessInputComponentSchema();
-            } finally {
-                tacokitGuessSchema.close();
-            }
-    <% } else { %>
-        globalMap.put("___tacokitGuessSchema___", tacokitGuessSchema);
-        int _recordsCount_<%=guessSchemaCid%> = 0;
-    <% } %>
+<% if ("input".equalsIgnoreCase(tacokitComponentType)) {  %>
+    try {
+        tacokitGuessSchema.guessInputComponentSchema();
+    } finally {
+        tacokitGuessSchema.close();
+    }
+<% } else { %>
+    <%@include file="../../jet_stub/generic/utils/schema.javajet"%>
+    try {
+        tacokitGuessSchema.guessComponentSchema(schema_<%=cid%>, "<%=outputConnectionName%>");
+    } finally {
+        tacokitGuessSchema.close();
+    }
+<% } %>

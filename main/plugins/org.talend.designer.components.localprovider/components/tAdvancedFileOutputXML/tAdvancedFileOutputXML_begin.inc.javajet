@@ -388,9 +388,12 @@ class GenerateToolByDom4j{
 			for(XMLNode attri:node.attributes){
 				addAttribute(currEleName,attri);
 			}
-			if(node.name.indexOf(":")>0){
+			int idx = node.name.indexOf(":");
+			if(idx > 0){
+				String prefix = node.name.substring(0, idx);
+				String localName = node.name.substring(idx + 1);
 %>
-			<%touchXMLNode.getXMLNode(currEleName);%>.setName("<%=node.name%>");
+			<%touchXMLNode.getXMLElement(currEleName);%>.setQName(org.dom4j.DocumentHelper.createQName("<%=localName%>",<%touchXMLNode.getXMLElement(currEleName);%>.getNamespaceForPrefix("<%=prefix%>")));
 <%
 			}
 			int index = 0;

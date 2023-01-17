@@ -14,6 +14,7 @@ package org.talend.repository.ui.wizards.ConfigExternalLib;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -133,6 +134,11 @@ public abstract class TableField {
             } else {
                 list.addAll(input);
             }
+            
+            HashSet c = new HashSet(list);
+            list.clear();
+            list.addAll(c);
+            
             viewer.refresh();
             selectionChanged();
         }

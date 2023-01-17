@@ -110,7 +110,7 @@
 	<CODEGENERATION>
 
 	  <IMPORTS>
-	    <IMPORT NAME="Talend_CSV" MODULE="talendcsv.jar" MVN="mvn:org.talend.libraries/talendcsv/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv.jar" REQUIRED="true" />
+	    <IMPORT NAME="Talend_CSV" MODULE="talendcsv-1.0.0.jar" MVN="mvn:org.talend.components/talendcsv/1.0.0"  UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv-1.0.0.jar" REQUIRED="true" />
 	  </IMPORTS>
 
 	</CODEGENERATION>

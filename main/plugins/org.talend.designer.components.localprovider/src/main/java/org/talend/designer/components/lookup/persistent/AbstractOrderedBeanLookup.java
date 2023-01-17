@@ -19,7 +19,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import org.jboss.serial.io.JBossObjectInputStream;
+import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Unmarshaller;
 import org.talend.designer.components.lookup.common.ILookupManagerUnit;
 import org.talend.designer.components.persistent.IRowProvider;
 
@@ -118,6 +121,12 @@ public abstract class AbstractOrderedBeanLookup<B extends Comparable<B> & IPersi
 
     private boolean skipBytesEnabled;
 
+    Unmarshaller keysUnmarshaller;
+
+    Unmarshaller valuesUnmarshaller;
+
+
+
     /**
      *
      * DOC amaumont OrderedBeanLookup constructor comment.
@@ -138,14 +147,18 @@ public abstract class AbstractOrderedBeanLookup<B extends Comparable<B> & IPersi
         this.fileIndex = fileIndex;
 
         this.keysBufferedInStream = new BufferedInputStream(new FileInputStream(keysDataFile));
+        final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
+        final MarshallingConfiguration configuration = new MarshallingConfiguration();
         if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
-            this.keysObjectInStream = new JBossObjectInputStream(keysBufferedInStream);
+            keysUnmarshaller = marshallerFactory.createUnmarshaller(configuration);
+            keysUnmarshaller.start(Marshalling.createByteInput(keysBufferedInStream));
         } else {
             this.keysObjectInStream = new ObjectInputStream(keysBufferedInStream);
         }
         this.valuesDataInStream = new DataInputStream(new BufferedInputStream(new FileInputStream(valuesFilePath)));
         if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
-            this.valuesObjectInStream = new JBossObjectInputStream(valuesDataInStream);
+            valuesUnmarshaller = marshallerFactory.createUnmarshaller(configuration);
+            valuesUnmarshaller.start(Marshalling.createByteInput(valuesDataInStream));
         } else {
             this.valuesObjectInStream = new ObjectInputStream(valuesDataInStream);
         }
@@ -155,7 +168,7 @@ public abstract class AbstractOrderedBeanLookup<B extends Comparable<B> & IPersi
 
         this.skipBytesEnabled = skipBytesEnabled;
 
-        // readDescriptors();
+//         readDescriptors();
 
     }
 
@@ -194,37 +207,64 @@ public abstract class AbstractOrderedBeanLookup<B extends Comparable<B> & IPersi
 
     protected void loadDataKeys(B lookupInstance) throws IOException {
         atLeastOneLoadkeys = true;
-        lookupInstance.readKeysData(keysObjectInStream);
-        currentValuesSize = keysObjectInStream.readInt();
+
+        if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
+            lookupInstance.readKeysData(keysUnmarshaller);
+            currentValuesSize = keysUnmarshaller.readInt();
+        } else {
+            lookupInstance.readKeysData(keysObjectInStream);
+            currentValuesSize = keysObjectInStream.readInt();
+        }
+        
     }
 
     protected boolean isEndOfKeysFile() throws IOException {
-        return !(keysObjectInStream.available() > (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION ? 1 : 0) || keysBufferedInStream
-                .available() > 0);
+    	if(PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
+    		 return !(keysUnmarshaller.available() > 1 || keysBufferedInStream.available() > 0);
+    	}else {
+    		return !(keysObjectInStream.available() > 0  || keysBufferedInStream
+                    .available() > 0);
+    	}
     }
 
-    protected void loadDataValues(B lookupInstance, int valuesSize) throws IOException {
-        if (skipValuesSize > 0) {
-            skipValuesSize += remainingSkip;
+	protected void loadDataValues(B lookupInstance, int valuesSize) throws IOException {
+		if (skipValuesSize > 0) {
+			skipValuesSize += remainingSkip;
+			if (skipBytesEnabled) {
+				int currentSkipped = 0;
+				if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
+					while (skipValuesSize != (currentSkipped += valuesUnmarshaller
+							.skip(skipValuesSize - currentSkipped)))
+						;
+				} else {
+					while (skipValuesSize != (currentSkipped += valuesDataInStream
+							.skip(skipValuesSize - currentSkipped)))
+						;
+				}
 
-            if (skipBytesEnabled) {
-                int currentSkipped = 0;
-                while (skipValuesSize != (currentSkipped += valuesDataInStream.skip(skipValuesSize - currentSkipped)))
-                    ;
-            } else {
-                for (long i = 0; i < countBeansToSkip; i++) {
-                    lookupInstance.readValuesData(valuesDataInStream, valuesObjectInStream);
-                }
-            }
+			} else {
+				for (long i = 0; i < countBeansToSkip; i++) {
 
-            // System.out.println("Data skipped:" + skipValuesSize);
-            remainingSkip = 0;
-            skipValuesSize = 0;
-            countBeansToSkip = 0;
-        }
-        lookupInstance.readValuesData(valuesDataInStream, valuesObjectInStream);
+					if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
+						lookupInstance.readValuesData(valuesDataInStream, valuesUnmarshaller);
+					} else {
+						lookupInstance.readValuesData(valuesDataInStream, valuesObjectInStream);
+					}
+				}
+			}
 
-    }
+//           System.out.println("Data skipped:" + skipValuesSize);
+			remainingSkip = 0;
+			skipValuesSize = 0;
+			countBeansToSkip = 0;
+		}
+		if (PersistentSortedLookupManager.USE_JBOSS_IMPLEMENTATION) {
+			lookupInstance.readValuesData(valuesDataInStream, valuesUnmarshaller);
+		} else {
+			lookupInstance.readValuesData(valuesDataInStream, valuesObjectInStream);
+		}
+
+	}
 
     /*
      * (non-Javadoc)
@@ -239,7 +279,7 @@ public abstract class AbstractOrderedBeanLookup<B extends Comparable<B> & IPersi
         if (keysBufferedInStream != null) {
             keysBufferedInStream.close();
         }
-        if (valuesDataInStream != null) {
+        if (valuesObjectInStream != null) {
             valuesObjectInStream.close();
         }
         if (valuesDataInStream != null) {

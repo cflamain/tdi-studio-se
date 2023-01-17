@@ -132,7 +132,16 @@ public class TaCoKitUpdateManager extends RepositoryUpdateManager {
                                                     update = true;
                                                 }
                                             } else if (!valueModel.getValue().equals(properties.get(key))) {
-                                                connProperties.put(key, valueModel.getValue());
+                                                String storedValue = valueModel.getValue();
+                                                PropertyDefinitionDecorator decorator = tree.get(key);
+                                                if (decorator.isCredential()) {
+                                                    module.setValue(key, module.getValueOfSelf(key));
+                                                    String value = module.getProperties().get(key);
+                                                    if (org.apache.commons.lang.StringUtils.isNotBlank(value)) {
+                                                        storedValue = value;
+                                                    }
+                                                }
+                                                connProperties.put(key, storedValue);
                                                 update = true;
                                             }
                                         }

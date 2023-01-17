@@ -7,9 +7,31 @@ int retry_max_<%=cid%> = 5;
 
 com.jcraft.jsch.Session session_<%=cid%> = null;
 com.jcraft.jsch.Channel channel_<%=cid%> = null;
+
+class JschLogger_<%=cid %> implements com.jcraft.jsch.Logger {
+    public boolean isEnabled(int level){
+        return true;
+    }
+    public void log(int level, String message){
+    	<%if(isLog4jEnabled){%>
+        	log.debug(message);
+        <%}%>
+    }
+}
+
 do {
     retry_<%=cid%> = false;
 
+    <%if (isConfigClient && clientParams.size() > 0) {
+    	for (Map<String, String> map : clientParams) {
+    		String parameter = map.get("PARAMETER");
+    		String value = map.get("VALUE");
+    %>
+    		com.jcraft.jsch.JSch.setConfig(<%=parameter %>, <%=value %>);
+    <%	}
+    }
+    %>
+    com.jcraft.jsch.JSch.setLogger(new JschLogger_<%=cid %>());
     com.jcraft.jsch.JSch jsch_<%=cid%> = new com.jcraft.jsch.JSch(); 
 
     <%if (("PUBLICKEY").equals(authMethod) || ("PUBLIC_KEY_AND_PASSWORD").equals(authMethod)){%>

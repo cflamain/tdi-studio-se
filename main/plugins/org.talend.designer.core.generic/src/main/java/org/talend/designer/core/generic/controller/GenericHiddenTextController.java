@@ -13,7 +13,6 @@
 package org.talend.designer.core.generic.controller;
 
 import org.eclipse.gef.commands.Command;
-import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -29,11 +28,14 @@ import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.talend.commons.ui.runtime.image.ImageProvider;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.utils.ContextParameterUtils;
+import org.talend.core.runtime.IAdditionalInfo;
 import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.properties.tab.IDynamicProperty;
 import org.talend.core.utils.TalendQuoteUtils;
-import org.talend.designer.core.generic.i18n.Messages;
+import org.talend.designer.core.model.FakeElement;
 import org.talend.designer.core.model.components.EParameterName;
+import org.talend.designer.core.ui.dialog.PasswordDialog;
+import org.talend.designer.core.ui.dialog.PasswordDialog.Mode;
 import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 import org.talend.designer.core.ui.editor.properties.controllers.TextController;
 
@@ -71,9 +73,8 @@ public class GenericHiddenTextController extends TextController {
         if (labelText != null && param != null && isPasswordParam(param)) {
             labelText.setEchoChar('*');
         }
-        FormData data = (FormData) lastControlUsed.getLayoutData();
-        if (!param.isRepositoryValueUsed() && !isInWizard()) {
-            data.right = new FormAttachment((numInRow * MAX_PERCENT) / nbInRow, -STANDARD_BUTTON_WIDTH);
+        boolean isEditable = !param.isReadOnly() && (elem instanceof FakeElement || !param.isRepositoryValueUsed());
+        if (isEditable && (!isInWizard() || isTck(param))) {
             lastControlUsed = addButton(subComposite, param, lastControlUsed, numInRow, nbInRow, top);
         }
         return lastControlUsed;
@@ -87,7 +88,6 @@ public class GenericHiddenTextController extends TextController {
         FormData data;
 
         btn = getWidgetFactory().createButton(subComposite, "", SWT.PUSH); //$NON-NLS-1$
-        btnSize = btn.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 
         btn.setImage(ImageProvider.getImage(CoreUIPlugin.getImageDescriptor(DOTS_BUTTON)));
 
@@ -97,18 +97,21 @@ public class GenericHiddenTextController extends TextController {
 
         lastControlUsed = btn;
 
+        FormData lastControlData = (FormData) lastControl.getLayoutData();
         data = new FormData();
         // data.right = new FormAttachment(lastControl, -5, SWT.LEFT);
         // data.left = new FormAttachment(lastControl, -(15 + STANDARD_BUTTON_WIDTH), SWT.LEFT);
         // data.right = new FormAttachment(((numInRow * MAX_PERCENT) / nbInRow), 0);
         // data.left = new FormAttachment(((numInRow * MAX_PERCENT) / nbInRow), -STANDARD_BUTTON_WIDTH);
-        data.left = new FormAttachment(lastControl, 0);
-        data.right = new FormAttachment(lastControl, STANDARD_BUTTON_WIDTH, SWT.RIGHT);
-        data.top = new FormAttachment(0, top);
+        data.top = new FormAttachment(lastControl, 0, SWT.TOP);
+        data.bottom = new FormAttachment(lastControl, 0, SWT.BOTTOM);
+        data.right = lastControlData.right;
+        data.left = null;
+        lastControlData.right = new FormAttachment(btn, 0, SWT.LEFT);
 
-        data.height = STANDARD_HEIGHT - 2;
         btn.setLayoutData(data);
 
+        btnSize = btn.computeSize(SWT.DEFAULT, SWT.DEFAULT);
         // dynamicProperty.setCurRowSize(btnSize.y + ITabbedPropertyConstants.VSPACE);
         int buttonHeight = btnSize.y + ITabbedPropertyConstants.VSPACE;
         if (dynamicProperty.getCurRowSize() < buttonHeight) {
@@ -117,30 +120,63 @@ public class GenericHiddenTextController extends TextController {
         return lastControlUsed;
     }
 
+    private boolean isTck(IElementParameter param) {
+        return param instanceof IAdditionalInfo;
+    }
+
     protected Command createButtonCommand(final Button button) {
         if (button.getData(NAME).equals(HIDDEN_TEXT)) {
-            InputDialog dlg = new InputDialog(
-                    button.getShell(),
-                    Messages.getString("GenericHiddenTextController.NewPassword"), Messages.getString("GenericHiddenTextController.NoteConvention"), "\"\"", null) { //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-
-                /*
-                 * (non-Javadoc)
-                 *
-                 * @see org.eclipse.jface.dialogs.InputDialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-                 */
-                @Override
-                protected Control createDialogArea(Composite parent) {
-                    Control control = super.createDialogArea(parent);
-                    String paramName = (String) button.getData(PARAMETER_NAME);
-                    getText().setData(PARAMETER_NAME, paramName);
-                    editionControlHelper.register(paramName, getText());
-                    return control;
+            String paramName = (String) button.getData(PARAMETER_NAME);
+            IElementParameter param = elem.getElementParameter(paramName);
+            String initValue = null;
+            boolean isInWizard = isInWizard();
+            if (!isInWizard) {
+                initValue = "\"\"";//$NON-NLS-1$
+                if (param.getValue() != null && ContextParameterUtils.containContextVariables(param.getValue().toString())) {
+                    initValue = param.getValue().toString();
                 }
+            }
+            boolean isTck = isTck(param);
+            PasswordDialog.Mode mode = null;
+            if (isInWizard) {
+                mode = Mode.PurePassword;
+            } else if (isTck) {
+                mode = Mode.all;
+            } else {
+                mode = Mode.JavaExpression;
+            }
+            PasswordDialog dlg = new PasswordDialog(button.getShell(), initValue, mode) {
+
+                @Override
+                protected void registContextAssist() {
+                    super.registContextAssist();
+                    String paramName = (String) button.getData(PARAMETER_NAME);
+                    editionControlHelper.register(paramName, getPasswordTextControl());
+                }
+
+                @Override
+                protected void registValueChangeListener() {
+                    super.registValueChangeListener();
+                    String paramName = (String) button.getData(PARAMETER_NAME);
+                    getPasswordTextControl().setData(PARAMETER_NAME, paramName);
+                }
+
+                @Override
+                protected void unregistValueChangeListener() {
+                    super.unregistValueChangeListener();
+                    getPasswordTextControl().setData(PARAMETER_NAME, "");
+                }
+
             };
             if (dlg.open() == Window.OK) {
-                String paramName = (String) button.getData(PARAMETER_NAME);
-                elem.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), new Boolean(true));
-                return new PropertyChangeCommand(elem, paramName, dlg.getValue());
+                elem.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), Boolean.TRUE);
+                String newPassword = null;
+                if (!isInWizard && dlg.isPurePassword()) {
+                    newPassword = dlg.getEscapedPassword();
+                } else {
+                    newPassword = dlg.getPasswordText();
+                }
+                return new PropertyChangeCommand(elem, paramName, newPassword);
             }
         }
 
@@ -160,9 +196,15 @@ public class GenericHiddenTextController extends TextController {
             executeCommand(cmd);
             if (e.getSource() instanceof Button) {
                 Button button = (Button) e.getSource();
-                if (button.getData(NAME).equals(HIDDEN_TEXT)) {
+                if (!button.isDisposed() && button.getData(NAME).equals(HIDDEN_TEXT)) {
                     String paramName = (String) button.getData(PARAMETER_NAME);
-                    refresh(elem.getElementParameter(paramName), false);
+                    IElementParameter ep = elem.getElementParameter(paramName);
+                    refresh(ep, false);
+                    Text labelText = (Text) hashCurControls.get(ep.getName());
+                    labelText.setEchoChar('*');
+                    if (labelText != null && !labelText.isDisposed() && ep != null && !isPasswordParam(ep)) {
+                        labelText.setEchoChar('\0');
+                    }
                 }
             }
         }

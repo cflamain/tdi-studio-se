@@ -37,6 +37,7 @@ import org.talend.designer.core.model.utils.emf.talendfile.NodeType;
 import org.talend.designer.core.model.utils.emf.talendfile.ProcessType;
 import org.talend.designer.maven.tools.creator.CreateMavenStandardJobOSGiPom;
 import org.talend.designer.runprocess.IProcessor;
+import org.talend.repository.constants.BuildJobConstants;
 import org.talend.repository.ui.wizards.exportjob.handler.BuildOSGiBundleHandler;
 import org.talend.repository.ui.wizards.exportjob.scriptsmanager.JobScriptsManager.ExportChoice;
 
@@ -44,13 +45,6 @@ import org.talend.repository.ui.wizards.exportjob.scriptsmanager.JobScriptsManag
  * DOC ggu class global comment. Detailled comment
  */
 public class StandardJobOSGiBundleBuildProvider extends RepositoryObjectTypeBuildProvider {
-
-    private static final List<String> ESB_COMPONENTS;
-    static {
-        final List<String> esbComponents = Arrays.asList("tRESTClient", "tRESTRequest", "tRESTResponse", "tESBConsumer",
-                "tESBProviderFault", "tESBProviderRequest", "tESBProviderResponse", "tRouteInput", "tREST");
-        ESB_COMPONENTS = Collections.unmodifiableList(esbComponents);
-    }
 
     @Override
     public boolean valid(Map<String, Object> parameters) {
@@ -67,7 +61,7 @@ public class StandardJobOSGiBundleBuildProvider extends RepositoryObjectTypeBuil
 
             IProcess2 process = (IProcess2) object;
             for (INode node : process.getGraphicalNodes()) {
-                if (ESB_COMPONENTS.contains(node.getComponent().getName())) {
+                if (BuildJobConstants.esbComponents.contains(node.getComponent().getName())) {
                     containsEsbComponent = true;
                     break;
                 }
@@ -85,7 +79,7 @@ public class StandardJobOSGiBundleBuildProvider extends RepositoryObjectTypeBuil
                 ProcessType process = processItem.getProcess();
                 for (Object node : process.getNode()) {
                     NodeType nodeType = (NodeType) node;
-                    if (ESB_COMPONENTS.contains(nodeType.getComponentName())) {
+                    if (BuildJobConstants.esbComponents.contains(nodeType.getComponentName())) {
                         containsEsbComponent = true;
                         break;
                     }

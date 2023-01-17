@@ -82,6 +82,7 @@ import org.talend.metadata.managment.ui.preview.StoppablePreviewLoader;
 import org.talend.metadata.managment.ui.utils.ConnectionContextHelper;
 import org.talend.metadata.managment.ui.utils.ShadowProcessHelper;
 import org.talend.metadata.managment.ui.wizard.IRefreshable;
+import org.talend.repository.json.i18n.Messages;
 import org.talend.repository.json.ui.preview.JSONShadowProcessPreview;
 import org.talend.repository.json.ui.shadow.JSONShadowProcessHelper;
 import org.talend.repository.json.ui.wizards.extraction.ExtractionFieldsWithJSONXPathEditorView;
@@ -91,6 +92,7 @@ import org.talend.repository.json.ui.wizards.extraction.JSONExtractorLoopModel;
 import org.talend.repository.json.ui.wizards.extraction.JSONToJsonPathLinker;
 import org.talend.repository.json.ui.wizards.extraction.JSONToXPathLinker;
 import org.talend.repository.json.util.JSONConnectionContextUtils;
+import org.talend.repository.json.util.JSONExpressionHelper;
 import org.talend.repository.json.util.JSONUtil;
 import org.talend.repository.model.json.JSONFileConnection;
 import org.talend.repository.model.json.JSONXPathLoopDescriptor;
@@ -400,6 +402,19 @@ public class JSONFileStep2Form extends AbstractJSONFileStepForm implements IRefr
         data2.heightHint = 180;
         fieldTableEditorComposite.setLayoutData(data2);
         fieldTableEditorComposite.setBackground(null);
+        fieldsTableEditorView.getAutoWrapButton().addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                List<Object> treeViewerInput = (List<Object>) availableJSONTreeViewer.getInput();
+                List<SchemaTarget> fieldBeansList = fieldsTableEditorView.getModel().getBeansList();
+                new JSONExpressionHelper().autoWrapFieldToExpression(treeViewerInput, fieldBeansList);
+                fieldsTableEditorView.getTableViewerCreator().refresh();
+            }
+
+        });
+        fieldsTableEditorView.getAutoWrapButton()
+                .setVisible(EJsonReadbyMode.JSONPATH.getValue().equals(this.wizard.getReadbyMode()));
         // ///////////////////////////////////////////
         // to correct graphic bug under Linux-GTK when the wizard is opened the first time
         if (WindowSystem.isGTK() && firstTimeWizardOpened.equals(Boolean.TRUE)) {
@@ -848,10 +863,7 @@ public class JSONFileStep2Form extends AbstractJSONFileStepForm implements IRefr
         text.setLayoutData(gridData);
         outputComposite.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
-        String errorInfo = "No result for this settings" + "\n";
-        errorInfo = errorInfo + "Please check right XPathExpression or XML source document." + "\n";
-
-        text.setText(errorInfo);
+        text.setText(Messages.JSONFileStep2Form_Output_ErrorInfo);
         text.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_RED));
         text.setFont(font);
 
@@ -1067,6 +1079,10 @@ public class JSONFileStep2Form extends AbstractJSONFileStepForm implements IRefr
                 loopTableEditorView.setLinker(linker);
                 fieldsTableEditorView.setLinker(linker);
                 jsonFilePreview.removePreviewContent();
+            }
+            if (fieldsTableEditorView.getAutoWrapButton() != null) {
+                fieldsTableEditorView.getAutoWrapButton()
+                        .setVisible(EJsonReadbyMode.JSONPATH.getValue().equals(this.wizard.getReadbyMode()));
             }
         }
         if (isContextMode()) {

@@ -12,8 +12,10 @@
  */
 package org.talend.sdk.component.studio.metadata.model;
 
-import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.*;
-import static org.talend.sdk.component.studio.model.parameter.PropertyDefinitionDecorator.*;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_CONFIG_ID;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_CONFIG_PARENT_ID;
+import static org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel.BuiltInKeys.TACOKIT_PARENT_ITEM_ID;
+import static org.talend.sdk.component.studio.model.parameter.PropertyDefinitionDecorator.PATH_SEPARATOR;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,9 +93,7 @@ public class TaCoKitConfigurationModel {
     }
 
     public int getVersion() {
-        final String version = Optional.ofNullable(getProperties().get(configType.getProperties().stream()
-                .filter(p -> p.getName().equals(p.getPath()))
-                .findFirst().map(SimplePropertyDefinition::getPath).orElse("configuration") + ".__version"))
+        final String version = Optional.ofNullable(getProperties().get(TaCoKitUtil.getVersionPropName(configType)))
                 .orElse("-1");
         return Integer.parseInt(version);
     }

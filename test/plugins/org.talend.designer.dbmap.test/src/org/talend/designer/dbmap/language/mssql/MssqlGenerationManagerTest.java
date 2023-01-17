@@ -1,7 +1,8 @@
 package org.talend.designer.dbmap.language.mssql;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -297,7 +298,7 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A INNER JOIN  \" +dbo+\".\"+src2+ \" B ON(  B.id = A.id )\"";
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A INNER JOIN  \" +\"dbo\"+\".\"+src2+ \" B ON(  B.id = A.id )\"";
         assertEquals(expectedQuery, query);
     }
 
@@ -418,7 +419,7 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A LEFT OUTER JOIN  \" +dbo+\".\"+src2+ \" B ON(  B.id = A.id )\"";
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A LEFT OUTER JOIN  \" +\"dbo\"+\".\"+src2+ \" B ON(  B.id = A.id )\"";
         assertEquals(expectedQuery, query);
     }
 
@@ -554,8 +555,8 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A INNER JOIN  \" +dbo+\".\"+src2+ \" B ON(  B.id = A.id )"
-                + " LEFT OUTER JOIN  \" +dbo+\".\"+src3+ \" C ON(  C.id = B.id )\"";
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A INNER JOIN  \" +\"dbo\"+\".\"+src2+ \" B ON(  B.id = A.id )"
+                + " LEFT OUTER JOIN  \" +\"dbo\"+\".\"+src3+ \" C ON(  C.id = B.id )\"";
         assertEquals(expectedQuery, query);
     }
 
@@ -692,8 +693,8 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A INNER JOIN  \" +dbo+\".\"+src2+ \" B ON(  B.id = A.id )"
-                + "  , \" +dbo+\".\"+src3+ \" C" + "\nWHERE" + "\n  C.id = B.id\"";
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A INNER JOIN  \" +\"dbo\"+\".\"+src2+ \" B ON(  B.id = A.id )"
+                + "  , \" +\"dbo\"+\".\"+src3+ \" C" + "\nWHERE" + "\n  C.id = B.id\"";
         assertEquals(expectedQuery, query);
     }
 
@@ -829,7 +830,7 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A , \" +dbo+\".\"+src2+ \" B LEFT OUTER JOIN  \" +dbo+\".\"+src3+ \" C ON(  C.id = B.id )"
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A , \" +\"dbo\"+\".\"+src2+ \" B LEFT OUTER JOIN  \" +\"dbo\"+\".\"+src3+ \" C ON(  C.id = B.id )"
                 + "\nWHERE" + "\n  B.id = A.id\"";
         assertEquals(expectedQuery, query);
     }
@@ -967,7 +968,7 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A INNER JOIN  \" +dbo+\".\"+src2+ \" B ON(  B.id = A.id )  , \" +dbo+\".\"+src3+ \" C"
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A INNER JOIN  \" +\"dbo\"+\".\"+src2+ \" B ON(  B.id = A.id )  , \" +\"dbo\"+\".\"+src3+ \" C"
                 + "\nWHERE" + "\n  C.id = B.id\"";
         assertEquals(expectedQuery, query);
     }
@@ -1105,7 +1106,7 @@ public class MssqlGenerationManagerTest extends DbGenerationManagerTestHelper {
         lookupTableContext.setType("String");
         String query = dbManager.buildSqlSelect(dbMapComponent, schema + "." + outTable1);
         String expectedQuery = "\"UPDATE dbo.tar\n" + "SET tarColumn = A.id,\n" + "tarColumn1 = A.name\n"
-                + "FROM\n \" +dbo+\".\"+src1+ \" A CROSS JOIN  \n\" +dbo+\".\"+src2+ \" B CROSS JOIN  \n\" +dbo+\".\"+src3+ \" C"
+                + "FROM\n \" +\"dbo\"+\".\"+src1+ \" A CROSS JOIN  \n\" +\"dbo\"+\".\"+src2+ \" B CROSS JOIN  \n\" +\"dbo\"+\".\"+src3+ \" C"
                 + "\nWHERE" + "\n  B.id = A.id\n  AND  C.id = B.id\"";
         assertEquals(expectedQuery, query);
     }

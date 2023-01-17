@@ -7,6 +7,14 @@
   <version>1.0.1</version>
   <packaging>jar</packaging>
 
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+      <distribution>may be downloaded from the Maven repository</distribution>
+    </license>
+  </licenses>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
@@ -70,9 +78,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.talend.libraries</groupId>
+      <groupId>org.talend.components</groupId>
       <artifactId>talendcsv</artifactId>
-      <version>6.0.0</version>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
 

@@ -14,7 +14,7 @@
 %>
 org.dom4j.io.OutputFormat format<%=cid%> = org.dom4j.io.OutputFormat.createPrettyPrint();
 format<%=cid%>.setEncoding(<%=encoding%>);
-org.dom4j.io.XMLWriter writer<%=cid%> = new org.dom4j.io.XMLWriter(new java.io.FileWriter(new java.io.File(<%=filename%>)), format<%=cid%>);
+org.dom4j.io.XMLWriter writer<%=cid%> = new org.dom4j.io.XMLWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(<%=filename%>),java.nio.charset.Charset.forName(<%=encoding%>)), format<%=cid%>);
 writer<%=cid%> .write(document<%=cid%>);
 writer<%=cid%> .close();
 globalMap.put("<%=cid %>_NB_LINE",nb_line_<%=cid %>);

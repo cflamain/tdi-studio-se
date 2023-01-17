@@ -60,6 +60,7 @@ import org.talend.core.runtime.process.LastGenerationInfo;
 import org.talend.core.runtime.repository.build.IBuildResourceParametes;
 import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.services.IDesignerCoreUIService;
+import org.talend.designer.core.ICamelDesignerCoreService;
 import org.talend.designer.maven.model.TalendMavenConstants;
 import org.talend.designer.maven.utils.PomUtil;
 import org.talend.designer.runprocess.IRunProcessService;
@@ -381,7 +382,15 @@ public class BuildJobManager {
                 }
             }
             if (checkCompilationError) {
-                CorePlugin.getDefault().getRunProcessService().checkLastGenerationHasCompilationError(false);
+                boolean isJob = true;
+                if (GlobalServiceRegister.getDefault().isServiceRegistered(ICamelDesignerCoreService.class)) {
+                    ICamelDesignerCoreService service = (ICamelDesignerCoreService) GlobalServiceRegister.getDefault()
+                            .getService(ICamelDesignerCoreService.class);
+                    if (service.isInstanceofCamel(processItem.getProperty().getItem())) {
+                        isJob = false;
+                    }
+                }
+                CorePlugin.getDefault().getRunProcessService().checkLastGenerationHasCompilationError(false, isJob);
             }
             pMonitor.worked(scale);
             pMonitor.done();

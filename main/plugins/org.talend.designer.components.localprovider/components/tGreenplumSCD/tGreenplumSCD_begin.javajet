@@ -46,6 +46,7 @@ if(inputSchema != null && inputSchema.size() > 0 && outputSchema != null && outp
     boolean useExistingConnection = ("true").equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
     boolean isEnableSaveMemMode = ("true").equals(ElementParameterParser.getValue(node, "__USE_SAVE_MEM_MODE__"));
     boolean isSourceKeyIncNull = ("true").equals(ElementParameterParser.getValue(node, "__SOURCE_KEY_INC_NULL__"));
+    String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
     String dbType = POSTGRESQL;
     SCDConfiger scdConfiger = getSCDConfiger(node);
     SCDManager scdManager = getSCDManager(cid, dbType);
@@ -72,13 +73,22 @@ if(inputSchema != null && inputSchema.size() > 0 && outputSchema != null && outp
     } else {
         %>
         String dbSchema_<%=cid%> = <%=ElementParameterParser.getValue(node, "__SCHEMA_DB__")%>;
-		
+		String dbProperties_<%=cid%> = <%=dbproperties%>;
+        
 		<%if (dbDriver.equals("POSTGRESQL")){%>
 			String driverClass_<%=cid%> = "org.postgresql.Driver";
 			String connectionString_<%=cid %> = "jdbc:postgresql://" + <%=dbhost%> + ":" + <%=dbport%> + "/" + <%=dbname%>;
+			
+			if(dbProperties_<%=cid%> != null && !"".equals(dbProperties_<%=cid%>.trim())) {
+				connectionString_<%=cid %> = connectionString_<%=cid%> + "?" + dbProperties_<%=cid%>;
+            }
 		<%} else {%>
 			String driverClass_<%=cid%> = "com.pivotal.jdbc.GreenplumDriver";
 			String connectionString_<%=cid %> = "jdbc:pivotal:greenplum://"+<%=dbhost%>+":"+<%=dbport%>+";DatabaseName="+<%=dbname%>;
+			
+			if(dbProperties_<%=cid%> != null && !"".equals(dbProperties_<%=cid%>.trim())) {
+				connectionString_<%=cid %> = connectionString_<%=cid%> + ";" + dbProperties_<%=cid%>;
+            }
 		<%}
 		String passwordFieldName = "__PASS__";
 		%>

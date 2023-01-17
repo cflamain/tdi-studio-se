@@ -51,6 +51,9 @@ boolean useRemoteVerification = ("true").equals(ElementParameterParser.getValue(
 boolean useStrictReplyParsing = ("true").equals(ElementParameterParser.getValue(node, "__USE_STRICT_REPLY_PARSING__"));
 
 boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
+
+boolean isConfigClient = "true".equals(ElementParameterParser.getValue(node, "__CONFIG_CLIENT__"));
+List<Map<String, String>> clientParams = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__CLIENT_PARAMETERS__");
 String passwordFieldName = "";
 
 if (("true").equals(useExistingConn)) {
@@ -173,6 +176,9 @@ int nb_file_<%=cid%> = 0;
 		String rootDir_<%=cid %> = c_<%=cid %>.pwd();
 		String remotedir_<%=cid %> = (<%=remotedir %>).replaceAll("\\\\", "/");
 		String[] dirsTree_<%=cid %> = remotedir_<%=cid %>.split("/");
+		if (remotedir_<%=cid %>.startsWith("/")) {
+		    c_<%=cid %>.cd("/"); // go to root path if remote is absolute.
+		}
 		for (String dir: dirsTree_<%=cid %>) {
 			if (dir.isEmpty()) continue;
 
@@ -312,9 +318,14 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 %>
 			if(!cwdSuccess_<%=cid %>){
 				String[] dirsTree_<%=cid %> = remotedir_<%=cid %>.split("/");
+				if (remotedir_<%=cid %>.startsWith("/")) {
+				    ftp_<%=cid %>.changeWorkingDirectory("/"); // go to root path if remote is absolute.
+				}
 				for (String dir: dirsTree_<%=cid %>) {
-					ftp_<%=cid %>.makeDirectory(dir);
-					ftp_<%=cid %>.changeWorkingDirectory(dir);
+				    if (dir != null && !dir.isEmpty()) {
+					    ftp_<%=cid %>.makeDirectory(dir);
+					    ftp_<%=cid %>.changeWorkingDirectory(dir);
+					}
 				}
 				ftp_<%=cid %>.changeWorkingDirectory(rootDir_<%=cid %>);
 				cwdSuccess_<%=cid %> = ftp_<%=cid %>.changeWorkingDirectory(remotedir_<%=cid %>);

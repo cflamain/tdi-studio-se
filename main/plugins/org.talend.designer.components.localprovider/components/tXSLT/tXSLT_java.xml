@@ -10,8 +10,14 @@
     AUTHOR="Talend"
     RELEASE_DATE="20050320A"
     STARTABLE="true"
-	PARTITIONING="NONE"
+  	PARTITIONING="NONE"
+    SCHEMA_AUTO_PROPAGATE="false"
+    HAS_CONDITIONAL_OUTPUTS="true"
+    IS_MULTIPLYING_OUTPUTS="true"
+    DATA_AUTO_PROPAGATE="false"
   >
+   <!--
+  -->
     <SIGNATURE />
   </HEADER>
 
@@ -34,11 +40,12 @@
   </CONNECTORS>
 
   <PARAMETERS>
+
     <PARAMETER
       NAME="XML_FILE"
       FIELD="FILE"
       NUM_ROW="1"
-      REQUIRED="true"
+      SHOW_IF="OVERRIDE_INPUT_XML_FILE != 'true'"
     >
     <DEFAULT>"__COMP_DEFAULT_FILE_DIR__/in.xml"</DEFAULT>
     </PARAMETER>
@@ -47,7 +54,7 @@
       NAME="XSLT_FILE"
       FIELD="FILE"
       NUM_ROW="2"
-      REQUIRED="true"
+      SHOW_IF="OVERRIDE_INPUT_XSL_FILE != 'true'"
     > 
 	<DEFAULT>"__COMP_DEFAULT_FILE_DIR__/in.xsl"</DEFAULT>  
     </PARAMETER>
@@ -55,7 +62,7 @@
       NAME="OUTPUT_FILE"
       FIELD="FILE"
       NUM_ROW="3"
-      REQUIRED="true"      
+      SHOW_IF="OVERRIDE_OUTPUT != 'true'"
      >
      <DEFAULT>"__COMP_DEFAULT_FILE_DIR__/in.html"</DEFAULT>
     </PARAMETER>
@@ -67,11 +74,78 @@
       </ITEMS>
     </PARAMETER>
 
+  <PARAMETER
+      NAME="OVERRIDE_INPUT_XML_FILE"
+      FIELD="CHECK"
+      NUM_ROW="21"
+      >
+      <DEFAULT>false</DEFAULT>
+  </PARAMETER>
+  <PARAMETER
+      NAME="INPUT_XML_FILE_COL"
+      FIELD="PREV_COLUMN_LIST"
+      NUM_ROW="21"
+      SHOW_IF="OVERRIDE_INPUT_XML_FILE == 'true'"
+    >
+  </PARAMETER>
+
+  <PARAMETER
+      NAME="OVERRIDE_INPUT_XSL_FILE"
+      FIELD="CHECK"
+      NUM_ROW="22"
+      >
+      <DEFAULT>false</DEFAULT>
+  </PARAMETER>
+  <PARAMETER
+      NAME="INPUT_XSL_FILE_COL"
+      FIELD="PREV_COLUMN_LIST"
+      NUM_ROW="22"
+      SHOW_IF="OVERRIDE_INPUT_XSL_FILE == 'true'"
+    >
+  </PARAMETER>
+
+  <PARAMETER
+      NAME="OVERRIDE_OUTPUT"
+      FIELD="CHECK"
+      NUM_ROW="23"
+      >
+      <DEFAULT>false</DEFAULT>
+  </PARAMETER>
+  <PARAMETER
+      NAME="OUTPUT_COL"
+      FIELD="COLUMN_LIST"
+      NUM_ROW="23"
+      SHOW_IF="OVERRIDE_OUTPUT == 'true'"
+    >
+  </PARAMETER>
+
+    <PARAMETER
+      NAME="SCHEMA"
+      FIELD="SCHEMA_TYPE"
+      REQUIRED="true"
+      NUM_ROW="25"
+    >
+      <DEFAULT/>
+    </PARAMETER>
+
   </PARAMETERS>
+  
+  <ADVANCED_PARAMETERS>
+    <PARAMETER
+      NAME="CACHE_SOURCE"
+      FIELD="CHECK"
+      NUM_ROW="10"
+      >
+      <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+  </ADVANCED_PARAMETERS>
   
 	<CODEGENERATION>
 		<IMPORTS>
-			<IMPORT NAME="SAXON9" MODULE="saxon9.jar" MVN="mvn:org.talend.libraries/saxon9/6.0.0"  REQUIRED="true" />
+			<IMPORT NAME="SAXON-HE" MODULE="Saxon-HE-10.6.jar" MVN="mvn:net.sf.saxon/Saxon-HE/10.6"  REQUIRED="true" />
+			<IMPORT NAME="apache-commons-io"
+                    MODULE="commons-io-2.8.0.jar" MVN="mvn:commons-io/commons-io/2.8.0" 
+               		REQUIRED_IF="CACHE_SOURCE == 'true'" />
 		</IMPORTS>
 	</CODEGENERATION>
 	

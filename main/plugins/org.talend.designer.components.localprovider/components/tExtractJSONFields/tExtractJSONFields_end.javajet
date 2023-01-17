@@ -11,12 +11,8 @@ CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 INode node = (INode)codeGenArgument.getArgument();
 boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 String cid = node.getUniqueName();
-String destination = ElementParameterParser.getValue(node, "__DESTINATION__");
-if(destination==null || "".equals(destination)){
-    destination = cid;
-}
 %>
-   globalMap.put("<%=destination %>_NB_LINE", nb_line_<%=cid%>);
+   globalMap.put("<%=cid%>_NB_LINE", nb_line_<%=cid%>);
 <%if(isLog4jEnabled){%>
 	log.debug("<%=cid%> - Extracted records count: " + nb_line_<%=cid %> + " .");
 <%}%>

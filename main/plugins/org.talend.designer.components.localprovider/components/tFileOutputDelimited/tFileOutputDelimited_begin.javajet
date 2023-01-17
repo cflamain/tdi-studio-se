@@ -278,7 +278,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {//A1
                                 <%
                                 }else if(javaType == JavaTypesManager.BYTE_ARRAY){
                                 %>
-                                    java.nio.charset.Charset.defaultCharset().decode(java.nio.ByteBuffer.wrap(<%=conn.getName() %>.<%=column.getLabel() %>)).toString();
+                                    java.nio.charset.Charset.forName(<%=encoding %>).decode(java.nio.ByteBuffer.wrap(<%=conn.getName() %>.<%=column.getLabel() %>)).toString();
                                 <%
                                 }else if(advancedSeparator && JavaTypesManager.isNumberType(javaType, column.isNullable())) {
                                     if(javaType == JavaTypesManager.BIGDECIMAL) {%>
@@ -487,7 +487,9 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                         new java.io.FileOutputStream(fullName_<%=cid%> + splitedFileNo_<%=cid%> + extension_<%=cid%>, <%=isAppend%>),<%=encoding%>));
                 <%
                 }
-
+                %>
+                resourceMap.put("out_<%=cid%>", out<%=cid%>);
+                <%
                 if(isIncludeHeader && !hasDynamic){
                 %>
                     <%
@@ -588,7 +590,10 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                     out<%=cid%> = new <%=writerClass%>(writer_<%=cid%>);
                 <%
                 }
-
+                %>
+                resourceMap.put("out_<%=cid%>", out<%=cid%>);
+            	resourceMap.put("writer_<%=cid%>", writer_<%=cid%>);
+            	<%
                 if(isIncludeHeader && !hasDynamic){
                     List<IMetadataColumn> columns = metadata.getListColumns();
                     int sizeColumns = columns.size();
@@ -820,12 +825,12 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                                 fileToDelete_<%=cid%>.delete();
                             }
                             <%}%>
-                            if (resourceMap.get("outWriter_for_" + <%=fileName %>) == null) {
+                            if (resourceMap.get("outWriter_for_" + (<%=fileName %>)) == null) {
                                 out<%=cid%> = new routines.system.BufferedOutput(new java.io.OutputStreamWriter(
                                     new java.io.FileOutputStream(fileName_<%=cid%>, <%=isAppend%>), <%=encoding%>));
-                                resourceMap.put("outWriter_for_" + <%=fileName %>, out<%=cid%>);
+                                resourceMap.put("outWriter_for_" + (<%=fileName %>), out<%=cid%>);
                             } else {
-                                out<%=cid%> = (java.io.Writer) resourceMap.get("outWriter_for_" + <%=fileName %>);
+                                out<%=cid%> = (java.io.Writer) resourceMap.get("outWriter_for_" + (<%=fileName %>));
                             }
                             java.io.StringWriter strWriter<%=cid%> = new java.io.StringWriter();
                             CsvWriter<%=cid%> = new com.talend.csv.CSVWriter(strWriter<%=cid%>);
@@ -903,6 +908,14 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                         CsvWriter<%=cid%>.setSeparator(csvSettings_<%=cid%>.getFieldDelim());
                     <%
                     }
+                }
+                %>
+                resourceMap.put("CsvWriter_<%=cid%>", CsvWriter<%=cid%>);
+                <%
+                if(isInRowMode) {
+                %>
+                	resourceMap.put("out_<%=cid%>", out<%=cid%>);
+                <%
                 }
 
                 if(!useOSLineSeparator) {
@@ -1052,7 +1065,21 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
                     <%
                     }
                 }
-
+                
+                %>
+                resourceMap.put("CsvWriter_<%=cid%>", CsvWriter<%=cid%>);
+                <%
+                if(isInRowMode){
+                %>
+                    resourceMap.put("out_<%=cid%>", out<%=cid%>);
+                    resourceMap.put("outWriter_<%=cid%>", outWriter_<%=cid%>);
+                <%
+                }else{
+                %>
+                    resourceMap.put("bufferWriter_<%=cid%>", bufferWriter_<%=cid%>);
+                    resourceMap.put("outWriter_<%=cid%>", outWriter_<%=cid%>);
+                <%
+                }
                 if(!useOSLineSeparator) {
                 %>
                     if(csvSettings_<%=cid%>.isUseCRLFRecordDelimiter()) {
@@ -1104,51 +1131,10 @@ if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
             }
         }
     }
-    %>
-
-
-<%
 // ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 %>
 
-<%
-if(("false").equals(ElementParameterParser.getValue(node,"__CSV_OPTION__"))) {
-    if(!useStream){
-    %>
-        resourceMap.put("out_<%=cid%>", out<%=cid%>);
-    <%
-    }else{
-    %>
-        resourceMap.put("out_<%=cid%>", out<%=cid%>);
-        resourceMap.put("writer_<%=cid%>", writer_<%=cid%>);
-    <%
-    }
-}else{//the following is the tFileOutputCSV component
-%>
-    resourceMap.put("CsvWriter_<%=cid%>", CsvWriter<%=cid%>);
-    <%
-    if(!useStream){
-        if(isInRowMode){
-        %>
-            resourceMap.put("out_<%=cid%>", out<%=cid%>);
-        <%
-        }
-    }else{
-        if(isInRowMode){
-        %>
-            resourceMap.put("out_<%=cid%>", out<%=cid%>);
-            resourceMap.put("outWriter_<%=cid%>", outWriter_<%=cid%>);
-        <%
-        }else{
-        %>
-            resourceMap.put("bufferWriter_<%=cid%>", bufferWriter_<%=cid%>);
-            resourceMap.put("outWriter_<%=cid%>", outWriter_<%=cid%>);
-        <%
-        }
-    }
-}
-%>
 resourceMap.put("nb_line_<%=cid%>", nb_line_<%=cid%>);
 <%if(!useStream && ("true").equals(ElementParameterParser.getValue(node, "__DELETE_EMPTYFILE__"))){%>
     resourceMap.put("isFileGenerated_<%=cid%>", isFileGenerated_<%=cid%>);

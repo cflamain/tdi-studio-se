@@ -24,6 +24,7 @@ import org.talend.core.IService;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.runtime.projectsetting.ProjectPreferenceManager;
 import org.talend.designer.codegen.ICodeGeneratorService;
+import org.talend.designer.runprocess.maven.listener.CodesChangeListener;
 import org.talend.designer.runprocess.maven.listener.ProcessChangeListener;
 import org.talend.repository.model.IRepositoryService;
 
@@ -44,6 +45,8 @@ public class RunProcessPlugin extends AbstractUIPlugin {
     private ProjectPreferenceManager projectPreferenceManager;
 
     private PropertyChangeListener processChangeListener;
+
+    private PropertyChangeListener codesChangeListener;
 
     /**
      * Constructs a new Activator.
@@ -68,7 +71,9 @@ public class RunProcessPlugin extends AbstractUIPlugin {
             runProcessContextManager = new RunProcessContextManager();
         }
         processChangeListener = new ProcessChangeListener();
+        codesChangeListener = new CodesChangeListener();
         ProxyRepositoryFactory.getInstance().addPropertyChangeListener(processChangeListener);
+        ProxyRepositoryFactory.getInstance().addPropertyChangeListener(codesChangeListener);
     }
 
     /*
@@ -79,6 +84,7 @@ public class RunProcessPlugin extends AbstractUIPlugin {
     public void stop(BundleContext context) throws Exception {
         plugin = null;
         ProxyRepositoryFactory.getInstance().removePropertyChangeListener(processChangeListener);
+        ProxyRepositoryFactory.getInstance().removePropertyChangeListener(codesChangeListener);
         super.stop(context);
     }
 

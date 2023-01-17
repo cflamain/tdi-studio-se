@@ -70,6 +70,8 @@ public class BuildJobHandlerTest {
 
     private ProcessItem childJobItem;
 
+    private ProcessItem tRunJobTdqMainItem;
+
     private Item jobletItem;
 
     private List<Item> testItems;
@@ -96,10 +98,12 @@ public class BuildJobHandlerTest {
 
     private static final String JOBLET_ID = "_V92qED7OEeiNfpYj4K_XrA";
 
+    private static final String TRUNJOBTDQMAIN_ID = "_4aKkMAmLEe2jg5BG8Ms-tA";
+
     @Before
     public void setUp() throws Exception {
         if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class)) {
-            runProcessService = (IRunProcessService) GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
+            runProcessService = GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
         }
         assertNotNull(runProcessService);
 
@@ -133,6 +137,7 @@ public class BuildJobHandlerTest {
         jobWithTestcaseItem = (ProcessItem) getItemById(JOB_WITH_TESTCASE_ID);
         childJobItem = (ProcessItem) getItemById(JOB_CHILD_ID);
         jobletItem = getItemById(JOBLET_ID);
+        tRunJobTdqMainItem = (ProcessItem) getItemById(TRUNJOBTDQMAIN_ID);
 
         testItems = new ArrayList<>();
         testItems.add(jobWithTdqItem);
@@ -142,6 +147,7 @@ public class BuildJobHandlerTest {
         testItems.add(jobWithTestcaseItem);
         testItems.add(childJobItem);
         testItems.add(jobletItem);
+        testItems.add(tRunJobTdqMainItem);
 
         initExportChoice();
 
@@ -191,6 +197,17 @@ public class BuildJobHandlerTest {
         BuildJobManager.getInstance().buildJob(destinationPath, jobWithTestcaseItem, "0.1", "Default", exportChoiceMap,
                 JobExportType.POJO, new NullProgressMonitor());
         validateBuildResult(jobWithTestcaseItem, destinationPath);
+    }
+
+    @Test
+    public void testTRunJobTdqMain() throws Exception {
+        String destinationPath = getDestinationPath(tRunJobTdqMainItem);
+        destinationPaths.add(destinationPath);
+        BuildJobManager
+                .getInstance()
+                .buildJob(destinationPath, tRunJobTdqMainItem, "0.1", "Default", exportChoiceMap, JobExportType.POJO,
+                        new NullProgressMonitor());
+        validateBuildResult(tRunJobTdqMainItem, destinationPath);
     }
 
     private Map<ExportChoice, Object> initExportChoice() {
@@ -252,8 +269,8 @@ public class BuildJobHandlerTest {
             final String technicalLabel = ProjectManager.getInstance().getCurrentProject().getTechnicalLabel();
             assertEquals(technicalLabel, jobInfoProp.getProperty("project"));
 
-            ZipEntry libEntry = zip.getEntry("lib");
-            assertNotNull("No lib folder", libEntry);
+            boolean findLibFolder = zip.stream().anyMatch(entry->entry.getName().startsWith("lib/"));
+            assertTrue("No lib folder", findLibFolder);
             if (jobItem == jobWithChildrenItem) {
                 String dependencyFromParent = "commons-beanutils-1.9.4.jar";
                 ZipEntry dependencyEntry = zip.getEntry("lib/" + dependencyFromParent);
@@ -286,7 +303,6 @@ public class BuildJobHandlerTest {
                     assertNotNull("No log4j.xml", log4jXmlEntry);
                 }
             }
-
             // shell, ps1, bat
             ZipEntry batEntry = zip.getEntry(jobName + "/" + jobName + "_run.bat");
             assertNotNull("No bat file", batEntry);
@@ -339,9 +355,9 @@ public class BuildJobHandlerTest {
                     }
                 }
                 assertTrue("Not TDM item", isTDM);
-
                 ZipEntry tdmSettingEntry = zip.getEntry(
-                        jobName + "/items/" + technicalLabel.toLowerCase() + "/.settings/com.oaklandsw.base.projectProps");
+                        jobName + "/items/" + technicalLabel.toLowerCase()
+                                + "/.settings/com.oaklandsw.base.projectProps");
                 assertNotNull("Can't export tdm rightly", tdmSettingEntry);
                 // the __tdm has been moved into job jar. so need test it in jar.
                 // testbuildWithXXX_0_1.jar!/__tdm/...
@@ -362,6 +378,13 @@ public class BuildJobHandlerTest {
                         jarStream.close();
                     }
                 }
+            }
+            // even uncheck Item checkbox , if there's tDqReportRun component , dq items should be build within the zip
+            if (jobItem == tRunJobTdqMainItem) {
+                String DQItems = tRunJobTdqMainItem.getProperty().getLabel() + "/items/" + technicalLabel.toLowerCase()
+                        + "/TDQ_Libraries";
+                ZipEntry dependencyEntry = zip.getEntry(DQItems);
+                assertNotNull("DQ Items should not be null", dependencyEntry);
             }
         } finally {
             if (zip != null) {

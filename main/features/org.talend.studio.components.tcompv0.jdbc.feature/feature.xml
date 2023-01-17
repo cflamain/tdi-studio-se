@@ -2,7 +2,7 @@
 <feature
       id="org.talend.studio.components.tcompv0.jdbc.feature"
       label="JDBC_feature"
-      version="8.0.1.qualifier">
+      version="8.8.8.qualifier">
 
    <description url="http://www.example.com/description">
       [Enter Feature Description here.]

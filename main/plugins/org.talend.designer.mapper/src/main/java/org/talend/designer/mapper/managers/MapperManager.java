@@ -99,6 +99,8 @@ public class MapperManager extends AbstractMapperManager {
 
     public static final String MAPPER_MODEL_DATA = "MAPPER_MODEL_DATA"; //$NON-NLS-1$
 
+    private PendoMapperManager pendoTrackManager;
+
     private TableEntriesManager tableEntriesManager;
 
     TableManager tableManager;
@@ -134,6 +136,7 @@ public class MapperManager extends AbstractMapperManager {
         isMRProcess = ComponentCategory.CATEGORY_4_MAPREDUCE.getName().equals(process.getComponentsType());
         isBigDataProcess = MapperHelper.isMapperOnBigDataProcess(process.getComponentsType());
         getDefaultSetting();
+        pendoTrackManager = new PendoMapperManager(this);
     }
 
     public void addTablePair(DataMapTableView view, IDataMapTable data) {
@@ -1038,6 +1041,12 @@ public class MapperManager extends AbstractMapperManager {
     public void mapAutomaticallly() {
         AutoMapper autoMapper = new AutoMapper(this);
         autoMapper.map();
+    }
+
+    public void pendoMapperTrack() {
+        if (isDataChanged()) {
+            pendoTrackManager.sendTrackToPendo();
+        }
     }
 
     /**

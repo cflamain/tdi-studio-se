@@ -36,6 +36,7 @@ imports="
 	%>
 	String select_query_<%=cid %> = null;
 	String tableName_<%=cid%> = null;
+	String query_<%=cid%> = null;
 	<%
 	List<IConnection> connections = (List<IConnection>) node.getIncomingConnections();
 	if(connections != null && connections.size() > 0 && connections.get(0) != null) {
@@ -76,8 +77,11 @@ imports="
         String dbuser = null;
 	    String connectionType = null;
 	    boolean useExistingConn = false;
+	    boolean dryRun = false;
 	    String dbproperties = null;
         if(previousNode != null) {
+           dryRun = ("true").equals(ElementParameterParser.getValue(previousNode, "__DRY_RUN__"));
+           if(!dryRun){
 	        dbhost = ElementParameterParser.getValue(previousNode, "__HOST__");
 	        dbport = ElementParameterParser.getValue(previousNode, "__PORT__");
 	        dbname = ElementParameterParser.getValue(previousNode, "__DBNAME__");
@@ -85,6 +89,7 @@ imports="
 	    	connectionType = ElementParameterParser.getValue(previousNode, "__CONNECTION_TYPE__");
 	    	useExistingConn = ("true").equals(ElementParameterParser.getValue(previousNode, "__USE_EXISTING_CONNECTION__"));
 	    	dbproperties = ElementParameterParser.getValue(previousNode, "__PROPERTIES__");
+           }
         }
 
         boolean useWhereTable = ("true").equals(ElementParameterParser.getValue(node, "__USE_WHERE_CONDITIONS_TABLE__"));
@@ -94,6 +99,7 @@ imports="
 
 
 <%
+if(!dryRun){
 if(useExistingConn) {
     String connection = ElementParameterParser.getValue(previousNode, "__CONNECTION__");
     String conn = "conn_" + connection;
@@ -153,6 +159,7 @@ if(useExistingConn) {
 %>
 
 <%
+	}
 }
 %>
 
@@ -167,12 +174,13 @@ if(metadatas !=null && metadatas.size()>0){
 		columnList = metadata.getListColumns();
 	}
 }
+if(!dryRun){
 %>
 
 java.sql.PreparedStatement pstmt_<%=cid %> =null;
 
 <%
-
+}
 if(columnList != null && columnList.size()>0){
 
 class Column{
@@ -408,9 +416,14 @@ if (useHintOptions) {
 <%
 		}
 %>
-	pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(insertQuery_<%=cid %>);
+        query_<%=cid %> = insertQuery_<%=cid %>.toString();
+<%
+if(!dryRun){
+%>
+	    pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(insertQuery_<%=cid %>);
 
 <%
+}
 	}else if (("UPDATE").equals(dataAction)){
 %>
 		StringBuffer updateQuery_<%=cid %> = new StringBuffer("UPDATE "+tableName_<%=cid%>+" SET (<%=insertColName.toString()%>) = ("+select_query_<%=cid %>+") ");
@@ -444,9 +457,14 @@ if (useHintOptions) {
 <%
 		}
 %>
+        query_<%=cid %> = updateQuery_<%=cid %>.toString();
+<%
+if(!dryRun){
+%>
 		pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(updateQuery_<%=cid %>.toString());
 
 <%
+}
 	}else if (("DELETE").equals(dataAction)){
 	%>
 
@@ -476,9 +494,14 @@ if (useHintOptions) {
 <%
 		}
 %>
+        query_<%=cid %> = deleteQuery_<%=cid %>.toString();
+<%
+        if(!dryRun){
+%>
 		pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(deleteQuery_<%=cid %>.toString());
 
 	<%
+	}
 	}else if ("MERGE".equals(dataAction)) {
 		// get parameter
 		boolean useMergeUpdate = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_MERGE_UPDATE__"));
@@ -591,8 +614,13 @@ if (useHintOptions) {
 <%
 		}
 %>
+        query_<%=cid %> = mergeQuery_<%=cid %>.toString();
+<%
+        if(!dryRun){
+%>
 		pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(mergeQuery_<%=cid %>);
 <%
+        }
 	}
 %>
 int nb_line_<%=cid%> = 0;
@@ -605,60 +633,54 @@ int nb_line_merged_<%=cid%> = 0;
 }
 
 if(dbtable != null && columnList != null){
+  if(!dryRun){
 	if(("INSERT").equals(dataAction)){
 	%>
 
-<%if(!isLog4jEnabled){%>System.out.println("Inserting with : \n" + insertQuery_<%=cid %> + "\n");<%}%>
+System.out.println("Inserting with : \n" + insertQuery_<%=cid %> + "\n");
 <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executing SQL:\"+insertQuery_"+ cid +"+\"");%>
 nb_line_inserted_<%=cid%> = pstmt_<%=cid %>.executeUpdate();
 <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executed successfully.");%>
-<%if(!isLog4jEnabled){%>System.out.println("--> " + nb_line_inserted_<%=cid%> + " rows inserted. \n");<%}%>
+System.out.println("--> " + nb_line_inserted_<%=cid%> + " rows inserted. \n");
 
 	<%
 	}else if(("UPDATE").equals(dataAction)){
 
 	%>
-<%if(!isLog4jEnabled){%>System.out.println("Updating with : \n" + updateQuery_<%=cid %>.toString() +"\n");<%}%>
+System.out.println("Updating with : \n" + updateQuery_<%=cid %>.toString() +"\n");
 <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executing SQL:\"+updateQuery_"+ cid +"+\"");%>
 nb_line_updated_<%=cid%> = pstmt_<%=cid %>.executeUpdate();
 <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executed successfully.");%>
-	<%if(!isLog4jEnabled){%>System.out.println("--> " + nb_line_updated_<%=cid%> + " rows updated. \n");<%}%>
+System.out.println("--> " + nb_line_updated_<%=cid%> + " rows updated. \n");
 	<%
 	}else if (("DELETE").equals(dataAction)){
 		%>
-	<%if(!isLog4jEnabled){%>System.out.println("Deleting with : \n" + deleteQuery_<%=cid %>.toString() +"\n");<%}%>
+		System.out.println("Deleting with : \n" + deleteQuery_<%=cid %>.toString() +"\n");
 		<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executing SQL:\"+deleteQuery_"+ cid +"+\"");%>
 		nb_line_deleted_<%=cid%> = pstmt_<%=cid %>.executeUpdate();
 		<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executed successfully.");%>
-	<%if(!isLog4jEnabled){%>System.out.println("--> " + nb_line_deleted_<%=cid%> + " rows deleted. \n");<%}%>
+		System.out.println("--> " + nb_line_deleted_<%=cid%> + " rows deleted. \n");
 		<%
 	}else if (("MERGE").equals(dataAction)){
 	%>
-<%
-    if(!isLog4jEnabled){
-%>
         System.out.println("Merge with : \n" + mergeQuery_<%=cid %> +"\n");
-<%
-    } else {
-%>
-        log.info("<%=cid %> - Executing SQL: " + mergeQuery_<%=cid %>);
-<%
-    }
-%>
+        <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executing SQL:\"+mergeQuery_"+ cid +"+\"");%>
 	    nb_line_merged_<%=cid%> = pstmt_<%=cid %>.executeUpdate();
 		<%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executed successfully.");%>
-	<%if(!isLog4jEnabled){%>System.out.println("--> " + nb_line_merged_<%=cid%> + " rows merged. \n");<%}%>
+		System.out.println("--> " + nb_line_merged_<%=cid%> + " rows merged. \n");
 	<%
 	}
+  }
 }
 // END
-
+if(!dryRun){
 %>
 
 pstmt_<%=cid %>.close();
 
 <%
-if(!useExistingConn) {
+}
+if(!dryRun && !useExistingConn) {
     %>
     if(conn_<%=cid%> != null && !conn_<%=cid%>.isClosed()) {
 		<%log4jCodeGenerateUtil.close(node);%>
@@ -673,9 +695,9 @@ globalMap.put("<%=cid %>_NB_LINE_UPDATED",nb_line_updated_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_INSERTED",nb_line_inserted_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_DELETED",nb_line_deleted_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_MERGED",nb_line_merged_<%=cid%>);
-
+globalMap.put("<%=cid %>_QUERY",query_<%=cid%>);
 <%
-if(isLog4jEnabled){
+if(!dryRun && isLog4jEnabled){
 	Map<String,String> actionMap=new java.util.HashMap<String,String>();
 	actionMap.put("INSERT","inserted");
 	actionMap.put("UPDATE","updated");

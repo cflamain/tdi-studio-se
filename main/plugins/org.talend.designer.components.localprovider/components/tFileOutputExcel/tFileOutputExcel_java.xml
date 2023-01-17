@@ -98,6 +98,7 @@
       NAME="FIRST_CELL_Y_ABSOLUTE"
       FIELD="CHECK"
       NUM_ROW="50"
+      NOT_SHOW_IF="isShow[STREAMING_APPEND] AND (STREAMING_APPEND == 'true')"
     >
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
@@ -106,7 +107,7 @@
       NAME="FIRST_CELL_X"
       FIELD="TEXT"
       NUM_ROW="50"
-	  SHOW_IF="(FIRST_CELL_Y_ABSOLUTE == 'true')"
+	  SHOW_IF="isShow[FIRST_CELL_Y_ABSOLUTE] AND (FIRST_CELL_Y_ABSOLUTE == 'true')"
     >
       <DEFAULT>0</DEFAULT>
     </PARAMETER>
@@ -115,7 +116,7 @@
       NAME="FIRST_CELL_Y"
       FIELD="TEXT"
       NUM_ROW="50"
-	  SHOW_IF="(FIRST_CELL_Y_ABSOLUTE == 'true')"
+	  SHOW_IF="isShow[FIRST_CELL_Y_ABSOLUTE] AND (FIRST_CELL_Y_ABSOLUTE == 'true')"
     >
       <DEFAULT>0</DEFAULT>
     </PARAMETER>
@@ -124,7 +125,7 @@
       NAME="KEEP_CELL_FORMATING"
       FIELD="CHECK"
       NUM_ROW="50"
-      SHOW_IF="(FIRST_CELL_Y_ABSOLUTE == 'true')"
+      SHOW_IF="isShow[FIRST_CELL_Y_ABSOLUTE] AND (FIRST_CELL_Y_ABSOLUTE == 'true')"
     >
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
@@ -139,7 +140,7 @@
       </ITEMS>
     </PARAMETER>
 
-	<PARAMETER NAME="IS_ALL_AUTO_SZIE" FIELD="CHECK" REQUIRED="true" NUM_ROW="65" >
+	<PARAMETER NAME="IS_ALL_AUTO_SZIE" FIELD="CHECK" REQUIRED="true" NUM_ROW="65">
 	  <DEFAULT>false</DEFAULT>
 	</PARAMETER>
 
@@ -220,7 +221,11 @@
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
 
-  	<PARAMETER NAME="RECALCULATE_FORMULA" FIELD="CHECK" REQUIRED="true" NUM_ROW="80" SHOW_IF="(VERSION_2007 == 'true') AND (USESTREAM=='false') AND (APPEND_FILE=='true') AND (APPEND_SHEET=='true')">
+  	<PARAMETER NAME="RECALCULATE_FORMULA" FIELD="CHECK" REQUIRED="true" NUM_ROW="80" SHOW_IF="(VERSION_2007 == 'true') AND (USESTREAM=='false') AND (APPEND_FILE=='true') AND (APPEND_SHEET=='true') AND (STREAMING_APPEND=='false')">
+      <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+    
+    <PARAMETER NAME="STREAMING_APPEND" FIELD="CHECK" NUM_ROW="90" SHOW_IF="(VERSION_2007 == 'true') AND isShow[APPEND_FILE] AND (APPEND_FILE == 'true')">
       <DEFAULT>false</DEFAULT>
     </PARAMETER>
 
@@ -232,10 +237,12 @@
   <CODEGENERATION>
     <IMPORTS>
       <IMPORT NAME="Java_Excel" MODULE="jxl.jar" MVN="mvn:org.talend.libraries/jxl/6.0.0" UrlPath="platform:/plugin/org.talend.libraries.jexcel/lib/jxl.jar" REQUIRED_IF="(VERSION_2007 == 'false')" />
-      <IMPORT NAME="TALEND_EXCEL" MODULE="talendExcel-1.11-20210513.jar" MVN="mvn:org.talend.components/talendExcel/1.11-20210513" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/talendExcel-1.11-20210513.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="TALEND_EXCEL" MODULE="talendExcel-1.14-20220912.jar" MVN="mvn:org.talend.components/talendExcel/1.14-20220912" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="xlsx-streamer" MODULE="xlsx-streamer-2.1.0-20201125.jar" MVN="mvn:com.monitorjbl/xlsx-streamer/2.1.0-20201125" REQUIRED_IF="(VERSION_2007 == 'true') AND (STREAMING_APPEND == 'true')" />
+      
       <IMPORT NAME="commons-lang3" MODULE="commons-lang3-3.10.jar" MVN="mvn:org.apache.commons/commons-lang3/3.10" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="Java_DOM4J2" MODULE="dom4j-2.1.3.jar" MVN="mvn:org.dom4j/dom4j/2.1.3" REQUIRED_IF="(VERSION_2007 == 'true')" BundleID="" />
-      <IMPORT NAME="log4j" MODULE="log4j-1.2.17.jar" MVN="mvn:log4j/log4j/1.2.17" REQUIRED_IF="(VERSION_2007 == 'true')" BundleID="" />
+      <IMPORT NAME="reload4j-1.2.22" MODULE="reload4j-1.2.22.jar" MVN="mvn:ch.qos.reload4j/reload4j/1.2.22" REQUIRED_IF="(VERSION_2007 == 'true')" BundleID="" />
 
       <IMPORT NAME="poi" MODULE="poi-4.1.2-20200903124306_modified_talend.jar" MVN="mvn:org.apache.poi/poi/4.1.2-20200903124306_modified_talend" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-4.1.2-20200903124306_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="SparseBitSet" MODULE="SparseBitSet-1.2.jar" MVN="mvn:com.zaxxer/SparseBitSet/1.2" REQUIRED_IF="(VERSION_2007 == 'true')" />
@@ -245,12 +252,12 @@
 
       <IMPORT NAME="poi-ooxml" MODULE="poi-ooxml-4.1.2-20200903124306_modified_talend.jar" MVN="mvn:org.apache.poi/poi-ooxml/4.1.2-20200903124306_modified_talend" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-4.1.2-20200903124306_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="curvesapi" MODULE="curvesapi-1.06.jar" MVN="mvn:com.github.virtuald/curvesapi/1.06" REQUIRED_IF="(VERSION_2007 == 'true')" />
-      <IMPORT NAME="commons-compress" MODULE="commons-compress-1.20.jar" MVN="mvn:org.apache.commons/commons-compress/1.20" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="commons-compress" MODULE="commons-compress-1.21.jar" MVN="mvn:org.apache.commons/commons-compress/1.21" REQUIRED_IF="(VERSION_2007 == 'true')" />
 
       <IMPORT NAME="poi-ooxml-schemas" MODULE="poi-ooxml-schemas-4.1.2-20200903124306_modified_talend.jar" MVN="mvn:org.apache.poi/poi-ooxml-schemas/4.1.2-20200903124306_modified_talend" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-ooxml-schemas-4.1.2-20200903124306_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
       <IMPORT NAME="xmlbeans" MODULE="xmlbeans-3.1.0.jar" MVN="mvn:org.apache.xmlbeans/xmlbeans/3.1.0" REQUIRED_IF="(VERSION_2007 == 'true')" />
 
-      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-4.1.2-20200903124306_modified_talend.jar" MVN="mvn:org.apache.poi/poi-scratchpad/4.1.2-20200903124306_modified_talend" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-4.1.2-20200903124306_modified_talend.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
+      <IMPORT NAME="poi-scratchpad" MODULE="poi-scratchpad-5.2.2.jar" MVN="mvn:org.apache.poi/poi-scratchpad/5.2.2" UrlPath="platform:/plugin/org.talend.libraries.excel/lib/poi-scratchpad-5.2.2.jar" REQUIRED_IF="(VERSION_2007 == 'true')" />
     </IMPORTS>
   </CODEGENERATION>
 

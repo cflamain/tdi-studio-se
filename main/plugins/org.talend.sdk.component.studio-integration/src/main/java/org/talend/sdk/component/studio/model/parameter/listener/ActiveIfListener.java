@@ -83,7 +83,9 @@ public class ActiveIfListener implements PropertyChangeListener {
     }
 
     private boolean evaluateCondition(final PropertyDefinitionDecorator.Condition cond) {
-        return cond.isNegation() != Stream.of(cond.getValues()).anyMatch(val -> evalute(cond, val));
+        //now tck add uiscope target, so the path may not exists in model, now not process here, only return true for that case, TODO process hide logic for studio from the json info
+        return targetParams.get(cond.getTargetPath()) == null
+                || cond.isNegation() != Stream.of(cond.getValues()).anyMatch(val -> evalute(cond, val));
     }
 
     private boolean evalute(final PropertyDefinitionDecorator.Condition condition, final String value) {

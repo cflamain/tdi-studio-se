@@ -12,6 +12,7 @@
 // ============================================================================
 package org.talend.designer.unifiedcomponent;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.talend.core.GlobalServiceRegister;
+import org.talend.core.database.EDatabaseTypeName;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.components.IComponentsFactory;
 import org.talend.core.model.components.IComponentsService;
@@ -33,6 +35,7 @@ import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.INodeConnector;
 import org.talend.core.model.utils.IComponentName;
+import org.talend.core.model.utils.NodeUtil;
 import org.talend.core.runtime.services.IGenericWizardService;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
 import org.talend.designer.core.IUnifiedComponentService;
@@ -127,6 +130,14 @@ public class UnifiedComponentService implements IUnifiedComponentService {
                     UnifiedObject unifiedObjectByDatabase = selectedDcomp.getUnifiedObjectByDatabase(database);
                     if (unifiedObjectByDatabase != null) {
                         return unifiedObjectByDatabase.getDisplayComponentName();
+                    } else if (EDatabaseTypeName.SYBASEASE.getDisplayName().equals(database)) {
+                        // sybase can be dbType as database
+                        // ref:org.talend.designer.unifiedcomponent.unifier.sybase.SybaseComponentsUnifier
+                        unifiedObjectByDatabase = selectedDcomp
+                                .getUnifiedObjectByDatabase(EDatabaseTypeName.SYBASEASE.getXmlName());
+                        if (unifiedObjectByDatabase != null) {
+                            return unifiedObjectByDatabase.getDisplayComponentName();
+                        }
                     }
                 }
 
@@ -257,6 +268,16 @@ public class UnifiedComponentService implements IUnifiedComponentService {
                 } else if (newParamRepositoryValue != null) {
                     if (newParamRepositoryValue.equals(oldParamMappedValue)
                             || newParamRepositoryValue.equalsIgnoreCase(oldParamRepositoryValue)) {
+                        param2Find = oldParam;
+                        break;
+                    }
+                } else if (NodeUtil.isCompatibleByName(oldEmfComponent, unifiedComp) 
+                        && NodeUtil.isDatabaseFamily(node.getComponent().getOriginalFamilyName())) {
+                    //TUP-32758:Fix the problem of reset to builtin in the components if everything is valid. 
+                    //(if component is mysql then switch to amazonmysql while propertytype  are compatible)
+                    String[] mappingInclude = {"QUERY","TABLE","TABLE_ACTION","DATA_ACTION","DIE_ON_ERROR"};
+                    if (Arrays.toString(mappingInclude).contains(newParam.getName()) &&
+                           newParam.getName().equals(oldParam.getName())) {
                         param2Find = oldParam;
                         break;
                     }

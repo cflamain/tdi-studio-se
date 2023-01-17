@@ -27,7 +27,6 @@ import org.talend.core.prefs.ITalendCorePrefConstants;
 import org.talend.core.ui.branding.IBrandingService;
 import org.talend.designer.core.DesignerPlugin;
 import org.talend.designer.core.i18n.Messages;
-import org.talend.repository.ui.login.LoginHelper;
 import org.talend.repository.ui.login.connections.network.NetworkConfiguration;
 
 public class PerformancePreferencePage extends FieldEditorPreferencePage implements IWorkbenchPreferencePage {
@@ -59,9 +58,6 @@ public class PerformancePreferencePage extends FieldEditorPreferencePage impleme
             addField(new BooleanFieldEditor(TalendDesignerPrefConstants.PROPERTY_CODE_CHECK,
                     Messages.getString("PerformancePreferencePage.propertyCodeCheck"), getFieldEditorParent())); //$NON-NLS-1$
 
-            addField(new BooleanFieldEditor(TalendDesignerPrefConstants.GENERATE_CODE_WHEN_OPEN_JOB,
-                    Messages.getString("PerformancePreferencePage.generateCode"), //$NON-NLS-1$
-                    getFieldEditorParent()));
             addField(new BooleanFieldEditor(TalendDesignerPrefConstants.CHECK_ONLY_LAST_VERSION,
                     Messages.getString("PerformancePreferencePage.checkVersion"), //$NON-NLS-1$
                     getFieldEditorParent()));
@@ -82,10 +78,10 @@ public class PerformancePreferencePage extends FieldEditorPreferencePage impleme
                 }
             });
             dbConnTimeout = new IntegerFieldEditor(ITalendCorePrefConstants.DB_CONNECTION_TIMEOUT,
-                    Messages.getString("PerformancePreferencePage.ConnectionTimeout"), //$NON-NLS-1$
+                    Messages.getString("PerformancePreferencePage.DBConnectionTimeout"), //$NON-NLS-1$
                     getFieldEditorParent());
             Text textControl = dbConnTimeout.getTextControl(getFieldEditorParent());
-            textControl.setToolTipText(Messages.getString("PerformancePreferencePage.ConnectionTimeoutTip")); //$NON-NLS-1$
+            textControl.setToolTipText(Messages.getString("PerformancePreferencePage.DBConnectionTimeoutTip")); //$NON-NLS-1$
             dbConnTimeout.setValidRange(0, Short.MAX_VALUE);
             textControl.setEnabled(getPreferenceStore().getBoolean(ITalendCorePrefConstants.DB_CONNECTION_TIMEOUT_ACTIVED));
             addField(dbConnTimeoutActive);
@@ -98,9 +94,6 @@ public class PerformancePreferencePage extends FieldEditorPreferencePage impleme
             addField(new BooleanFieldEditor(TalendDesignerPrefConstants.PROPERTY_CODE_CHECK,
                     Messages.getString("PerformancePreferencePage.propertyCodeCheck"), getFieldEditorParent())); //$NON-NLS-1$
 
-            addField(new BooleanFieldEditor(TalendDesignerPrefConstants.GENERATE_CODE_WHEN_OPEN_JOB,
-                    Messages.getString("PerformancePreferencePage.generateCode"), //$NON-NLS-1$
-                    getFieldEditorParent()));
             addField(new BooleanFieldEditor(TalendDesignerPrefConstants.CHECK_ONLY_LAST_VERSION,
                     Messages.getString("PerformancePreferencePage.checkVersion"), //$NON-NLS-1$
                     getFieldEditorParent()));
@@ -121,10 +114,10 @@ public class PerformancePreferencePage extends FieldEditorPreferencePage impleme
                 }
             });
             dbConnTimeout = new IntegerFieldEditor(ITalendCorePrefConstants.DB_CONNECTION_TIMEOUT,
-                    Messages.getString("PerformancePreferencePage.ConnectionTimeout"), //$NON-NLS-1$
+                    Messages.getString("PerformancePreferencePage.DBConnectionTimeout"), //$NON-NLS-1$
                     getFieldEditorParent());
             Text textControl = dbConnTimeout.getTextControl(getFieldEditorParent());
-            textControl.setToolTipText(Messages.getString("PerformancePreferencePage.ConnectionTimeoutTip")); //$NON-NLS-1$
+            textControl.setToolTipText(Messages.getString("PerformancePreferencePage.DBConnectionTimeoutTip")); //$NON-NLS-1$
             dbConnTimeout.setValidRange(0, Short.MAX_VALUE);
             textControl.setEnabled(getPreferenceStore().getBoolean(ITalendCorePrefConstants.DB_CONNECTION_TIMEOUT_ACTIVED));
             addField(dbConnTimeoutActive);
@@ -157,42 +150,12 @@ public class PerformancePreferencePage extends FieldEditorPreferencePage impleme
 
     private void addRemoteInforAutoCheckFiled() {
         if (PluginChecker.isRemoteProviderPluginLoaded()) {
-            if (PluginChecker.isSVNProviderPluginLoaded()) {
-                final CheckBoxFieldEditor autoCheckField = new CheckBoxFieldEditor(
-                        ITalendCorePrefConstants.SVN_UPDATE_INFO_AUTO_CHECK,
-                        Messages.getString("PerformancePreferencePage.autoCheckField"), getFieldEditorParent()); //$NON-NLS-1$
-                addField(autoCheckField);
-                final IntegerFieldEditor autoCheckTime = new IntegerFieldEditor(
-                        ITalendCorePrefConstants.SVN_UPDATE_INFO_AUTO_CHECK_TIME_INTERVAL,
-                        Messages.getString("PerformancePreferencePage.autoCheckTime"), //$NON-NLS-1$
-                        getFieldEditorParent());
-                autoCheckTime.setValidRange(1, 30);
-                autoCheckTime.setEnabled(getPreferenceStore().getBoolean(ITalendCorePrefConstants.SVN_UPDATE_INFO_AUTO_CHECK),
-                        getFieldEditorParent());
-                addField(autoCheckTime);
-                autoCheckField.getButton().addSelectionListener(new SelectionAdapter() {
-
-                    @Override
-                    public void widgetSelected(SelectionEvent e) {
-                        if (autoCheckField.getButton().getSelection()) {
-                            autoCheckTime.setEnabled(true, getFieldEditorParent());
-                        } else {
-                            autoCheckTime.setEnabled(false, getFieldEditorParent());
-                        }
-                    }
-                });
-            }
-
             final CheckBoxFieldEditor autoRefreshLocksField = new CheckBoxFieldEditor(ITalendCorePrefConstants.AUTO_REFRESH_LOCKS,
                     Messages.getString("PerformancePreferencePage.autoRefreshLocksField"), getFieldEditorParent()); //$NON-NLS-1$
             addField(autoRefreshLocksField);
             //
-            String timeout = Messages.getString("PerformancePreferencePage.tacTimeout");//$NON-NLS-1$
-            String readTimeout = Messages.getString("PerformancePreferencePage.tacTimeout.read");//$NON-NLS-1$
-            if (!LoginHelper.isRemotesConnection()) {
-                timeout = Messages.getString("PerformancePreferencePage.defaultTimeout");//$NON-NLS-1$
-                readTimeout = Messages.getString("PerformancePreferencePage.defaultTimeout.read");//$NON-NLS-1$
-            }
+            String timeout = Messages.getString("PerformancePreferencePage.defaultTimeout");//$NON-NLS-1$
+            String readTimeout = Messages.getString("PerformancePreferencePage.defaultTimeout.read");//$NON-NLS-1$
             final IntegerFieldEditor tacConnectionTimeout = new IntegerFieldEditor(
                     ITalendCorePrefConstants.PERFORMANCE_TAC_CONNECTION_TIMEOUT, timeout, getFieldEditorParent());
             tacConnectionTimeout.setValidRange(NetworkConfiguration.CONNECTION_TIMEOUT_MIN,

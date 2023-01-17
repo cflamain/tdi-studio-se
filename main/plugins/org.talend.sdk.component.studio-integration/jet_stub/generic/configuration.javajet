@@ -15,6 +15,8 @@
 final java.util.Map<String, String> configuration_<%=cid%> = new java.util.HashMap<>();
 final java.util.Map<String, String> registry_metadata_<%=cid%> = new java.util.HashMap<>();
 <%
+    final java.util.Map<String, String> configurationToChange = new java.util.HashMap<String, String>();
+    
     final List<ElementParameter> params = List.class.cast(node.getElementParametersWithChildrens());
     
     //set the datastore parameters when use existed connection for passing the parameter check like @Required and @Pattern 
@@ -42,15 +44,29 @@ final java.util.Map<String, String> registry_metadata_<%=cid%> = new java.util.H
                 String tableName = p.getName().replace('$', '.');
                 boolean primitiveTable = items.length == 1 && items[0].equals(tableName + "[]");
                 String tableNamePrefix = tableName + "[]";
+                
+                java.util.List<String> changable = java.util.List.class.cast(p.getTaggedValue("org.talend.sdk.component.field.changable"));
+                
                 for (int i = 0; i < tableValues.size(); i++) {
                     java.util.Map<String, String> lineValues = tableValues.get(i);
                     for (int j = 0; j < items.length; j++) {
+                        boolean canChange = false;
+                        
                         String key = tableName + "[" + i + "]";
                         if (!primitiveTable) {
                             final String columnName = items[j].substring(tableNamePrefix.length(), items[j].length());
                             key = key + columnName;
+                            
+                            if(changable!=null && changable.contains(items[j])) {
+                                canChange = true;
+                            }
                         }
                         String value = lineValues.get(items[j]);
+                        
+                        if(canChange) {
+                            configurationToChange.put(key, value);
+                        }
+                        
                         if (!org.talend.core.model.utils.ContextParameterUtils.isDynamic(value)) {
                             if (org.talend.core.model.utils.TalendTextUtils.isEnclosed(value)) {
                                 value = org.talend.core.model.utils.TalendTextUtils.removeQuotes(value);
@@ -69,13 +85,24 @@ final java.util.Map<String, String> registry_metadata_<%=cid%> = new java.util.H
                 if (p.getFieldType() == EParameterFieldType.SCHEMA_TYPE) {
                     connections = NodeUtil.getOutgoingConnections(node, p.getContext());
                 } else {
+                    //TODO may remove this and EParameterFieldType.TACOKIT_INPUT_SCHEMA support
                     connections = NodeUtil.getIncomingConnections(node, p.getContext());
                 }
+                
+                IMetadataTable metaTable = null;
                 if(connections != null && !connections.isEmpty()) {
                     connection = connections.get(0);
+                    metaTable = (connection!=null) ? connection.getMetadataTable() : null;
+                } else if("FLOW".equals(p.getContext())) {
+                    //pass the connector schema when no output line case
+                    //for example: tfixedflowinput==>tjdbcoutput, we need the column key/db column name info in studio design schema
+                    List<IMetadataTable> metadataTables = node.getMetadataList();
+                    if(metadataTables!=null && !metadataTables.isEmpty()) {
+                        metaTable = metadataTables.get(0);
+                    }
                 }
-                if(connection != null) {
-                    IMetadataTable metaTable = connection.getMetadataTable();
+                
+                if(metaTable != null) {
                     List<IMetadataColumn> columns = metaTable.getListColumns();
                     boolean hasDynamic = false;
                     for (int i = 0; i < columns.size(); i++) {
@@ -92,12 +119,16 @@ final java.util.Map<String, String> registry_metadata_<%=cid%> = new java.util.H
                         <%
                         }
                     }
-                    if (!hasDynamic){
-                        String [] columnMetas = java.util.Optional.ofNullable(p.getListItemsDisplayCodeName()).orElse(new String[0]);
-                        List<String> metas = new java.util.ArrayList();
-                        for (String k : columnMetas){
-                            metas.add(k.substring(k.lastIndexOf(".")+1));
-                        }
+                    
+                    String [] columnMetas = java.util.Optional.ofNullable(p.getListItemsDisplayCodeName()).orElse(new String[0]);
+                    List<String> metas = new java.util.ArrayList();
+                    for (String k : columnMetas){
+                        metas.add(k.substring(k.lastIndexOf(".")+1));
+                    }
+                    
+                    final boolean isFullSchema = metas.contains("talendType");
+                    
+                    if (isFullSchema || !hasDynamic){
                         for(int i = 0; i < columns.size(); i++) {
                             IMetadataColumn column = columns.get(i);
                             for (String meta : metas){

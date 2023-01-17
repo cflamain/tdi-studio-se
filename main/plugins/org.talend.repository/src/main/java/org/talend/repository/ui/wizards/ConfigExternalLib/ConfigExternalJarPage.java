@@ -15,11 +15,14 @@ package org.talend.repository.ui.wizards.ConfigExternalLib;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -37,8 +40,10 @@ import org.talend.core.ILibraryManagerUIService;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.routines.CodesJarInfo;
+import org.talend.core.runtime.process.ITalendProcessJavaProject;
 import org.talend.designer.core.model.utils.emf.component.ComponentFactory;
 import org.talend.designer.core.model.utils.emf.component.IMPORTType;
+import org.talend.designer.maven.tools.AggregatorPomsHelper;
 import org.talend.designer.maven.tools.CodesJarM2CacheManager;
 import org.talend.designer.maven.utils.MavenProjectUtils;
 import org.talend.designer.runprocess.IRunProcessService;
@@ -47,11 +52,12 @@ import org.talend.repository.i18n.Messages;
 /**
  * Page of the Job Scripts Export Wizard. <br/>
  *
- * @referto WizardArchiveFileResourceExportPage1 $Id: JobScriptsExportWizardPage.java 1 2006-12-13 ä¸‹å�ˆ03:09:07 bqian
+ * @referto WizardArchiveFileResourceExportPage1 $Id: JobScriptsExportWizardPage.java 1 2006-12-13 Ã¤Â¸â€¹Ã¥ï¿½Ë†03:09:07 bqian
  *
  */
 public class ConfigExternalJarPage extends ConfigExternalLibPage {
-
+    private static Logger log = Logger.getLogger(ConfigExternalJarPage.class);
+    
     private Map<IMPORTType, File> newJarFiles = new HashMap<IMPORTType, File>();
 
     private LibraryField libField;
@@ -122,18 +128,26 @@ public class ConfigExternalJarPage extends ConfigExternalLibPage {
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
+                IRunProcessService runProcessService = IRunProcessService.get();
+                runProcessService.updateLibraries(getSelectedItem());
+
                 Item item = getSelectedItem();
-                if (ERepositoryObjectType.getAllTypesOfCodesJar().contains(ERepositoryObjectType.getItemType(item))) {
-                    CodesJarInfo info = CodesJarInfo.create(item.getProperty());
-                    IProject project = IRunProcessService.get().getTalendCodesJarJavaProject(info).getProject();
-                    CodesJarM2CacheManager.updateCodesJarProjectPom(new NullProgressMonitor(), info);
-                    try {
-                        MavenProjectUtils.updateMavenProject(new NullProgressMonitor(), project);
-                    } catch (CoreException e) {
-                        ExceptionHandler.process(e);
+                ERepositoryObjectType itemType = ERepositoryObjectType.getItemType(item);
+                IProgressMonitor monitor = new NullProgressMonitor();
+                try {
+                    if (ERepositoryObjectType.getAllTypesOfCodesJar().contains(itemType)) {
+                        CodesJarInfo info = CodesJarInfo.create(item.getProperty());
+                        IProject project = runProcessService.getTalendCodesJarJavaProject(info).getProject();
+                        CodesJarM2CacheManager.updateCodesJarProjectPom(monitor, info);
+                        MavenProjectUtils.updateMavenProject(monitor, project);
+                    } else {
+                        ITalendProcessJavaProject codeProject = runProcessService.getTalendCodeJavaProject(itemType);
+                        new AggregatorPomsHelper().updateCodeProjectPom(monitor, itemType, codeProject.getProjectPom());
+                        MavenProjectUtils.updateMavenProject(monitor, codeProject.getProject());
                     }
+                } catch (Exception e) {
+                    ExceptionHandler.process(e);
                 }
-                CorePlugin.getDefault().getRunProcessService().updateLibraries(getSelectedItem());
             }
         });
 
@@ -190,18 +204,33 @@ public class ConfigExternalJarPage extends ConfigExternalLibPage {
             if (GlobalServiceRegister.getDefault().isServiceRegistered(ILibraryManagerUIService.class)) {
                 ILibraryManagerUIService libUiService = GlobalServiceRegister.getDefault()
                         .getService(ILibraryManagerUIService.class);
-                IConfigModuleDialog dialog = libUiService.getConfigModuleDialog(getShell(), null);
+                IConfigModuleDialog dialog = libUiService.getConfigModuleDialog(getShell(), null, true);
                 if (dialog.open() == IDialogConstants.OK_ID) {
-                    IMPORTType type = ComponentFactory.eINSTANCE.createIMPORTType();
-                    type.setNAME(getSelectedItem().getProperty().getLabel());
-                    type.setMODULE(dialog.getModuleName());
-                    type.setMVN(dialog.getMavenURI());
-                    type.setREQUIRED(true);
-                    importTypes.add(type);
+                    String label = getSelectedItem().getProperty().getLabel();
+                    Map<String, String> moduleName2mvnUrls = dialog.getModulesMVNUrls();
+                    if(moduleName2mvnUrls != null) {
+                        Iterator<Entry<String, String>> iterator = moduleName2mvnUrls.entrySet().iterator();
+                        while(iterator.hasNext()) {
+                            Entry<String, String> entry = iterator.next();
+                            IMPORTType itype = buildIMPORTType(label, entry.getKey(), entry.getValue(), true);
+                            importTypes.add(itype);
+                        }
+                    }
                 }
             }
             ConfigExternalJarPage.this.setPageComplete(true);
             return importTypes;
+        }
+        
+
+        private IMPORTType buildIMPORTType(String label, String moduleName, String mvnURI, boolean required) {
+            IMPORTType type = ComponentFactory.eINSTANCE.createIMPORTType();
+            type.setNAME(label);
+            type.setMODULE(moduleName);
+            type.setMVN(mvnURI);
+            type.setREQUIRED(required);
+
+            return type;
         }
     }
 

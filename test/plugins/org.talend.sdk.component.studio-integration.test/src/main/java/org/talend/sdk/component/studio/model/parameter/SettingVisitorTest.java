@@ -12,12 +12,14 @@
 // ============================================================================
 package org.talend.sdk.component.studio.model.parameter;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -44,8 +46,10 @@ public class SettingVisitorTest {
 
         SettingVisitor visitor = new SettingVisitor(nodeMock, parameter, new ArrayList());
 
-        PropertyNode propertyNode = getPropertyNode(PropertyTypes.STRING, EParameterFieldType.TEXT);
-        PropertyNode childPropertyNode = getPropertyNode(PropertyTypes.STRING, EParameterFieldType.TEXT);
+        PropertyNode propertyNode = getPropertyNode(PropertyTypes.STRING, EParameterFieldType.TEXT,
+                new HashMap<String, String>());
+        PropertyNode childPropertyNode = getPropertyNode(PropertyTypes.STRING, EParameterFieldType.TEXT,
+                new HashMap<String, String>());
         propertyNode.addChild(childPropertyNode);
 
         visitor.visit(propertyNode);
@@ -60,19 +64,20 @@ public class SettingVisitorTest {
                 Collections.emptyList());
         
         SettingVisitor visitor = new SettingVisitor(nodeMock, parameter, new ArrayList());
-        
-        PropertyNode propertyNode = getPropertyNode(PropertyTypes.OBJECT, EParameterFieldType.TEXT);
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("configurationtype::type", "dataset");
+        PropertyNode propertyNode = getPropertyNode(PropertyTypes.OBJECT, EParameterFieldType.TEXT, metadata);
         
         visitor.visit(propertyNode);
         
         Assertions.assertEquals(0, visitor.getSettings().size());
     }
 
-    private PropertyNode getPropertyNode(String propertyType, EParameterFieldType fieldType) {
+    private PropertyNode getPropertyNode(String propertyType, EParameterFieldType fieldType, Map<String, String> metadata) {
         SimplePropertyDefinition definition = new SimplePropertyDefinition();
         definition.setName("propertyName1");
         definition.setType(propertyType);
-        definition.setMetadata(new HashMap());
+        definition.setMetadata(metadata);
         PropertyNode propertyNode = new PropertyNode(new PropertyDefinitionDecorator(definition), fieldType, false);
         return propertyNode;
     }

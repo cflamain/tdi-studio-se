@@ -47,7 +47,7 @@ public class LoginNetworkPreferencePage extends PreferencePage {
                 validate();
             }
 
-        }, Messages.getString("LoginNetworkPreferencePage.info"), null, null, false);
+        }, Messages.getString("LoginNetworkPreferencePage.connect.info"), null, null, false); //$NON-NLS-1$
 
         return composite;
     }

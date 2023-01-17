@@ -73,6 +73,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.navigator.IExtensionStateModel;
 import org.eclipse.ui.navigator.INavigatorContentService;
 import org.talend.commons.CommonsPlugin;
+import org.talend.commons.runtime.service.ITaCoKitService;
 import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
 import org.talend.commons.utils.system.EnvironmentUtils;
 import org.talend.commons.utils.time.TimeMeasure;
@@ -97,6 +98,7 @@ import org.talend.core.model.repository.RepositoryObject;
 import org.talend.core.repository.constants.FileConstants;
 import org.talend.core.repository.model.ProjectRepositoryNode;
 import org.talend.core.repository.model.repositoryObject.MetadataColumnRepositoryObject;
+import org.talend.core.repository.seeker.RepositorySeekerManager;
 import org.talend.core.ui.ITestContainerProviderService;
 import org.talend.core.ui.advanced.composite.FilteredCheckboxTree;
 import org.talend.designer.core.model.utils.emf.talendfile.ElementParameterType;
@@ -299,7 +301,12 @@ public class ExportItemWizardPage extends WizardPage {
                 }
             }
             TimeMeasure.step(this.getClass().getSimpleName(), "finished to collect nodes"); //$NON-NLS-1$
-            exportItemsTreeViewer.setCheckedElements(nodes.toArray());
+            //TUP-31974 for eclipse upgrade
+            //exportItemsTreeViewer.setCheckedElements(nodes.toArray());
+            exportItemsTreeViewer.setAllChecked(false);
+            for (Object tocheck : nodes) {
+                exportItemsTreeViewer.setChecked(tocheck, true);
+            }
             TimeMeasure.step(this.getClass().getSimpleName(), "finished to check nodes"); //$NON-NLS-1$
         }
     }
@@ -449,9 +456,6 @@ public class ExportItemWizardPage extends WizardPage {
     }
 
     private void expandParent(TreeViewer viewer, Object nodeObject, ERepositoryObjectType type) {
-        if (type == ERepositoryObjectType.SVN_ROOT) {
-            viewer.setExpandedState(nodeObject, true);
-        }
         Object parent = getParentNode(nodeObject);
 
         if (parent != null) {
@@ -526,8 +530,14 @@ public class ExportItemWizardPage extends WizardPage {
             }
         }
         if (objectType != null) {
+            ITaCoKitService coKitService = ITaCoKitService.getInstance();
+            boolean isTaCoKitType = false;
+            if (coKitService != null && coKitService.isTaCoKitType(objectType)) {
+                isTaCoKitType = true;
+            }
             CheckboxTreeViewer exportItemsTreeViewer = getItemsTreeViewer();
-            if (objectType == ERepositoryObjectType.METADATA || objectType == ERepositoryObjectType.ROUTINES
+            if (isTaCoKitType || objectType == ERepositoryObjectType.METADATA
+                    || objectType == ERepositoryObjectType.ROUTINES
                     || objectType == ERepositoryObjectType.DOCUMENTATION) {
                 RepositoryNode rootRepositoryNode = ProjectRepositoryNode.getInstance().getRootRepositoryNode(objectType);
                 if (rootRepositoryNode != null) {
@@ -573,6 +583,7 @@ public class ExportItemWizardPage extends WizardPage {
 
                 Set toselect = new HashSet();
                 if (event.getChecked()) {
+                	exportItemsTreeViewer.expandToLevel(event.getElement(), 3);
                     initcheckedNodes.add(event.getElement());
 
                     checkedDependency.addAll(beanDependencies);
@@ -581,7 +592,7 @@ public class ExportItemWizardPage extends WizardPage {
                         for (Object obj : beanDependencies) {
                             ERepositoryObjectType objectType = getObjectType(obj);
                             expandRoot(objectType);
-                            expandParent(exportItemsTreeViewer, obj, objectType);
+                            //expandParent(exportItemsTreeViewer, obj, objectType);
                             checkElement(obj, toselect);
                         }
                     }
@@ -615,7 +626,9 @@ public class ExportItemWizardPage extends WizardPage {
                     uncheckedNodes.addAll(beanDependencies);
                 }
                 if (exportDependencies.getSelection()) {
-                    exportDependencies.notifyListeners(SWT.Selection, new Event());
+                	Event e = new Event();
+                	e.data = "treecheck";
+                    exportDependencies.notifyListeners(SWT.Selection, e);
                     return;
                 }
             }
@@ -998,7 +1011,7 @@ public class ExportItemWizardPage extends WizardPage {
                         if (exportDependencies == null || exportDependencies.isDisposed()) return;
                         for (Object obj : allNode) {
                             ERepositoryObjectType objectType = getObjectType(obj);
-                            if (exportDependencies.getSelection()) {
+                            if (exportDependencies.getSelection() && e.data == null) {
                                 expandRoot(objectType);
                                 expandParent(exportItemsTreeViewer, obj, objectType);
                             }
@@ -1013,7 +1026,12 @@ public class ExportItemWizardPage extends WizardPage {
                                 }
                             }
                         } else {
-                            exportItemsTreeViewer.setCheckedElements(toselect.toArray());
+                        	//TUP-31974 for eclipse upgrade
+                        	//exportItemsTreeViewer.setCheckedElements(toselect.toArray());
+                        	exportItemsTreeViewer.setAllChecked(false);
+                        	for (Object tocheck : toselect) {
+                                exportItemsTreeViewer.setChecked(tocheck, true);
+                            }
                         }
                         if (!exportDependencies.getSelection()) {
                             for (Object unchecked : uncheckedNodes) {
@@ -1189,6 +1207,29 @@ public class ExportItemWizardPage extends WizardPage {
                     if (monitor.isCanceled()) {setCanceled(true); return;}
                     monitor.setTaskName("Caculating dependencies:" + (repositoryObject == null ? "" : repositoryObject.getLabel()));
                     RepositoryNode repositoryNode = RepositoryNodeUtilities.getRepositoryNode(repositoryObject, monitor);
+
+                    if (repositoryNode == null) {
+
+                        ERepositoryObjectType repositoryObjectType = repositoryObject.getRepositoryObjectType();
+
+                        if (repositoryObjectType != null) {
+
+                            ITaCoKitService coKitService = ITaCoKitService.getInstance();
+
+                            if (coKitService != null) {
+
+                                boolean taCoKitType = coKitService.isTaCoKitType(repositoryObjectType);
+
+                                if (taCoKitType) {
+                                    repositoryNode = (RepositoryNode) RepositorySeekerManager.getInstance()
+                                            .searchRepoViewNode(repositoryObject.getProperty().getId(), false);
+                                }
+                            }
+                        }
+
+
+                    }
+
                     if (repositoryNode != null) {
                         checkedDependency.add(repositoryNode);
                     } else {
@@ -1574,7 +1615,7 @@ public class ExportItemWizardPage extends WizardPage {
     private List<Object> getUnTestCaseChildren(Object[] children) {
         ITestContainerProviderService testContainerService = null;
         if (GlobalServiceRegister.getDefault().isServiceRegistered(ITestContainerProviderService.class)) {
-            testContainerService = (ITestContainerProviderService) GlobalServiceRegister.getDefault().getService(
+            testContainerService = GlobalServiceRegister.getDefault().getService(
                     ITestContainerProviderService.class);
         }
         List<Object> childrenNodes = new ArrayList<Object>();

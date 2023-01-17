@@ -84,6 +84,7 @@ if(useExistingConnection) {
 	<%
 } else {
 %>
+System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
 java.lang.Class.forName("net.ucanaccess.jdbc.UcanaccessDriver");
 <%dbLog.conn().logJDBCDriver(dbLog.str("sun.jdbc.odbc.JdbcOdbcDriver"));%>
 String url_<%=cid %> = "jdbc:ucanaccess://" + <%=dbname%> + ";jackcessOpener=org.talend.ucanaccess.encrypt.CryptCodecOpener;singleConnection=true";

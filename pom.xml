@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.talend.studio</groupId>
 		<artifactId>parent-pom</artifactId>
-		<version>8.0.1-SNAPSHOT</version>
+		<version>8.8.8-SNAPSHOT</version>
 		<relativePath />
 	</parent>
 	<artifactId>tdi-studio-se</artifactId>
@@ -82,7 +82,6 @@
 		<module>main/plugins/org.talend.libraries.mozilla</module>
 		<module>main/plugins/org.talend.libraries.palo</module>
 		<module>main/plugins/org.talend.libraries.salesforce</module>
-		<module>main/plugins/org.talend.libraries.servlet</module>
 		<module>main/plugins/org.talend.libraries.slf4j</module>
 		<module>main/plugins/org.talend.libraries.uniserv</module>
 		<module>main/plugins/org.talend.libraries.w3c</module>
@@ -136,7 +135,10 @@
 		<module>test/plugins/org.talend.designer.runprocess.test</module>
 		<module>test/plugins/org.talend.designer.xmlmap.test</module>
 		<module>test/plugins/org.talend.repository.test</module>
+		<module>test/plugins/org.talend.sqlbuilder.test</module>
+		<module>test/plugins/org.talend.presentation.onboarding.resource.test</module>
 		<module>test/plugins/org.talend.repository.generic.test</module>
+		<module>test/plugins/org.talend.repository.json.test</module>
 		<module>test/plugins/org.talend.designer.core.generic.test</module>
 		<module>test/plugins/org.talend.repository.view.di.test</module>
 		<module>test/plugins/org.talend.designer.webservice.test</module>

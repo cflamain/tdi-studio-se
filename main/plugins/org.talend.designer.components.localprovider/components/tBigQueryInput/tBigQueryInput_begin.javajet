@@ -339,8 +339,11 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",ee_<%=cid%>.getMessage());
                         %>
                         continue;
                     }
-
+                    if (job_iterable_<%=cid%>.getStatistics().getScriptStatistics() != null && "EXPRESSION".equals(job_iterable_<%=cid%>.getStatistics().getScriptStatistics().getEvaluationKind())){
+                        continue;
+                    }
                     com.google.cloud.bigquery.TableResult result_<%=cid%> = job_iterable_<%=cid%>.getQueryResults();
+
 		//Dynamic start
 
 		<%

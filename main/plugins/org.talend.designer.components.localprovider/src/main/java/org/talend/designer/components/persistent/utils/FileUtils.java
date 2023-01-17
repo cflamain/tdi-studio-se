@@ -29,7 +29,8 @@ public final class FileUtils {
 
         File file = new File(filePath);
         File parentFile = file.getParentFile();
-        if (!parentFile.isDirectory()) {
+        // msjian TDQ-19435: when filePath is "D:\\test", then parentFile is null
+        if (parentFile != null && !parentFile.isDirectory()) {
             boolean createFolder = parentFile.mkdirs();
             if (!createFolder) {
                 throw new RuntimeException("The following directory can't be created : '" //$NON-NLS-1$

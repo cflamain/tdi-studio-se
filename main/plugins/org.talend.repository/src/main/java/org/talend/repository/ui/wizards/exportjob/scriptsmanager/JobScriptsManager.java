@@ -233,6 +233,7 @@ public abstract class JobScriptsManager {
         registryPassword,
         avoidBranchName,
         mainJobOnly,
+        clearPasswordContextParameters,
         bundleVersion
     }
 

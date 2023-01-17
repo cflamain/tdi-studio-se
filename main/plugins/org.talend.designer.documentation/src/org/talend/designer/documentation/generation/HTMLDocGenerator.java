@@ -1248,9 +1248,14 @@ public class HTMLDocGenerator implements IDocumentationGenerator {
             jobVersion = version[0];
         }
         if (isRouteProcess(item)) {
+            projectElement.addAttribute("docType", "Route");//$NON-NLS-1$//$NON-NLS-2$
             jobElement.addAttribute("type", "route");//$NON-NLS-1$//$NON-NLS-2$
-            ICamelDesignerCoreService camelService = GlobalServiceRegister.getDefault().getService(
-                    ICamelDesignerCoreService.class);
+            if (isRouteLetProcess(item)) {
+                projectElement.addAttribute("docType", "Routelets");//$NON-NLS-1$//$NON-NLS-2$
+                jobElement.addAttribute("type", "routelets");//$NON-NLS-1$//$NON-NLS-2$
+            }
+            ICamelDesignerCoreService camelService = GlobalServiceRegister.getDefault()
+                    .getService(ICamelDesignerCoreService.class);
             camelService.appendRouteInfo2Doc(item, jobElement);
         }
         if (generateExtraSetting) {
@@ -1331,6 +1336,16 @@ public class HTMLDocGenerator implements IDocumentationGenerator {
             ICamelDesignerCoreService camelService = GlobalServiceRegister.getDefault().getService(
                     ICamelDesignerCoreService.class);
             return camelService.isInstanceofCamel(item);
+        }
+        return false;
+    }
+
+    protected boolean isRouteLetProcess(Item item) {
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(ICamelDesignerCoreService.class)) {
+            ICamelDesignerCoreService camelService = GlobalServiceRegister.getDefault()
+                    .getService(ICamelDesignerCoreService.class);
+
+            return camelService.isRouteletProcess(item);
         }
         return false;
     }

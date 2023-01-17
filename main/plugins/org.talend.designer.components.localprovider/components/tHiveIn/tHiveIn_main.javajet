@@ -33,7 +33,7 @@ imports="
 
     String theDistribution = ElementParameterParser.getValue(node, "__DISTRIBUTION__");
     String theVersion = ElementParameterParser.getValue(node, "__HIVE_VERSION__");
-
+    
 	final String studioVersion = org.talend.commons.utils.VersionUtils.getDisplayVersion();
 
     if ("true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"))) { //with connection
@@ -45,7 +45,7 @@ imports="
             }
         }
     }
-
+	
     org.talend.hadoop.distribution.component.HiveComponent hiveDistrib = null;
     try {
         hiveDistrib = (org.talend.hadoop.distribution.component.HiveComponent) org.talend.hadoop.distribution.DistributionFactory.buildDistribution(theDistribution, theVersion);
@@ -95,7 +95,7 @@ bw_<%=cid%>.write("!set showHeader false\n");
 <%
         }
     }
-    if (hiveDistrib.isGoogleDataprocDistribution()) {
+    if (hiveDistrib.doSupportUniversalDataprocMode()) {
 %>
         <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Hive/GetDataprocConnection.javajet"%>
 <%
@@ -193,7 +193,7 @@ bw_<%=cid%>.write("!set showHeader false\n");
 <%
     }
 
-    if (hiveDistrib.isGoogleDataprocDistribution()) {
+    if (hiveDistrib.doSupportUniversalDataprocMode()) {
         if (isLog4jEnabled) {
 %>
             log.debug("Query for <%=cid%>: " + <%=dbquery%>.replace("';'", "'\\;'") + ";");

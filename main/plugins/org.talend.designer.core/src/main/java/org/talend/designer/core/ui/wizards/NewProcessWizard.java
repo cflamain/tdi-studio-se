@@ -35,6 +35,7 @@ import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.properties.PropertiesFactory;
 import org.talend.core.model.properties.Property;
 import org.talend.core.model.routines.RoutinesUtil;
+import org.talend.core.runtime.process.TalendProcessArgumentConstant;
 import org.talend.designer.core.DesignerPlugin;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.utils.emf.talendfile.ParametersType;
@@ -43,6 +44,8 @@ import org.talend.designer.core.model.utils.emf.talendfile.RoutinesParameterType
 import org.talend.designer.core.model.utils.emf.talendfile.TalendFileFactory;
 import org.talend.repository.RepositoryWorkUnit;
 import org.talend.repository.model.IProxyRepositoryFactory;
+import org.talend.repository.utils.MavenVersionUtils;
+import org.talend.camel.core.model.camelProperties.impl.CamelProcessItemImpl;
 
 /**
  * Wizard for the creation of a new project. <br/>

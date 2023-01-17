@@ -18,6 +18,7 @@ package org.talend.sdk.component.studio.model.parameter;
 import static org.talend.sdk.component.studio.model.parameter.Metadatas.MAIN_FORM;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -207,6 +208,36 @@ public class PropertyNode {
         return children.stream().map(n -> n.getProperty().getName()).collect(Collectors.toList());
     }
 
+    protected List<String> getFilteredChildrenNames(String form) {
+        boolean foundGridLayoutFromParent = false;
+        PropertyNode pa = getParent();
+        while (pa != null) {
+            if (pa.getProperty().hasGridLayout(form)) {
+                String formGridLayout = pa.getProperty().getGridLayout(form);
+
+                List<String> mainLayouts = Collections.emptyList();
+                if (pa.getProperty().hasGridLayout(MAIN_FORM)) {
+                    String mainGridLayout = pa.getProperty().getGridLayout(MAIN_FORM);
+                    mainLayouts = Arrays.asList(mainGridLayout.split(",|\\|"));
+                }
+
+                String[] formLayouts = formGridLayout.split(",|\\|");
+                if (Arrays.asList(formLayouts).contains(getProperty().getName())
+                        && !mainLayouts.contains(getProperty().getName())) {
+                    foundGridLayoutFromParent = true;
+                    break;
+                }
+            }
+            pa = pa.getParent();
+        }
+
+        if (foundGridLayoutFromParent) {
+            return getChildrenNames();
+        }
+
+        return Collections.emptyList();
+    }
+
     /**
      * Returns children names for specified <code>form</code>.
      * If <code>form</code> is Main form its children may be specified by ui::gridlayout or ui:optionsorder.
@@ -254,7 +285,7 @@ public class PropertyNode {
         if (property.hasOptionsOrder()) {
             return property.getOptionsOrderNames();
         }
-        return Collections.emptyList();
+        return getFilteredChildrenNames(form);
     }
 
     public Layout getLayout(final String name) {

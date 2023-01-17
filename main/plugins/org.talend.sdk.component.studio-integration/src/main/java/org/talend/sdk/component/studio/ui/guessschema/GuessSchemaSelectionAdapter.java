@@ -237,9 +237,9 @@ public class GuessSchemaSelectionAdapter extends SelectionAdapter {
         for (final IMetadataColumn oneColumn : jsonColumns) {
             i++;
             oneColumn.setLabel(getLabel(columnLabels, i, oneColumn));
-            oneColumn.setOriginalDbColumnName(oneColumn.getLabel());
-            oneColumn.setPrecision(0);
-            oneColumn.setLength(0);
+            if (oneColumn.getOriginalDbColumnName() == null || oneColumn.getOriginalDbColumnName().isEmpty()) {
+                oneColumn.setOriginalDbColumnName(oneColumn.getLabel());
+            }
             columns.add(oneColumn);
             columnLabels.add(oneColumn.getLabel());
         }

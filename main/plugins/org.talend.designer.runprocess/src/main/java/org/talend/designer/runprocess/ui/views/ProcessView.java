@@ -68,6 +68,8 @@ import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.Element;
+import org.talend.core.model.process.IProcess2;
+import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.branding.IBrandingService;
@@ -684,10 +686,19 @@ public class ProcessView extends ViewPart implements PropertyChangeListener {
         }
         if (activeContext != null) {
             String jobName = Messages.getString("ProcessView.jobName"); //$NON-NLS-1$
-            if (activeContext.getProcess().disableRunJobView()) { // ?? joblet
+            IProcess2 process = activeContext.getProcess();
+            if (process.disableRunJobView()) { // ?? joblet
                 jobName = "Joblet"; //$NON-NLS-1$
             }
-            jobName = jobName + " " + activeContext.getProcess().getLabel(); //$NON-NLS-1$
+            if (ComponentCategory.CATEGORY_4_CAMEL.getName().equals(process.getComponentsType())) {
+    			if (ERepositoryObjectType.PROCESS_ROUTELET != null && ERepositoryObjectType.PROCESS_ROUTELET
+    					.equals(ERepositoryObjectType.getItemType(process.getProperty().getItem()))) {
+            		jobName = "Routelet"; //$NON-NLS-1$
+            	} else {
+            		jobName = "Route"; //$NON-NLS-1$
+            	}
+            }
+            jobName = jobName + " " + process.getLabel(); //$NON-NLS-1$
             setTitleToolTip(jobName);
             setPartName(Messages.getString("ProcessView.title", jobName)); //$NON-NLS-1$
             // processNameLab.setText(jobName);

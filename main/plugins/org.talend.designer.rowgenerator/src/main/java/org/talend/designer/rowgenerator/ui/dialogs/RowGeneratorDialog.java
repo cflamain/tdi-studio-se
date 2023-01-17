@@ -244,6 +244,8 @@ public class RowGeneratorDialog extends Dialog {
     @Override
     public boolean close() {
         UIManager uiManager = rowGenMain.getRowGenManager().getUiManager();
+        FunParaTableView2 editor = uiManager.getGeneratorUI().getTabFolderEditors().getParameterEditor();
+        editor.notifyOkPressed();
         if (uiManager.getRowGenResponse() == SWT.NONE) {
             uiManager.closeRowGenerator(SWT.CANCEL, true);
             if (uiManager.getRowGenResponse() == SWT.NONE) {

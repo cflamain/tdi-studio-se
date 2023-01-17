@@ -3,6 +3,7 @@ package org.talend.parquet.utils;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -11,7 +12,7 @@ import org.talend.parquet.data.simple.NanoTime;
 import jodd.time.JulianDate;
 
 public class NanoTimeUtils {
-	
+
 	/**
 	 * Number of days between Julian day epoch (January 1, 4713 BC) and Unix day
 	 * epoch (January 1, 1970). The value of this constant is {@value}.
@@ -50,6 +51,31 @@ public class NanoTimeUtils {
 		return calendar;
 	}
 
+	/**
+	 * Converts a timestamp to NanoTime.
+	 */
+	public static NanoTime getNanoTime(Timestamp ts, boolean skipConversion) {
+
+		Calendar calendar = getCalendar(skipConversion);
+		calendar.setTimeInMillis(ts.getTime());
+		int year = calendar.get(Calendar.YEAR);
+		if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
+			year = 1 - year;
+		}
+		JulianDate jDateTime;
+		jDateTime = JulianDate.of(year, calendar.get(Calendar.MONTH) + 1, // java calendar index starting at 1.
+				calendar.get(Calendar.DAY_OF_MONTH), 0, 0, 0, 0);
+		int days = jDateTime.getJulianDayNumber();
+
+		long hour = calendar.get(Calendar.HOUR_OF_DAY);
+		long minute = calendar.get(Calendar.MINUTE);
+		long second = calendar.get(Calendar.SECOND);
+		long nanos = ts.getNanos();
+		long nanosOfDay = nanos + NANOS_PER_SECOND * second + NANOS_PER_MINUTE * minute + NANOS_PER_HOUR * hour;
+
+		return new NanoTime(days, nanosOfDay);
+	}
+
 	public static Timestamp getTimestamp(NanoTime nt, boolean skipConversion) {
 		int julianDay = nt.getJulianDay();
 		long nanosOfDay = nt.getTimeOfDayNanos();
@@ -83,7 +109,7 @@ public class NanoTimeUtils {
 		ts.setNanos((int) nanos);
 		return ts;
 	}
-	
+
 	/**
 	 * Returns timestamp millis from NanoTime type value.
 	 *
@@ -95,5 +121,11 @@ public class NanoTimeUtils {
 		int julianDay = nt.getJulianDay();
 
 		return (julianDay - JULIAN_EPOCH_OFFSET_DAYS) * MILLIS_IN_DAY + (timeOfDayNanos / NANOS_PER_MILLISECOND);
+	}
+
+	public static Timestamp getTimestamp(NanoTime nt) {
+		Timestamp ts = new Timestamp(getTimestampMillis(nt));
+		ts.setNanos((int) (nt.getTimeOfDayNanos() % 1000000000));
+		return ts;
 	}
 }

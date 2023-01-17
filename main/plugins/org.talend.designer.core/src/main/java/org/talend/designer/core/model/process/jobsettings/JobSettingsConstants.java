@@ -67,12 +67,13 @@ public final class JobSettingsConstants {
 
     private static final String[] JAVA_DB_INPUT_COMPONENTS = new String[] {
             "tJDBCInput", "tMysqlInput", "tMSSqlInput", ORACLE_INPUT_SID_ALIAS, ORACLE_INOUT_SN_ALIAS, ORACLE_INOUT_OCI_ALIAS, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-            "tPostgresPlusInput", "tPostgresqlInput", "tDB2Input", "tSybaseInput", "tIngresInput", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$//$NON-NLS-5$
-            "tInterbaseInput", "tSQLiteInput", "tFirebirdInput", "tInformixInput", "tAccessInput", "tTeradataInput" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
+            "tPostgresPlusInput", "tPostgresqlInput", "tDB2Input", "tSybaseInput", "tSQLiteInput", "tFirebirdInput", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
+            "tInformixInput", "tAccessInput", "tTeradataInput" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
     public static final String[] JAVA_DB_OUTPUT_COMPONENTS = new String[] {
-            "tJDBCOutput", "tMysqlOutput", "tMSSqlOutput", ORACLE_OUTPUT_SID_ALIAS, ORACLE_OUTPUT_SN_ALIAS, ORACLE_OUTPUT_OCI_ALIAS,//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-            "tPostgresPlusOutput", "tPostgresqlOutput", "tDB2Output", "tSybaseOutput", "tIngresOutput", "tInterbaseOutput", "tSQLiteOutput", "tFirebirdOutput", "tInformixOutput", "tAccessOutput", "tTeradataOutput" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$
+            "tJDBCOutput", "tMysqlOutput", "tMSSqlOutput", ORACLE_OUTPUT_SID_ALIAS, ORACLE_OUTPUT_SN_ALIAS, //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            ORACLE_OUTPUT_OCI_ALIAS, "tPostgresPlusOutput", "tPostgresqlOutput", "tDB2Output", "tSybaseOutput", "tSQLiteOutput", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+            "tFirebirdOutput", "tInformixOutput", "tAccessOutput", "tTeradataOutput" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 
     private static final String[] PERL_DB_OUTPUT_COMPONENTS = new String[] {
             "tMysqlOutput", ORACLE_OUTPUT_SID_ALIAS, ORACLE_OUTPUT_SN_ALIAS, ORACLE_OUTPUT_OCI_ALIAS, //$NON-NLS-1$

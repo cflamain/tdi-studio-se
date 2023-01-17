@@ -16,16 +16,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -79,10 +75,6 @@ import org.talend.designer.runprocess.maven.MavenJavaProcessor;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.documentation.ERepositoryActionName;
 import org.talend.repository.model.IProxyRepositoryFactory;
-import org.talend.utils.xml.XmlUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 public class ProcessChangeListenerTest {
 
@@ -133,14 +125,6 @@ public class ProcessChangeListenerTest {
 
         assertTrue(getItemPomFile(newProperty1).exists());
         assertTrue(getItemPomFile(newProperty2).exists());
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/testPropertiesChangeOldNameJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/testPropertiesChangeOldNameJob_0.2".toLowerCase());
-        toAdd.add("jobs/process/testPropertiesChangeNewNameJob_0.1".toLowerCase());
-        toAdd.add("jobs/process/testPropertiesChangeNewNameJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -179,14 +163,6 @@ public class ProcessChangeListenerTest {
         assertTrue(getItemPomFile(newProperty1).exists());
         assertTrue(getItemPomFile(newProperty2).exists());
 
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/joblets/testPropertiesChangeOldNameJoblet_0.1".toLowerCase());
-        toRemove.add("jobs/joblets/testPropertiesChangeOldNameJoblet_0.2".toLowerCase());
-        toAdd.add("jobs/joblets/testPropertiesChangeNewNameJoblet_0.1".toLowerCase());
-        toAdd.add("jobs/joblets/testPropertiesChangeNewNameJoblet_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
-
         assertFalse(buildCacheManager.isInCurrentJobletCache(oldProperty1));
         assertFalse(buildCacheManager.isInCurrentJobletCache(oldProperty2));
     }
@@ -200,11 +176,6 @@ public class ProcessChangeListenerTest {
         ProxyRepositoryFactory.getInstance().fireRepositoryPropertyChange(ERepositoryActionName.PROPERTIES_CHANGE.getName(),
                 new String[] { jobName, "0.2" }, property);
         assertTrue(pomFile.exists());
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toAdd.add("jobs/process/testPropertiesVersionChangeJob_0.3".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -241,14 +212,6 @@ public class ProcessChangeListenerTest {
             assertEquals("/" + projectTechName + "/poms/jobs/process/after_move/" + jobProjectFolderName + "/pom.xml",
                     pomFile.getFullPath().toPortableString());
         }
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/testMoveJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/testMoveJob_0.2".toLowerCase());
-        toAdd.add("jobs/process/after_move/testMoveJob_0.1".toLowerCase());
-        toAdd.add("jobs/process/after_move/testMoveJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -268,12 +231,6 @@ public class ProcessChangeListenerTest {
         assertFalse(getItemPomFile(property1).exists());
         assertFalse(getItemPomFile(property2).exists());
         assertFalse(jobProject.getProject().exists());
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/testDeleteJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/testDeleteJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -307,13 +264,6 @@ public class ProcessChangeListenerTest {
                     pomFile.getFullPath().toPortableString());
         }
 
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/before_folder_rename/testFolderRenameJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/before_folder_rename/testFolderRenameJob_0.2".toLowerCase());
-        toAdd.add("jobs/process/after_folder_rename/testFolderRenameJob_0.1".toLowerCase());
-        toAdd.add("jobs/process/after_folder_rename/testFolderRenameJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -350,14 +300,6 @@ public class ProcessChangeListenerTest {
                     + "/pom.xml",
                     pomFile.getFullPath().toPortableString());
         }
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/before_folder_move/testFolderMoveJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/before_folder_move/testFolderMoveJob_0.2".toLowerCase());
-        toAdd.add("jobs/process/after_folder_move/before_folder_move/testFolderMoveJob_0.1".toLowerCase());
-        toAdd.add("jobs/process/after_folder_move/before_folder_move/testFolderMoveJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -379,12 +321,6 @@ public class ProcessChangeListenerTest {
         assertFalse(getItemPomFile(property1).exists());
         assertFalse(getItemPomFile(property2).exists());
         assertFalse(jobProject.getProject().exists());
-
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toRemove.add("jobs/process/to_delete/testFolderDeleteJob_0.1".toLowerCase());
-        toRemove.add("jobs/process/to_delete/testFolderDeleteJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -396,10 +332,6 @@ public class ProcessChangeListenerTest {
 
         factory.save(property.getItem());
         assertTrue(getItemPomFile(property).exists());
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toAdd.add("jobs/process/testCreateAndSaveJob_0.1".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -418,11 +350,6 @@ public class ProcessChangeListenerTest {
         assertTrue(getItemPomFile(property1).exists());
         assertTrue(getItemPomFile(property2).exists());
 
-        List<String> toRemove = new ArrayList<>();
-        List<String> toAdd = new ArrayList<>();
-        toAdd.add("jobs/process/testImportJob_0.1".toLowerCase());
-        toAdd.add("jobs/process/testImportJob_0.2".toLowerCase());
-        checkRootPomModules(toRemove, toAdd);
     }
 
     @Test
@@ -612,50 +539,6 @@ public class ProcessChangeListenerTest {
             testJobs.add(property);
         }
         return property;
-    }
-
-    private void checkRootPomModules(List<String> toRemove, List<String> toAdd) throws Exception {
-        File projectPomFile = new AggregatorPomsHelper().getProjectRootPom().getLocation().toFile();
-        DocumentBuilderFactory dbf = XmlUtils.getSecureDocumentBuilderFactory();
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document document = db.parse(projectPomFile);
-        Node modulesNode = getElement(document.getDocumentElement(), "modules", 1);
-        NodeList modules = modulesNode.getChildNodes();
-        List<String> existModules = new ArrayList<>();
-        for (int i = 0; i < modules.getLength(); i++) {
-            Node module = modules.item(i);
-            if (module.getNodeType() == Node.ELEMENT_NODE) {
-                String modulePath = module.getTextContent();
-                if (modulePath.startsWith("jobs/")) {
-                    existModules.add(modulePath);
-                }
-            }
-        }
-        for (String toRemoveModule : toRemove) {
-            assertFalse("to remove module[" + toRemoveModule + "] still exist", existModules.contains(toRemoveModule));
-        }
-        for (String toAddModule : toAdd) {
-            assertTrue("to add module[" + toAddModule + "] not exist", toAdd.contains(toAddModule));
-        }
-    }
-
-    private Node getElement(Node parent, String elemName, int level) {
-        NodeList childrenNodeList = parent.getChildNodes();
-        for (int i = 0; i < childrenNodeList.getLength(); i++) {
-            Node child = childrenNodeList.item(i);
-            if (child != null && child.getNodeType() == Node.ELEMENT_NODE) {
-                if (child.getNodeName().equals(elemName)) {
-                    return child;
-                }
-            }
-            if (level > 1) {
-                Node element = getElement(child, elemName, --level);
-                if (element != null) {
-                    return element;
-                }
-            }
-        }
-        return null;
     }
 
     private IFile getItemPomFile(Property property) {

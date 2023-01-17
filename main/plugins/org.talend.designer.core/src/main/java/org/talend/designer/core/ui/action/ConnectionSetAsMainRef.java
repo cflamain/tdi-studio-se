@@ -119,7 +119,7 @@ public class ConnectionSetAsMainRef extends SelectionAction {
                     .openError(
                             DisplayUtils.getDefaultShell(false),
                             Messages.getString("ConnectionSetAsMainRef.ERROR"), //$NON-NLS-1$
-                            Messages.getString("ConnectionSetAsMainRef.ConnectionModifyError2")); //$NON-NLS-1$
+                            Messages.getString("ConnectionSetAsMainRef.ConnectionModifyError3")); //$NON-NLS-1$
             return;
         }
         if (checkConnectionStatus(connection.getTarget())) {
@@ -127,7 +127,7 @@ public class ConnectionSetAsMainRef extends SelectionAction {
                     .openError(
                             DisplayUtils.getDefaultShell(false),
                             Messages.getString("ConnectionSetAsMainRef.ERROR"), //$NON-NLS-1$
-                            Messages.getString("ConnectionSetAsMainRef.ConnectionModifyError2")); //$NON-NLS-1$
+                            Messages.getString("ConnectionSetAsMainRef.ConnectionModifyError3")); //$NON-NLS-1$
             return;
         }
         ChangeConnectionStatusCommand cmd = new ChangeConnectionStatusCommand(connection);

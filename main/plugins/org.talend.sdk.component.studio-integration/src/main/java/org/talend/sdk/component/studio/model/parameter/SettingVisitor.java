@@ -184,8 +184,8 @@ public class SettingVisitor implements PropertyVisitor {
                     .flatMap(it -> it.getConditions().stream())
                     .map(PropertyDefinitionDecorator.Condition::getTargetPath)
                     .peek((String key) -> {
-                        if (!this.settings.containsKey(key)) {
-                            LOGGER.error("Path " + path + " not found in settings for form " + this.form);
+                        if (!this.settings.containsKey(key) && !"ui.scope".equals(key)) {
+                            LOGGER.error("Path " + key + " not found in settings for form " + this.form);
                         }
                     })
                     .map(this.settings::get)
@@ -208,6 +208,11 @@ public class SettingVisitor implements PropertyVisitor {
         return unmodifiableList(new ArrayList<>(settings.values()));
     }
 
+    private boolean isDatastoreOrDataset(final PropertyNode node) {
+        final PropertyDefinitionDecorator pro = node.getProperty();
+        return PropertyTypes.OBJECT.equalsIgnoreCase(pro.getType()) && pro.getConfigurationType() != null;
+    }
+    
     /**
      * Creates ElementParameters only from leafs
      */
@@ -218,7 +223,7 @@ public class SettingVisitor implements PropertyVisitor {
             return;
         }
 
-        if (node.isLeaf() && !PropertyTypes.OBJECT.equalsIgnoreCase(node.getProperty().getType())) {
+        if (node.isLeaf() && !isDatastoreOrDataset(node)) {
             switch (node.getFieldType()) {
             case CHECK:
                 final CheckElementParameter check = visitCheck(node);
@@ -449,7 +454,6 @@ public class SettingVisitor implements PropertyVisitor {
             defaultValue = node.getProperty().getMetadata().get("ui::defaultvalue::value");
         }
         parameter.setDefaultClosedListValue(defaultValue);
-        parameter.setDefaultValue(defaultValue);
         parameter.setValue(defaultValue);
         return parameter;
     }
@@ -555,10 +559,16 @@ public class SettingVisitor implements PropertyVisitor {
         if (defaultValue == null && node.getProperty().getMetadata() != null) {
             defaultValue = node.getProperty().getMetadata().get("ui::defaultvalue::value");
         }
-
+        
         parameter.setRequired(node.getProperty().isRequired());
         if (TaCoKitElementParameter.class.isInstance(parameter)) {
             final TaCoKitElementParameter taCoKitElementParameter = TaCoKitElementParameter.class.cast(parameter);
+            
+            //see TDI-47696
+            if("OBJECT".equals(node.getProperty().getType())) {
+                taCoKitElementParameter.setTaggedValue("org.talend.sdk.component.field.changable", "true");
+            }
+            
             taCoKitElementParameter.setPropertyNode(node);
             taCoKitElementParameter.updateValueOnly(defaultValue);
             taCoKitElementParameter.setForm(this.form);

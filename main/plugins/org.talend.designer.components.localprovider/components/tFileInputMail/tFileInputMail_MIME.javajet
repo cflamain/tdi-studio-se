@@ -247,7 +247,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 							java.io.File file = new java.io.File(dir, fileName);
 							while (file.exists()) {
 								num++;
-								file = new java.io.File(dir, name + "_" + num + ext);
+								file = new java.io.File(dir, name + "_" + num + (ext != null ? ext : ""));
 							}
 							return file;
 				}
@@ -260,7 +260,8 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 				}
 
 				private  String getFileName(String fileName) {
-							return fileName.substring(0, fileName.lastIndexOf('.'));
+					int lastIndex = fileName.lastIndexOf('.');
+					return lastIndex < 0 ? fileName : fileName.substring(0, fileName.lastIndexOf('.'));
 				}
 
                 // recursively process body parts

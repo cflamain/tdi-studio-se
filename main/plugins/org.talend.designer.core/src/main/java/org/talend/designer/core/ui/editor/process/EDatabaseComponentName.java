@@ -44,7 +44,7 @@ import org.talend.core.model.utils.IComponentName;
 /**
  * DOC bqian TalendEditor class global comment. Detailled comment <br/>
  *
- * $Id: talend.epf 1 2006-09-29 17:06:40 +0000 (ææäº, 29 ä¹æ 2006) nrousseau $
+ * $Id: talend.epf 1 2006-09-29 17:06:40 +0000 (Ã¦Â˜ÂŸÃ¦ÂœÂŸÃ¤ÂºÂ”, 29 Ã¤Â¹Â�Ã¦ÂœÂˆ 2006) nrousseau $
  *
  * @deprecated use extension point in class RepositoryComponentManager
  */
@@ -67,7 +67,6 @@ public enum EDatabaseComponentName implements IComponentName {
                   EDatabaseTypeName.AMAZON_AURORA,
                   "tAmazonAuroraInput", "tAmazonAuroraOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     DBPSQL(DatabaseConnectionItem.class, EDatabaseTypeName.PSQL, "tPostgresqlInput", "tPostgresqlOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
-    PARACCEL(DatabaseConnectionItem.class, EDatabaseTypeName.PARACCEL, "tParAccelInput", "tParAccelOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     GREENPLUM(DatabaseConnectionItem.class, EDatabaseTypeName.GREENPLUM, "tGreenplumInput", "tGreenplumOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     REDSHIFT(DatabaseConnectionItem.class, EDatabaseTypeName.REDSHIFT, "tRedshiftInput", "tRedshiftOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     REDSHIFT_SSO(DatabaseConnectionItem.class, EDatabaseTypeName.REDSHIFT_SSO, "tRedshiftInput", "tRedshiftOutput", true),
@@ -94,10 +93,7 @@ public enum EDatabaseComponentName implements IComponentName {
     // this don't use in Branch 2.0
     HSQL(DatabaseConnectionItem.class, EDatabaseTypeName.HSQLDB, "tHSQLDbInput", "tHSQLDbOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     JAVADB(DatabaseConnectionItem.class, EDatabaseTypeName.JAVADB, "tJavaDBInput", "tJavaDBOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
-    INGRES(DatabaseConnectionItem.class, EDatabaseTypeName.INGRES, "tIngresInput", "tIngresOutput", true), // "INGRES"), //$NON-NLS-1$ //$NON-NLS-2$
-    INTERBASE(DatabaseConnectionItem.class, EDatabaseTypeName.INTERBASE, "tInterbaseInput", "tInterbaseOutput", true), // "INTERBASE" //$NON-NLS-1$ //$NON-NLS-2$
     EXASOL(DatabaseConnectionItem.class, EDatabaseTypeName.EXASOL, "tExasolInput", "tExasolOutput", true), // "INGRES"), //$NON-NLS-1$ //$NON-NLS-2$
-    VECTORWISE(DatabaseConnectionItem.class, EDatabaseTypeName.VECTORWISE, "tVectorWiseInput", "tVectorWiseOutput", true), //$NON-NLS-1$ //$NON-NLS-2$
     // )
     // ,
     SQLITE(DatabaseConnectionItem.class, EDatabaseTypeName.SQLITE, "tSQLiteInput", "tSQLiteOutput", true), // "SQLITE"), //$NON-NLS-1$ //$NON-NLS-2$
@@ -169,8 +165,6 @@ public enum EDatabaseComponentName implements IComponentName {
     // // this don't use in Branch 2.0
     // DBHSQL("HSQL","HSQL",new Boolean(false),"HSQLDB"),
     // DBJAVADB("JavaDB", "JavaDB", new Boolean(false), "JAVADB"),
-    // DBINGRES("Ingres", "Ingres", new Boolean(false), "INGRES"), // "INGRES"),
-    // DBINTERBASE("Interbase", "Interbase", new Boolean(false), "Interbase"), // "INTERBASE"),
     // DBSQLITE("SQLite", "SQLite", new Boolean(false), "SQLITE"), // "SQLITE"),
     // DBFIREBIRD("FireBird", "FireBird", new Boolean(false), "FIREBIRD"), // "FIREBIRD"),
     // DBINFORMIX("Informix", "Informix", new Boolean(true), "INFORMIX"), // "INFORMIX");

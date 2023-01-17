@@ -510,11 +510,12 @@ public class Node extends Element implements IGraphicalNode {
         this.oldcomponent = oldNode.getComponent();
         this.delegateComponent = UnifiedComponentUtil.getDelegateComponent(oldNode.getComponent());
         this.process = process;
-        init(oldNode.getComponent());
+        this.component = UnifiedComponentUtil.getEmfComponent(this, oldNode.getComponent());
         if (component != null && component instanceof AbstractBasicComponent) {
             AbstractBasicComponent comp = (AbstractBasicComponent) component;
             comp.initNodeProperties(this, oldNode);
         }
+        init();
         needlibrary = false;
     }
 
@@ -525,6 +526,10 @@ public class Node extends Element implements IGraphicalNode {
 
     private void init(IComponent newComponent) {
         this.component = UnifiedComponentUtil.getEmfComponent(this, newComponent);
+        init();
+    }
+
+    private void init() {
         this.label = component.getDisplayName();
         updateComponentStatusIfNeeded(true);
         IPreferenceStore store = DesignerPlugin.getDefault().getPreferenceStore();
@@ -648,12 +653,14 @@ public class Node extends Element implements IGraphicalNode {
                         table.setReadOnly(paramTable.isReadOnly());
                     } else if (param.getFieldType().equals(EParameterFieldType.SCHEMA_REFERENCE)) {
                         Schema schema = (Schema) componentProperties.getValuedProperty(param.getName()).getValue();
-                        org.talend.core.model.metadata.builder.connection.MetadataTable defaultEmfTable = MetadataToolAvroHelper
-                                .convertFromAvro(schema);
-                        IMetadataTable defaultTable = MetadataToolHelper.convert(defaultEmfTable);
-                        IMetadataTable myTable = getMetadataFromConnector(param.getContext());
-                        myTable.getListColumns().addAll(defaultTable.getListColumns());
-                        myTable.setReadOnly(defaultTable.isReadOnly());
+                        if (schema != null) {
+                            org.talend.core.model.metadata.builder.connection.MetadataTable defaultEmfTable = MetadataToolAvroHelper
+                                    .convertFromAvro(schema);
+                            IMetadataTable defaultTable = MetadataToolHelper.convert(defaultEmfTable);
+                            IMetadataTable myTable = getMetadataFromConnector(param.getContext());
+                            myTable.getListColumns().addAll(defaultTable.getListColumns());
+                            myTable.setReadOnly(defaultTable.isReadOnly());
+                        }
                     }
                 }
 
@@ -1256,7 +1263,9 @@ public class Node extends Element implements IGraphicalNode {
      */
     @Override
     public String getLabel() {
-        return label;
+		if (label == null)
+			label = this.getUniqueName();
+		return label;
     }
 
     /**

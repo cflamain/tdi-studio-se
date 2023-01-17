@@ -191,12 +191,12 @@
             <IMPORT NAME="google-api-services-oauth2-v2-rev20200213-1.31.0.jar" MODULE="google-api-services-oauth2-v2-rev20200213-1.31.0.jar" MVN="mvn:com.google.apis/google-api-services-oauth2/v2-rev20200213-1.31.0"  REQUIRED="true" />
             <IMPORT NAME="google-api-services-bigquery-v2-rev20201030-1.31.0.jar" MODULE="google-api-services-bigquery-v2-rev20201030-1.31.0.jar" MVN="mvn:com.google.apis/google-api-services-bigquery/v2-rev20201030-1.31.0" REQUIRED="true" />
             <IMPORT NAME="google-http-client-1.38.0.jar" MODULE="google-http-client-1.38.0.jar" MVN="mvn:com.google.http-client/google-http-client/1.38.0"  REQUIRED="true" />
-            <IMPORT NAME="google-oauth-client-1.31.0.jar" MODULE="google-oauth-client-1.31.0.jar" MVN="mvn:com.google.oauth-client/google-oauth-client/1.31.0" REQUIRED="true" />
+            <IMPORT NAME="google-oauth-client-1.33.3.jar" MODULE="google-oauth-client-1.33.3.jar" MVN="mvn:com.google.oauth-client/google-oauth-client/1.33.3" REQUIRED="true" />
             <IMPORT NAME="google-http-client-jackson2-1.38.0.jar" MODULE="google-http-client-jackson2-1.38.0.jar" MVN="mvn:com.google.http-client/google-http-client-jackson2/1.38.0"  REQUIRED="true" />
             <IMPORT NAME="guava-30.0-jre.jar" MODULE="guava-30.0-jre.jar" MVN="mvn:com.google.guava/guava/30.0-jre" REQUIRED="true"/>
             <IMPORT NAME="failureaccess-1.0.1.jar" MODULE="failureaccess-1.0.1.jar" MVN="mvn:com.google.guava/failureaccess/1.0.1" REQUIRED="true" />
-            <IMPORT NAME="jackson-core-2.11.4.jar" MODULE="jackson-core-2.11.4.jar"
-                    MVN="mvn:com.fasterxml.jackson.core/jackson-core/2.11.4" REQUIRED="true"/>
+            <IMPORT NAME="jackson-core-2.13.4.jar" MODULE="jackson-core-2.13.4.jar"
+                    MVN="mvn:com.fasterxml.jackson.core/jackson-core/2.13.4" REQUIRED="true"/>
             <IMPORT NAME="google-cloud-bigquery-1.126.3.jar" MODULE="google-cloud-bigquery-1.126.3.jar"
                     MVN="mvn:com.google.cloud/google-cloud-bigquery/1.126.3"
                     REQUIRED_IF="AUTH_MODE == 'SERVICEACCOUNT'"/>
@@ -233,7 +233,7 @@
             <IMPORT NAME="opencensus-api-0.24.0" MODULE="opencensus-api-0.24.0.jar" MVN="mvn:io.opencensus/opencensus-api/0.24.0" REQUIRED="true" />
             <IMPORT NAME="opencensus-contrib-http-util-0.24.0" MODULE="opencensus-contrib-http-util-0.24.0.jar" MVN="mvn:io.opencensus/opencensus-contrib-http-util/0.24.0" REQUIRED="true" />
             <IMPORT NAME="grpc-context-1.22.1" MODULE="grpc-context-1.22.1.jar" MVN="mvn:io.grpc/grpc-context/1.22.1" REQUIRED="true" />
-            <IMPORT NAME="gson-2.8.6" MODULE="gson-2.8.6.jar" MVN="mvn:com.google.code.gson/gson/2.8.6" REQUIRED_IF="AUTH_MODE == 'SERVICEACCOUNT'" />
+            <IMPORT NAME="gson-2.8.9" MODULE="gson-2.8.9.jar" MVN="mvn:com.google.code.gson/gson/2.8.9" REQUIRED_IF="AUTH_MODE == 'SERVICEACCOUNT'" />
         </IMPORTS>
     </CODEGENERATION>
     <RETURNS>

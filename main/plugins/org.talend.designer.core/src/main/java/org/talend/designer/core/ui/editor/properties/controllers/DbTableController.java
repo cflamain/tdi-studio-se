@@ -14,6 +14,7 @@ package org.talend.designer.core.ui.editor.properties.controllers;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -41,6 +42,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
@@ -54,17 +56,21 @@ import org.talend.core.GlobalServiceRegister;
 import org.talend.core.database.EDatabaseTypeName;
 import org.talend.core.database.conn.DatabaseConnStrUtil;
 import org.talend.core.database.conn.version.EDatabaseVersion4Drivers;
+import org.talend.core.model.context.ContextUtils;
 import org.talend.core.model.metadata.IMetadataConnection;
 import org.talend.core.model.metadata.builder.ConvertionHelper;
+import org.talend.core.model.metadata.builder.connection.Connection;
 import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataFromDataBase;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
 import org.talend.core.model.metadata.builder.database.JavaSqlFactory;
 import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EParameterFieldType;
+import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IContextManager;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
+import org.talend.core.model.properties.ContextItem;
 import org.talend.core.model.properties.DatabaseConnectionItem;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.repository.IRepositoryViewObject;
@@ -81,12 +87,16 @@ import org.talend.core.ui.services.ISQLBuilderService;
 import org.talend.designer.core.DesignerPlugin;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
+import org.talend.designer.core.model.utils.emf.talendfile.ContextType;
 import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 import org.talend.designer.core.ui.editor.connections.TracesConnectionUtils;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.properties.ConfigureConnParamDialog;
 import org.talend.designer.core.ui.editor.properties.controllers.creator.SelectAllTextControlCreator;
+import org.talend.designer.runprocess.IRunProcessService;
 import org.talend.metadata.managment.connection.manager.HiveConnectionManager;
+import org.talend.metadata.managment.ui.utils.ConnectionContextHelper;
+import org.talend.metadata.managment.utils.MetadataConnectionUtils;
 import org.talend.repository.model.IProxyRepositoryFactory;
 
 /**
@@ -295,15 +305,25 @@ public class DbTableController extends AbstractElementPropertySectionController 
 
         initConnectionParameters();
         if (this.connParameters != null) {
+            IContext selectContext = contextManager.getDefaultContext();
+            if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class) && part != null) {
+                IRunProcessService service = GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
+                Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
+                selectContext = service.promptConfirmLauch(shell, part.getProcess());
+                if (selectContext == null) {
+                    button.setEnabled(true);
+                    return;
+                }
+            }
             if (isUseExistingConnection()) {
-                initConnectionParametersWithContext(connectionNode, contextManager.getDefaultContext());
+                initConnectionParametersWithContext(connectionNode, selectContext);
             } else {
-                initConnectionParametersWithContext(elem, contextManager.getDefaultContext());
+                initConnectionParametersWithContext(elem, selectContext);
             }
 
             DatabaseConnection connection = getExistConnection();
             if (connection == null) {
-                ISQLBuilderService service = (ISQLBuilderService) GlobalServiceRegister.getDefault().getService(
+                ISQLBuilderService service = GlobalServiceRegister.getDefault().getService(
                         ISQLBuilderService.class);
                 connection = service.createConnection(connParameters);
             }
@@ -317,12 +337,44 @@ public class DbTableController extends AbstractElementPropertySectionController 
                     metadataConnection.setAdditionalParams(ConvertionHelper.convertAdditionalParameters(connection));
                     isStatus = checkConnection(metadataConnection);
                 } else {
+                    if (contextManager != null && contextManager instanceof EmptyContextManager && connection.isContextMode()) {
+                        ContextItem contextItem = ContextUtils.getContextItemById2(connection.getContextId());
+                        IContext defaultContext = null;
+                        if (contextItem != null && contextItem instanceof ContextItem) {
+                            List<IContext> iContexts = new ArrayList<IContext>();
+                            for (ContextType contextType : (List<ContextType>) contextItem.getContext()) {
+                                IContext context = ContextUtils.convert2IContext(contextType, contextItem.getProperty().getId());
+                                if (contextType.getName().equals(contextItem.getDefaultContext())) {
+                                    defaultContext = context;
+                                }
+                                iContexts.add(context);
+                            }
+                            if (iContexts.size() > 0) {
+                                selectContext = ConnectionContextHelper
+                                        .promptConfirmLauch(PlatformUI.getWorkbench().getDisplay().getActiveShell(), iContexts,
+                                                defaultContext);
+                                if (selectContext == null) {
+                                    if (ConnectionContextHelper.isPromptNeeded(iContexts)) {
+                                        button.setEnabled(true);
+                                        return;
+                                    } else {
+                                        selectContext = defaultContext;
+                                    }
+                                }
+                                if (isUseExistingConnection()) {
+                                    initConnectionParametersWithContext(connectionNode, selectContext);
+                                } else {
+                                    initConnectionParametersWithContext(elem, selectContext);
+                                }
+                            }
+                        }
+                    }
                     isStatus = true;
                 }
             }
 
             if (isStatus) {
-                openSQLBuilderWithParamer(button);
+                openSQLBuilderWithParamer(button, selectContext);
             } else {
                 Display.getDefault().asyncExec(new Runnable() {
 
@@ -398,7 +450,7 @@ public class DbTableController extends AbstractElementPropertySectionController 
      *
      * @param button
      */
-    private void openSQLBuilderWithParamer(Button button) {
+    private void openSQLBuilderWithParamer(Button button, IContext context) {
         String repositoryType = null;
         if (this.curParameter != null) {
             IElementParameter propertyTypeParam = elem.getElementParameterFromField(EParameterFieldType.PROPERTY_TYPE,
@@ -410,7 +462,7 @@ public class DbTableController extends AbstractElementPropertySectionController 
         }
         String propertyName = (String) button.getData(PARAMETER_NAME);
         if (repositoryType != null) {
-            openSQLBuilder(repositoryType, propertyName, ""); //$NON-NLS-1$
+            openSQLBuilder(repositoryType, propertyName, "", context); //$NON-NLS-1$
         }
     }
 
@@ -489,13 +541,23 @@ public class DbTableController extends AbstractElementPropertySectionController 
         contextManager = manager;
         initConnectionParameters();
         if (this.connParameters != null) {
+            IContext selectContext = contextManager.getDefaultContext();
+            if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class) && part != null) {
+                IRunProcessService service = GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
+                Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
+                selectContext = service.promptConfirmLauch(shell, part.getProcess());
+                if (selectContext == null) {
+                    button.setEnabled(true);
+                    return;
+                }
+            }
             if (isUseExistingConnection()) {
-                initConnectionParametersWithContext(connectionNode, manager.getDefaultContext());
+                initConnectionParametersWithContext(connectionNode, selectContext);
                 if (isUseAlternateSchema()) {
-                    initAlternateSchema(elem, manager.getDefaultContext());
+                    initAlternateSchema(elem, selectContext);
                 }
             } else {
-                initConnectionParametersWithContext(elem, manager.getDefaultContext());
+                initConnectionParametersWithContext(elem, selectContext);
             }
             openDbTableSelectorJob(button);
         } else {
@@ -519,22 +581,54 @@ public class DbTableController extends AbstractElementPropertySectionController 
             protected IStatus run(final IProgressMonitor monitor) {
                 monitor.beginTask(Messages.getString("DbTableController.waitingForOpen"), IProgressMonitor.UNKNOWN); //$NON-NLS-1$
                 DatabaseConnection existConnection = getExistConnection();
-                if (existConnection == null) {
+                final DatabaseConnection[] existConnections = new DatabaseConnection[1];
+                final boolean[] isPromptCancel = new boolean[1];
+                boolean isPromptNeeded = true;
+                if (contextManager != null) {
+                    isPromptNeeded = ConnectionContextHelper.isPromptNeeded(contextManager.getListContext());
+                }
+                if (existConnection == null || isPromptNeeded) {
                     if (connParameters == null) {
                         initConnectionParameters();
                     }
                     existConnection = TracesConnectionUtils.createConnection(connParameters);
+                } else {
+                    if (contextManager != null && contextManager instanceof EmptyContextManager
+                            && existConnection.isContextMode()) {
+                        Display.getDefault().syncExec(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                Connection copyConnection = MetadataConnectionUtils.prepareConection(getExistConnection());
+                                if (copyConnection == null) {
+                                    isPromptCancel[0] = true;
+                                }
+                                existConnections[0] = (DatabaseConnection) copyConnection;
+                            }
+                        });
+                    }
                 }
-                final DatabaseConnection con = existConnection;
+                if (isPromptCancel[0]) {
+                    monitor.setCanceled(true);
+                }
+                DatabaseConnection copyExistConnection = existConnections[0];
+                if (copyExistConnection == null) {
+                    copyExistConnection = existConnection;
+                }
+                final DatabaseConnection con = copyExistConnection;
                 IMetadataConnection iMetadataConnection = null;
                 final IMetadataConnection[] iMetadata = new IMetadataConnection[1];
                 boolean isStatus = false;
-                if (existConnection != null) {
+                if (copyExistConnection != null && !monitor.isCanceled()) {
                     Display.getDefault().syncExec(new Runnable() {
 
                         @Override
                         public void run() {
-                            IMetadataConnection convert = ConvertionHelper.convert(con);
+                            String selectContext = connParameters.getSelectContext();
+                            if (contextManager != null && contextManager instanceof EmptyContextManager && con.isContextMode()) {
+                                selectContext = con.getContextName();
+                            }
+                            IMetadataConnection convert = ConvertionHelper.convert(con, false, selectContext);
                             iMetadata[0] = convert;
                         }
                     });
@@ -560,7 +654,8 @@ public class DbTableController extends AbstractElementPropertySectionController 
                             }
                         }
                     } else {
-                        iMetadataConnection.setAdditionalParams(ConvertionHelper.convertAdditionalParameters(existConnection));
+                        iMetadataConnection.setAdditionalParams(
+                                ConvertionHelper.convertAdditionalParameters(copyExistConnection));
                         isStatus = checkConnection(iMetadataConnection);
                     }
                 }
@@ -694,7 +789,7 @@ public class DbTableController extends AbstractElementPropertySectionController 
         };
 
         if (part != null) {
-            IWorkbenchSiteProgressService siteps = (IWorkbenchSiteProgressService) part.getSite().getAdapter(
+            IWorkbenchSiteProgressService siteps = part.getSite().getAdapter(
                     IWorkbenchSiteProgressService.class);
             siteps.showInDialog(composite.getShell(), job);
         } else {
@@ -754,7 +849,7 @@ public class DbTableController extends AbstractElementPropertySectionController 
                     filePath.toLowerCase(), datasource, dbRootPath, additionParam);
 
             ConnectionStatus testConnection = ExtractMetaDataFromDataBase.testConnection(DBType, newURL, userName, password,
-                    schema, driveClass, driverJarPath, dbVersion, additionalParams);
+                    schema, driveClass, driverJarPath, dbVersion, additionalParams, metadataConnection.isSupportNLS());
             ConnectionParameters connParameters2 = new ConnectionParameters();
             if (connParameters == null) {
                 connParameters = connParameters2;
@@ -782,7 +877,7 @@ public class DbTableController extends AbstractElementPropertySectionController 
             ConnectionStatus testConnection = ExtractMetaDataFromDataBase.testConnection(metadataConnection.getDbType(),
                     metadataConnection.getUrl(), metadataConnection.getUsername(), metadataConnection.getPassword(),
                     metadataConnection.getSchema(), metadataConnection.getDriverClass(), metadataConnection.getDriverJarPath(),
-                    metadataConnection.getDbVersionString(), metadataConnection.getAdditionalParams());
+                    metadataConnection.getDbVersionString(), metadataConnection.getAdditionalParams(), metadataConnection.isSupportNLS());
             connParameters.setConnectionComment(testConnection.getMessageException());
 
             if (EDatabaseTypeName.ACCESS.getDisplayName().equals(connParameters.getDbType())) {

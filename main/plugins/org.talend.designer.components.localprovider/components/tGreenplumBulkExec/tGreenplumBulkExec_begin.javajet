@@ -24,6 +24,7 @@ String dataAction = ElementParameterParser.getValue(node,"__DATA_ACTION__");
 boolean convertToUppercase = false; // not active this function
 String dbDriver = ElementParameterParser.getValue(node, "__DB_DRIVER__");
 boolean useExistingConnection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
 %>
 String tableName_<%=cid%> = null;
 String dbschema_<%=cid%> = null;
@@ -124,12 +125,22 @@ if(useExistingConnection) {
 	log4jCodeGenerateUtil.useExistConnection(node);
 } else {
 %>	
+	String dbProperties_<%=cid%> = <%=dbproperties%>;
+	
 	<%if (dbDriver.equals("POSTGRESQL")){%>
 			String driverClass_<%=cid%> = "org.postgresql.Driver";
 			String url_<%=cid %> = "jdbc:postgresql://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%>;
+			
+			if(dbProperties_<%=cid%> != null && !"".equals(dbProperties_<%=cid%>.trim())) {
+				url_<%=cid %> = url_<%=cid%> + "?" + dbProperties_<%=cid%>;
+            }
 		<%} else {%>
 			String driverClass_<%=cid%> = "com.pivotal.jdbc.GreenplumDriver";
 			String url_<%=cid %> = "jdbc:pivotal:greenplum://"+<%=host%>+":"+<%=port%>+";DatabaseName="+<%=dbName%>;
+			
+			if(dbProperties_<%=cid%> != null && !"".equals(dbProperties_<%=cid%>.trim())) {
+				url_<%=cid %> = url_<%=cid%> + ";" + dbProperties_<%=cid%>;
+            }
 	<%}%>
 	java.lang.Class.forName(driverClass_<%=cid%>).newInstance();
 	String dbUser_<%=cid%> = <%=userName%>;

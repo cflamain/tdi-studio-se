@@ -13,7 +13,6 @@
 package org.talend.designer.core.ui.editor.properties.controllers;
 
 import org.eclipse.gef.commands.Command;
-import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.fieldassist.DecoratedField;
 import org.eclipse.jface.fieldassist.TextControlCreator;
 import org.eclipse.jface.window.Window;
@@ -30,10 +29,13 @@ import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.talend.commons.ui.runtime.image.ImageProvider;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.utils.ContextParameterUtils;
+import org.talend.core.runtime.IAdditionalInfo;
 import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.properties.tab.IDynamicProperty;
 import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.model.components.EParameterName;
+import org.talend.designer.core.ui.dialog.PasswordDialog;
+import org.talend.designer.core.ui.dialog.PasswordDialog.Mode;
 import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 
 /**
@@ -163,6 +165,10 @@ public class PasswordController extends TextController {
         return rowSize;
     }
 
+    private boolean isTck(IElementParameter param) {
+        return param instanceof IAdditionalInfo;
+    }
+
     protected Command createButtonCommand(final Button button) {
         if (button.getData(NAME).equals(PASSWORD)) {
             String paramName = (String) button.getData(PARAMETER_NAME);
@@ -172,28 +178,48 @@ public class PasswordController extends TextController {
                 initValue = param.getValue().toString();
             }
 
-            InputDialog dlg = new InputDialog(
-                    button.getShell(),
-                    getDialogTitle(), getDialogMessage(),
-                    initValue, null) {
+            boolean isInWizard = isInWizard();
+            boolean isTck = isTck(param);
+            PasswordDialog.Mode mode = null;
+            if (isInWizard) {
+                mode = Mode.PurePassword;
+            } else if (isTck) {
+                mode = Mode.all;
+            } else {
+                mode = Mode.JavaExpression;
+            }
+            PasswordDialog dlg = new PasswordDialog(button.getShell(), initValue, mode) {
 
-                /*
-                 * (non-Javadoc)
-                 *
-                 * @see org.eclipse.jface.dialogs.InputDialog#createDialogArea(org.eclipse.swt.widgets.Composite)
-                 */
                 @Override
-                protected Control createDialogArea(Composite parent) {
-                    Control control = super.createDialogArea(parent);
+                protected void registContextAssist() {
+                    super.registContextAssist();
                     String paramName = (String) button.getData(PARAMETER_NAME);
-                    getText().setData(PARAMETER_NAME, paramName);
-                    editionControlHelper.register(paramName, getText());
-                    return control;
+                    editionControlHelper.register(paramName, getPasswordTextControl());
                 }
+
+                @Override
+                protected void registValueChangeListener() {
+                    super.registValueChangeListener();
+                    String paramName = (String) button.getData(PARAMETER_NAME);
+                    getPasswordTextControl().setData(PARAMETER_NAME, paramName);
+                }
+
+                @Override
+                protected void unregistValueChangeListener() {
+                    super.unregistValueChangeListener();
+                    getPasswordTextControl().setData(PARAMETER_NAME, "");
+                }
+
             };
             if (dlg.open() == Window.OK) {
-                elem.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), new Boolean(true));
-                return new PropertyChangeCommand(elem, paramName, dlg.getValue());
+                elem.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), Boolean.TRUE);
+                String newPassword = null;
+                if (!isInWizard && dlg.isPurePassword()) {
+                    newPassword = dlg.getEscapedPassword();
+                } else {
+                    newPassword = dlg.getPasswordText();
+                }
+                return new PropertyChangeCommand(elem, paramName, newPassword);
             }
         }
 

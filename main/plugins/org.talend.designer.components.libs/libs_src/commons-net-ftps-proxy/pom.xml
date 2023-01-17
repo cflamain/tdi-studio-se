@@ -7,10 +7,18 @@
 
     <name>commons-net-talend</name>
 
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+            <distribution>may be downloaded from the Maven repository</distribution>
+        </license>
+    </licenses>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
-        <slf4.version>1.7.25</slf4.version>
+        <slf4.version>1.7.34</slf4.version>
         <lombok.version>1.18.12</lombok.version>
     </properties>
 

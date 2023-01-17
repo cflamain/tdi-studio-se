@@ -15,6 +15,9 @@ package org.talend.designer.core.model.process;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+import java.util.ArrayList;
+
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,6 +33,8 @@ import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.IProcess;
+import org.talend.core.model.properties.Property;
+import org.talend.core.model.utils.NodeUtil;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.components.EmfComponent;
@@ -90,7 +95,9 @@ public class DataProcessTest {
 
     @Before
     public void before() {
-        process = new Process(TestUtils.createDefaultProperty());
+    	Property prop = TestUtils.createDefaultProperty();
+    	prop.setId("test");
+        process = new Process(prop);
         dataProcess = new DataProcess(process);
         testNode = new Node(testComponent, process);
 
@@ -145,6 +152,42 @@ public class DataProcessTest {
         INode dataNode = dataProcess.buildDataNodeFromNode(testNode);
         assertEquals(testNode.getComponentProperties(), dataNode.getComponentProperties());
     }
+    
+	@Test
+	public void testBuildDataNodeFromNodeForLabel() {
+		// TUP-27184 test
+		IComponent testComponent = ComponentsFactoryProvider.getInstance().get("tJava",
+				ComponentCategory.CATEGORY_4_DI.getName());
+		Node tJavaNode = new Node(testComponent, process);
+		String postLabel = "_testlabel\"", escapedPostLable = "_testlabel\\\"";
+		tJavaNode.setPropertyValue(EParameterName.LABEL.getName(), "__UNIQUE_NAME__" + postLabel);
+		INode dataNode = dataProcess.buildDataNodeFromNode(tJavaNode);
+		assertEquals(dataNode.getLabel(), dataNode.getUniqueName() + postLabel);
+		// escaped java in NodeUtil.getLabel()
+		assertEquals(NodeUtil.getLabel(dataNode), dataNode.getUniqueName() + escapedPostLable);
+	}
+
+	@Test
+	public void testBuildVirtualDataNodeFromNodeForLabel() {
+		// TUP-27184 test
+		IComponent testComponent = ComponentsFactoryProvider.getInstance().get("tAggregateRow",
+				ComponentCategory.CATEGORY_4_DI.getName());
+		Node tAggregateRowNode = new Node(testComponent, process);
+		String parentLable = "testlabel";
+		tAggregateRowNode.setPropertyValue(EParameterName.LABEL.getName(), parentLable);
+		ArrayList<INode> nodeList = new ArrayList<INode>();
+		nodeList.add(tAggregateRowNode);
+		dataProcess.buildFromGraphicalProcess(nodeList);
+		java.util.List<INode> nodes = dataProcess.getNodeList();
+		nodes.forEach(node -> {
+			if (StringUtils.equals(node.getComponent().getName(), "tAggregateOut")) {
+				assertEquals(node.getLabel(), parentLable + "_AGGOUT");
+			}
+			if (StringUtils.equals(node.getComponent().getName(), "tAggregateIn")) {
+				assertEquals(node.getLabel(), parentLable + "_AGGIN");
+			}
+		});
+	}
 
     @Test
     public void testBuildNodeFromNodeForComponentProperties() {

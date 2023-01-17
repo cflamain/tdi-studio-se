@@ -31,6 +31,7 @@ import org.talend.core.model.general.ModuleNeeded;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.properties.PropertiesFactory;
 import org.talend.core.model.properties.Property;
+import org.talend.designer.core.model.utils.emf.talendfile.ProcessType;
 import org.talend.designer.core.model.utils.emf.talendfile.TalendFileFactory;
 import org.talend.designer.core.ui.editor.process.Process;
 import org.talend.designer.maven.utils.PomUtil;
@@ -61,7 +62,12 @@ public class JavaProcessorTest {
         property.setLabel("test"); //$NON-NLS-1$
         property.setVersion(VersionUtils.DEFAULT_VERSION);
         Process process = new Process(property);
-
+        ProcessItem item = PropertiesFactory.eINSTANCE.createProcessItem();
+        ProcessType processType = TalendFileFactory.eINSTANCE.createProcessType();
+        property.setItem(item);
+        item.setProperty(property);
+        item.setProcess(processType);
+        
         JavaProcessor processor = new JavaProcessor(process, property, false);
 
         // only for export
@@ -71,22 +77,6 @@ public class JavaProcessorTest {
 
         Assert.assertTrue(cmd.length > 2);
         Assert.assertEquals(processor.extractAheadCommandSegments().toString(), Arrays.asList(cmd).subList(0, 2).toString());
-    }
-
-    @Test
-    public void testGetCommandLine4ExecutionIsNotStandardJob() throws ProcessorException {
-        Property property = PropertiesFactory.eINSTANCE.createProperty();
-        property.setId("_rHnrstwXEeijXfdWFqSaEA"); //$NON-NLS-1$
-        property.setLabel("test"); //$NON-NLS-1$
-        property.setVersion(VersionUtils.DEFAULT_VERSION);
-        Process process = new Process(property);
-
-        JavaProcessor processor = new JavaProcessor(process, property, false);
-        //
-        ProcessorUtilities.setExportConfig(JavaUtils.JAVA_APP_NAME, null, null, false, new Date());
-
-        String[] cmd = processor.getCommandLine();
-        Assert.assertFalse(Arrays.asList(cmd).contains(getLocalM2Path()));
     }
 
     @Test

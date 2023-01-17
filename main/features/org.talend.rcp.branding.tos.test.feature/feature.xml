@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<feature id="org.talend.rcp.branding.tos.test.feature" label="Test feature for TOS" version="8.0.1.qualifier"> 
+<feature id="org.talend.rcp.branding.tos.test.feature" label="Test feature for TOS" version="8.8.8.qualifier"> 
   <description url="http://www.example.com/description">[Enter Feature Description here.]</description>  
   <copyright url="http://www.example.com/copyright">[Enter Copyright Description here.]</copyright>  
   <license url="http://www.example.com/license">[Enter License Description here.]</license>  
@@ -16,6 +16,7 @@
     <import plugin="org.talend.repository" version="0.0.0" match="greaterOrEqual"/>
     <import plugin="org.talend.utils" version="0.0.0" match="greaterOrEqual"/>
   </requires>  
+  <plugin id="org.talend.common.ui.runtime.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.commons.runtime.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.commons.ui.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.core.repository.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
@@ -43,11 +44,14 @@
   <plugin id="org.talend.migrationTool.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.model.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.generic.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
+  <plugin id="org.talend.repository.json.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.items.importexport.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.items.importexport.ui.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.localprovider.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.metadata.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
+  <plugin id="org.talend.sqlbuilder.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
+  <plugin id="org.talend.presentation.onboarding.resource.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.view.di.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.repository.view.test" download-size="0" install-size="0" version="0.0.0" fragment="true" unpack="false"/>
   <plugin id="org.talend.testutils" download-size="0" install-size="0" version="0.0.0" unpack="false"/>

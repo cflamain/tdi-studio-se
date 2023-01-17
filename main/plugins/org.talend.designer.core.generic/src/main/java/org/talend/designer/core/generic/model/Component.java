@@ -747,7 +747,7 @@ public class Component extends AbstractBasicComponent {
             param.setFieldType(EParameterFieldType.CHECK);
             param.setCategory(EComponentCategory.ADVANCED);
             param.setNumRow(200);
-            param.setShow(true);
+            param.setShow(defaultParalelize);
             param.setDefaultValue(param.getValue());
             listParam.add(param);
 
@@ -1269,10 +1269,10 @@ public class Component extends AbstractBasicComponent {
         ModuleNeeded moduleNeeded = null;
         if(!CheckLogManamger.isSelectLog4j2()) {
             //TODO consider to let it works for all jobs, not only for tcompv0 components, mean move the code to ReplaceNodeInProcess and UpdateLog4jJarUtils when not log4j2
-            moduleNeeded = new ModuleNeeded(getName(), "", true, "mvn:org.slf4j/slf4j-log4j12/1.7.25");
+            moduleNeeded = new ModuleNeeded(getName(), "", true, "mvn:org.slf4j/slf4j-reload4j/1.7.34");
             componentImportNeedsList.add(moduleNeeded);
         }
-        moduleNeeded = new ModuleNeeded(getName(), "", true, "mvn:org.talend.libraries/talend-codegen-utils/0.30.0");
+        moduleNeeded = new ModuleNeeded(getName(), "", true, "mvn:org.talend.libraries/talend-codegen-utils/0.31.0");
         componentImportNeedsList.add(moduleNeeded);
         return componentImportNeedsList;
     }

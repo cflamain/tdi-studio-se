@@ -40,9 +40,9 @@ if(("\"GBK\"").equals(encoding)){
 	charset = encoding;
 }
 
-String host = ElementParameterParser.getValue(node, "__HOST__");
-String port = ElementParameterParser.getValue(node, "__PORT__");
-String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
+String dbhost = ElementParameterParser.getValue(node, "__HOST__");
+String dbport = ElementParameterParser.getValue(node, "__PORT__");
+String dbname = ElementParameterParser.getValue(node, "__DBNAME__");
 String dbproperties = ElementParameterParser.getValue(node, "__PROPERTIES__");
 String table = ElementParameterParser.getValue(node, "__TABLE__");
 String userName = ElementParameterParser.getValue(node, "__USER__");
@@ -78,21 +78,10 @@ java.sql.Connection conn_<%=cid%> = null;
 		%>
 		String driverClass_<%=cid%> = "<%=drverClass%>";
 		Class.forName(driverClass_<%=cid%>).newInstance();
+		
+		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Mysql/jdbcurl4bulk.javajet"%>
+		
 		<%
-		if(dbproperties == null || ("\"\"").equals(dbproperties) || ("").equals(dbproperties)) {
-		%>
-			String url_<%=cid%> = "<%=jdbcURL%>://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%> + "?allowLoadLocalInfile=true";
-		<%
-		} else {
-		%>
-			<%
-				String localFileParam = "\"\"";
-				if (!(dbproperties.contains("allowLoadLocalInfile"))) {
-				localFileParam = "\"&allowLoadLocalInfile=true\"" ;
-			} %>
-			String url_<%=cid%> = "<%=jdbcURL%>://" + <%=host%> + ":" + <%=port%> + "/" + <%=dbName%> + "?" + <%=dbproperties%> + <%=localFileParam %>;
-		<%
-		}
 		String passwordFieldName = "__PASS__";
 		%>
 		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
@@ -170,10 +159,10 @@ if(("UPDATE").equals(dataAction)) {
 			log.info("<%=cid%> - Create temp table " + tableName_<%=cid%> + " has succeeded.");
 			log.info("<%=cid%> - Bulk inserting data into " + tableName_<%=cid%> + "." );
 		<%}%>
-		stmtTmpBulk_<%=cid %>.execute("SET character_set_database=" + charset_<%=cid %>);
 		stmtTmpBulk_<%=cid %>.execute(
 			"LOAD DATA LOCAL INFILE '" + file_<%=cid %> + "' "
 			+ " INTO TABLE " + tableName_<%=cid %>
+			+ " CHARACTER SET " + charset_<%=cid %>
 			+ " FIELDS TERMINATED BY '" + field_separator_<%=cid %>.replaceAll("\\\\", "\\\\\\\\") + "'"
 			+ " ENCLOSED BY '"+("'".equals(enclosed_str_<%=cid %>)?"\\":"")+ enclosed_str_<%=cid %>.replaceAll("\\\\", "\\\\\\\\") + "'"
 			+ " ESCAPED BY '" +("'".equals(escaped_str_<%=cid %>)?"\\":"")+ escaped_str_<%=cid %>.replaceAll("\\\\", "\\\\\\\\")+ "'"
@@ -248,6 +237,7 @@ if(("UPDATE").equals(dataAction)) {
 	String bulkSQL_<%=cid%> = "LOAD DATA LOCAL INFILE '" + file_<%=cid %> + "' "
 		+ replace_<%=cid%>
 		+ " INTO TABLE " + tableName_<%=cid %>
+		+ " CHARACTER SET " + charset_<%=cid %>
 		+ " FIELDS TERMINATED BY '" + field_separator_<%=cid %>.replaceAll("\\\\", "\\\\\\\\") + "'"
 		+ " ENCLOSED BY '"+("'".equals(enclosed_str_<%=cid %>)?"\\":"") + enclosed_str_<%=cid %>.replaceAll("\\\\", "\\\\\\\\") + "'"
 		+ " ESCAPED BY '" + ("'".equals(escaped_str_<%=cid %>)?"\\":"")+ escaped_str_<%=cid %>.replaceAll("\\\\", "\\\\\\\\") + "'"
@@ -272,7 +262,6 @@ if(("UPDATE").equals(dataAction)) {
 %>;
 	<%log4jCodeGenerateUtil.logInfo(node,"debug",cid+" - Bulk SQL:\"+bulkSQL_"+cid+"+\".");%>
 	java.sql.Statement stmt_<%=cid %>=conn_<%=cid %>.createStatement();
-	stmt_<%=cid %>.execute("SET character_set_database=" + charset_<%=cid %>);
 	
 	stmt_<%=cid %>.execute(bulkSQL_<%=cid%>);
 	<%if(isLog4jEnabled){

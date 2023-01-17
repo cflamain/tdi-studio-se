@@ -24,11 +24,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.talend.core.model.context.JobContextManager;
 import org.talend.core.model.metadata.IMetadataColumn;
 import org.talend.core.model.metadata.IMetadataTable;
 import org.talend.core.model.metadata.MetadataColumn;
 import org.talend.core.model.metadata.MetadataTable;
 import org.talend.core.model.process.IConnection;
+import org.talend.designer.core.ui.editor.process.Process;
 import org.talend.designer.dbmap.DbMapComponent;
 import org.talend.designer.dbmap.language.generation.DbGenerationManagerTestHelper;
 
@@ -58,7 +60,9 @@ public class OracleGenerationManagerTest extends DbGenerationManagerTestHelper {
         }
 
         oracleManager = new OracleGenerationManager();
-
+        Process process = mock(Process.class);
+        when(process.getContextManager()).thenReturn(new JobContextManager());
+        dbMapComponent.setProcess(process);
     }
 
     @After
@@ -197,6 +201,35 @@ public class OracleGenerationManagerTest extends DbGenerationManagerTestHelper {
         column.setOriginalDbColumnName(label);
         return column;
     }
+
+    // private IConnection mockConnection(String schemaName, String tableName, String[] columns, String[] dbColumns) {
+    // Connection connection = mock(Connection.class);
+    // Node node = mock(Node.class);
+    // ElementParameter param = new ElementParameter(node);
+    // param.setName("ELT_SCHEMA_NAME");
+    // param.setValue(schemaName);
+    // when(node.getElementParameter("ELT_SCHEMA_NAME")).thenReturn(param);
+    // param = new ElementParameter(node);
+    // param.setName("ELT_TABLE_NAME");
+    // param.setValue(tableName);
+    // when(node.getElementParameter("ELT_TABLE_NAME")).thenReturn(param);
+    // when(connection.getName()).thenReturn("".equals(schemaName) ? tableName : schemaName + "." + tableName);
+    // when(connection.getSource()).thenReturn(node);
+    // IMetadataTable table = new MetadataTable();
+    // table.setLabel(tableName);
+    // table.setTableName(tableName);
+    // List<IMetadataColumn> listColumns = new ArrayList<IMetadataColumn>();
+    // for (int i = 0; i < columns.length; i++) {
+    // String columnName = columns[i];
+    // IMetadataColumn column = new MetadataColumn();
+    // column.setLabel(columnName);
+    // column.setOriginalDbColumnName(dbColumns[i]);
+    // listColumns.add(column);
+    // }
+    // table.setListColumns(listColumns);
+    // when(connection.getMetadataTable()).thenReturn(table);
+    // return connection;
+    // }
 
     @Test
     public void testBuildSqlSelectForGlobalMap() {
@@ -377,4 +410,5 @@ public class OracleGenerationManagerTest extends DbGenerationManagerTestHelper {
         String query = manager.buildSqlSelect(dbMapComponent, "grade");
         assertEquals(expectedQuery, query);
     }
+
 }

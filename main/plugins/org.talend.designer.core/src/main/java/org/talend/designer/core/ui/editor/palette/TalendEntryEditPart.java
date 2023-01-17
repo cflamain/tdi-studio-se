@@ -80,6 +80,8 @@ public class TalendEntryEditPart extends ToolEntryEditPart {
             customLabelField = ToolEntryEditPart.class.getDeclaredField("customLabel"); //$NON-NLS-1$
             customLabelField.setAccessible(true);
             customLabelField.set(this, talendCustomLabel);
+            // TUP-35745
+            talendCustomLabel.setForegroundColor(cssStyleSetting.getMouseOverForgroundColor3());
         } catch (Exception e) {
             CommonExceptionHandler.process(e);
         }

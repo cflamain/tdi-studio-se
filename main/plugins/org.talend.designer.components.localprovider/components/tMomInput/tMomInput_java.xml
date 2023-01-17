@@ -83,7 +83,7 @@
     </PARAMETER>
     
 	<PARAMETER NAME="TIMEOUT" FIELD="TEXT" NUM_ROW="12"
-        SHOW_IF="(SERVER == 'JBOSS' and KEEPLISTENING == 'TRUE') or (((SERVER == 'ACTIVEMQ') or (USE_CONNECTION == 'true')) and KEEPLISTENING == 'false' and (USEMAX == 'false' OR USEMAX_WITH_TIMEOUT == 'true'))">
+        SHOW_IF="(USE_CONNECTION == 'false' and SERVER == 'JBOSS' and KEEPLISTENING == 'TRUE') or (((USE_CONNECTION == 'false' and SERVER == 'ACTIVEMQ') or (USE_CONNECTION == 'true' and (#LINK@NODE.CONNECTION.SERVER== 'ACTIVEMQ'))) and KEEPLISTENING == 'false') or (isShow[USEMAX] and USEMAX == 'true' and USEMAX_WITH_TIMEOUT == 'true')">
       <DEFAULT>1</DEFAULT>
     </PARAMETER>
 	<!--npruss end: changes for static discovery and custom connection parameters and timeout in max message operation-->

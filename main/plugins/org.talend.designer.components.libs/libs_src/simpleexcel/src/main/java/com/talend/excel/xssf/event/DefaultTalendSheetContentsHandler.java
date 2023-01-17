@@ -76,6 +76,18 @@ public class DefaultTalendSheetContentsHandler implements TalendXSSFSheetXMLHand
      * when currentCellReferecnce is "A1" ,and next currentCellReferecnce is "C1",we need add a null value for "B1"
      */
     private void checkHasNullValue(String cellReference) {
+        /*
+        Avoid the NPE for old format.
+        When the row is like that:
+        <row><c t="inlineStr"><is><t>Cell text</t></is></c></row>
+        the cellReference (comes from XSSFSheetXMLHandler::startElement) is null
+        because it's taken from the <c> attribute 'r', for new format the same row is looks like this
+        <row r="1" collapsed="false" outlineLevel="0" customHeight="false" hidden="false" ht="12.8" customFormat="false">
+            <c r="A1" t="s" s="0"><v>0</v></c>
+        </row>
+        and the cellReference is "A1"
+        */
+        if (cellReference == null) return;
         currentColumnIndex = ColumnUtil.calculateIndexOfColumn(cellReference);
         // Might be the empty string.
         for (int i = lastColumnIndex; i < currentColumnIndex - 1; i++) {

@@ -211,6 +211,20 @@ String inputConnName = null;
 							paraList_<%=cid %>.add("-Dtalend.component.manager.m2.repository=" + m2);
 						}
 						
+						if (Boolean.getBoolean("propagateLoggingConfiguration")) {
+							String log4j1_config_<%=cid %> = System.getProperty("log4j.configuration");
+							if (log4j1_config_<%=cid %> != null){
+								paraList_<%=cid %>.add("-Dlog4j.configuration=" + log4j1_config_<%=cid %>);
+							}
+							String log4j2_config_<%=cid %> = System.getProperty("log4j.configurationFile");
+							if (log4j2_config_<%=cid %> != null){
+								paraList_<%=cid %>.add("-Dlog4j.configurationFile=" + log4j2_config_<%=cid %>);
+							}
+							if (log4j1_config_<%=cid %> != null || log4j2_config_<%=cid %> != null) {
+								paraList_<%=cid %>.add("-DpropagateLoggingConfiguration=true");
+							}
+						}
+						
 						if(enableLogStash){
 							System.getProperties().stringPropertyNames().stream()
 								.filter(it -> it.startsWith("audit."))
@@ -279,6 +293,20 @@ String inputConnName = null;
 						String m2 = System.getProperty("talend.component.manager.m2.repository");
 						if (m2 != null){
 							paraList_<%=cid %>.add("-Dtalend.component.manager.m2.repository=" + m2);
+						}
+						
+						if (Boolean.getBoolean("propagateLoggingConfiguration")) {
+							String log4j1_config_<%=cid %> = System.getProperty("log4j.configuration");
+							if (log4j1_config_<%=cid %> != null){
+								paraList_<%=cid %>.add("-Dlog4j.configuration=" + log4j1_config_<%=cid %>);
+							}
+							String log4j2_config_<%=cid %> = System.getProperty("log4j.configurationFile");
+							if (log4j2_config_<%=cid %> != null){
+								paraList_<%=cid %>.add("-Dlog4j.configurationFile=" + log4j2_config_<%=cid %>);
+							}
+							if (log4j1_config_<%=cid %> != null || log4j2_config_<%=cid %> != null) {
+								paraList_<%=cid %>.add("-DpropagateLoggingConfiguration=true");
+							}
 						}
 						
 						if(enableLogStash){

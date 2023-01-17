@@ -24,6 +24,8 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jface.viewers.CheckStateChangedEvent;
 import org.eclipse.jface.viewers.ICheckStateListener;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -55,6 +57,7 @@ import org.talend.core.model.general.Project;
 import org.talend.core.prefs.GeneralParametersProvider;
 import org.talend.core.prefs.GeneralParametersProvider.GeneralParameters;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.core.service.IStudioLiteP2Service;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.ui.ERepositoryImages;
@@ -363,9 +366,18 @@ public class SelectDeleteProjectDialog extends SelectionDialog {
         try {
 
             if (delItemList.size() != 0) {
+                IProgressMonitor monitor = new NullProgressMonitor();
                 for (Object obj : delItemList) {
                     if (obj instanceof IProject) {
                         IProject project = (IProject) obj;
+                        try {
+                            IStudioLiteP2Service p2Service = IStudioLiteP2Service.get();
+                            if (p2Service != null) {
+                                p2Service.onProjectDeletion(monitor, project);
+                            }
+                        } catch (Exception e) {
+                            ExceptionHandler.process(e);
+                        }
                         // project.delete(true, null);
                         project.delete(!chkButton.getSelection(), true, null);
                         // IResourceChangeDescriptionFactory factory =

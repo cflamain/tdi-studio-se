@@ -104,7 +104,6 @@ import org.talend.commons.ui.runtime.image.OverlayImageProvider;
 import org.talend.commons.utils.workbench.resources.ResourceUtils;
 import org.talend.core.CorePlugin;
 import org.talend.core.GlobalServiceRegister;
-import org.talend.core.PluginChecker;
 import org.talend.core.context.Context;
 import org.talend.core.context.RepositoryContext;
 import org.talend.core.language.ECodeLanguage;
@@ -130,14 +129,12 @@ import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.repository.IRepositoryWorkUnitListener;
 import org.talend.core.model.repository.job.JobResourceManager;
 import org.talend.core.model.routines.RoutinesUtil;
-import org.talend.core.model.utils.AccessingEmfJob;
 import org.talend.core.repository.constants.Constant;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.repository.ui.editor.RepositoryEditorInput;
 import org.talend.core.runtime.repository.item.ItemProductKeys;
 import org.talend.core.runtime.util.ItemDateParser;
 import org.talend.core.services.ICreateXtextProcessService;
-import org.talend.core.services.ISVNProviderService;
 import org.talend.core.services.IUIRefresher;
 import org.talend.core.ui.CoreUIPlugin;
 import org.talend.core.ui.IJobletProviderService;
@@ -178,7 +175,6 @@ import org.talend.designer.core.ui.editor.outline.NodeTreeEditPart;
 import org.talend.designer.core.ui.editor.process.Process;
 import org.talend.designer.core.ui.editor.process.ProcessPart;
 import org.talend.designer.core.ui.editor.subjobcontainer.SubjobContainerPart;
-import org.talend.designer.core.ui.preferences.TalendDesignerPrefConstants;
 import org.talend.designer.core.ui.views.contexts.ContextsView;
 import org.talend.designer.core.ui.views.jobsettings.JobSettingsView;
 import org.talend.designer.core.ui.views.problems.Problems;
@@ -291,14 +287,6 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
     public boolean revisionChanged = false;
 
     public String revisionNumStr = null;
-
-    protected static ISVNProviderService svnProviderService = null;
-
-    static {
-        if (GlobalServiceRegister.getDefault().isServiceRegistered(ISVNProviderService.class)) {
-            svnProviderService = GlobalServiceRegister.getDefault().getService(ISVNProviderService.class);
-        }
-    }
 
     @Override
     public void changePaletteComponentHandler() {
@@ -546,25 +534,12 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
 
     private boolean isStorageVersionChanged(Item refreshedItem, Item currentItem) {
         boolean isChanged = false;
-        if (PluginChecker.isSVNProviderPluginLoaded()) {
-            if (svnProviderService != null && svnProviderService.isProjectInSvnMode()) {
-                Process refreshedProcess = new Process(refreshedItem.getProperty());
-                String refreshedNumStr = svnProviderService.getCurrentSVNRevision(refreshedProcess);
-                refreshedProcess.dispose();
-                if (refreshedNumStr != null) {
-                    refreshedNumStr = getFormattedRevisionNumStr(refreshedNumStr);
-                    if (!refreshedNumStr.equals(revisionNumStr)) {
-                        isChanged = true;
-                    }
-                }
-            }
-        } else {
-            Date currentModifiedDate = ItemDateParser.parseAdditionalDate(currentItem.getProperty(),
-                    ItemProductKeys.DATE.getModifiedKey());
-            Date refreshedModifiedDate = ItemDateParser.parseAdditionalDate(refreshedItem.getProperty(),
-                    ItemProductKeys.DATE.getModifiedKey());
-            isChanged = currentModifiedDate != null && !currentModifiedDate.equals(refreshedModifiedDate);
-        }
+
+        Date currentModifiedDate = ItemDateParser.parseAdditionalDate(currentItem.getProperty(),
+                ItemProductKeys.DATE.getModifiedKey());
+        Date refreshedModifiedDate = ItemDateParser.parseAdditionalDate(refreshedItem.getProperty(),
+                ItemProductKeys.DATE.getModifiedKey());
+        isChanged = currentModifiedDate != null && !currentModifiedDate.equals(refreshedModifiedDate);
         return isChanged;
     }
 
@@ -1036,10 +1011,6 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
                 ExceptionHandler.process(pie);
             }
         }
-
-        if (DesignerPlugin.getDefault().getPreferenceStore().getBoolean(TalendDesignerPrefConstants.GENERATE_CODE_WHEN_OPEN_JOB)) {
-            generateCode();
-        }
     }
 
     // create jobscript editor
@@ -1107,35 +1078,6 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
             ExceptionHandler.process(e);
         } catch (CoreException e) {
             ExceptionHandler.process(e);
-        }
-    }
-
-    /**
-     * DOC bqian Comment method "generateCode".
-     */
-    protected void generateCode() {
-        final IProcess2 process = getProcess();
-        if (!(process.getProperty().getItem() instanceof ProcessItem)) { // shouldn't work for joblet
-            return;
-        }
-        if (process.getGeneratingNodes().size() != 0) {
-            Job job = new AccessingEmfJob("Generating code") { //$NON-NLS-1$
-
-                @Override
-                protected IStatus doRun(IProgressMonitor monitor) {
-                    try {
-                        ProcessorUtilities.generateCode(process, process.getContextManager().getDefaultContext(), false, false,
-                                true, ProcessorUtilities.GENERATE_WITH_FIRST_CHILD);
-                    } catch (ProcessorException e) {
-                        ExceptionHandler.process(e);
-                    }
-
-                    return Status.OK_STATUS;
-                }
-            };
-            job.setUser(true);
-            job.setPriority(Job.BUILD);
-            job.schedule(); // start as soon as possible
         }
     }
 
@@ -1472,20 +1414,36 @@ public abstract class AbstractMultiPageTalendEditor extends MultiPageEditorPart 
             }
         }
         // if some code has been generated already, for the editor we should need only the main job, not the childs.
-        try {
-            boolean lastGeneratedWithStats = ProcessorUtilities.getLastGeneratedWithStats(process.getId());
-            boolean lastGeneratedWithTrace = ProcessorUtilities.getLastGeneratedWithTrace(process.getId());
+        boolean codeGenerated = processor.isCodeGenerated();
+        Job job = new Job("Generating code") {
 
-            if (processor.isCodeGenerated()) {
-                ProcessorUtilities.generateCode(process, process.getContextManager().getDefaultContext(), lastGeneratedWithStats,
-                        lastGeneratedWithTrace, true, ProcessorUtilities.GENERATE_MAIN_ONLY);
-            } else {
-                ProcessorUtilities.generateCode(process, process.getContextManager().getDefaultContext(), lastGeneratedWithStats,
-                        lastGeneratedWithTrace, true, ProcessorUtilities.GENERATE_WITH_FIRST_CHILD);
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                Display.getDefault().syncExec(() -> {
+                    try {
+                        monitor.beginTask("Generating code", IProgressMonitor.UNKNOWN);
+                        boolean lastGeneratedWithStats = ProcessorUtilities.getLastGeneratedWithStats(process.getId());
+                        boolean lastGeneratedWithTrace = ProcessorUtilities.getLastGeneratedWithTrace(process.getId());
+
+                        if (codeGenerated) {
+                            ProcessorUtilities.generateCode(process, process.getContextManager().getDefaultContext(),
+                                    lastGeneratedWithStats, lastGeneratedWithTrace, true, ProcessorUtilities.GENERATE_MAIN_ONLY,
+                                    monitor);
+                        } else {
+                            ProcessorUtilities.generateCode(process, process.getContextManager().getDefaultContext(),
+                                    lastGeneratedWithStats, lastGeneratedWithTrace, true,
+                                    ProcessorUtilities.GENERATE_WITH_FIRST_CHILD, monitor);
+                        }
+                    } catch (ProcessorException e) {
+                        ExceptionHandler.process(e);
+                    }
+                });
+                return Status.OK_STATUS;
             }
-        } catch (ProcessorException e) {
-            ExceptionHandler.process(e);
-        }
+        };
+        job.setUser(false);
+        job.setPriority(Job.INTERACTIVE);
+        job.schedule();
     }
 
     /**

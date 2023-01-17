@@ -1282,6 +1282,7 @@ public class ElementParameter implements IElementParameter {
         return taggedValues.get(key);
     }
 
+    @Override
     public boolean isSelectedFromItemValue() {
 
         Object[] listItemsValue = this.getListItemsValue();
@@ -1296,6 +1297,10 @@ public class ElementParameter implements IElementParameter {
         if (Arrays.asList(listItemsValue).contains(value)) {
             return true;
         }
+        return false;
+    }
+
+    public boolean isFromUpdateNodeCommand() {
         return false;
     }
 

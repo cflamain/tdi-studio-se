@@ -56,15 +56,15 @@ public class TaCoKitDependencyService implements ITaCoKitDependencyService {
         components.forEach(component -> {
             final Set<String> deps = component.getModulesNeeded()
                     .stream()
-                    .map(d -> Optional.ofNullable(d.getModuleLocaion())
-                            .map(loc -> loc.substring(loc.lastIndexOf("/") + 1))
+                    .map(d -> Optional.ofNullable(d.getMavenUri())
+                            .map(uri -> uri.split("/")[1] + "-" + uri.split("/")[2] + ".jar")
                             .orElseGet(() -> d.getModuleName()))
                     .filter(jar -> TACOKIT_JARS_BLACKLIST.stream().noneMatch(tck -> jar.contains(tck)))
                     .collect(Collectors.toSet());
             if (ComponentModel.class.isInstance(component)) {
                 // we keep plugin in original classloader classpath (intent for microservices spring boot)
                 final String pluginPrefix = ((ComponentModel) component).getId().getPlugin() + "-";
-                tckDeps.addAll(deps.stream().filter(dep -> !dep.startsWith(pluginPrefix)).collect(Collectors.toSet()));
+                tckDeps.addAll(deps.stream().filter(dep -> !dep.matches(pluginPrefix + "[0-9]+.*")).collect(Collectors.toSet()));
             } else {
                 diDeps.addAll(deps);
             }

@@ -24,6 +24,7 @@ public class JavaVersionProjectSettingPageInitializer extends AbstractPreference
     public void initializeDefaultPreferences() {
         IPreferenceStore preferenceStore = CoreRuntimePlugin.getInstance().getProjectPreferenceManager().getPreferenceStore();
         preferenceStore.setDefault(JavaUtils.PROJECT_JAVA_VERSION_KEY, JavaCore.VERSION_1_8);
+        preferenceStore.setDefault(JavaUtils.ALLOW_JAVA_INTERNAL_ACCESS, false);
     }
 
 }

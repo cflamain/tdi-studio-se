@@ -15,11 +15,13 @@
  */
 package org.talend.sdk.component.studio.websocket;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyList;
 import static java.util.Locale.ENGLISH;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.talend.sdk.component.studio.util.TaCoKitConst.BASE64_PREFIX;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,6 +31,7 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -65,13 +68,17 @@ import org.talend.sdk.component.server.front.model.Environment;
 import org.talend.sdk.component.server.front.model.error.ErrorPayload;
 import org.talend.sdk.component.studio.lang.Pair;
 import org.talend.sdk.component.studio.util.TaCoKitConst;
+
 // we shouldn't need the execution runtime so don't even include it here
 //
 // technical note: this client includes the transport (websocket) but also the protocol/payload formatting/parsing
 // todo: better error handling, can need some server bridge love too to support ERROR responses
 public class WebSocketClient implements AutoCloseable {
-    private static final byte[] EOM = "^@".getBytes(StandardCharsets.UTF_8);
+
+    private static final byte[] EOM = "^@".getBytes(UTF_8);
+
     private final Queue<Session> sessions = new ConcurrentLinkedQueue<>();
+
     private final WebSocketContainer container;
 
     private final String protocol;
@@ -81,6 +88,7 @@ public class WebSocketClient implements AutoCloseable {
     private final String basePath;
 
     private final long timeout;
+
     private final Jsonb jsonb;
 
     private String serverHost;
@@ -115,12 +123,12 @@ public class WebSocketClient implements AutoCloseable {
             return expectedResponse.cast(payload);
         }
         if (String.class == expectedResponse) {
-            return expectedResponse.cast(new String(payload, StandardCharsets.UTF_8));
+            return expectedResponse.cast(new String(payload, UTF_8));
         }
         try (InputStream stream = new ByteArrayInputStream(payload)) {
             return jsonb.fromJson(stream, expectedResponse);
         } catch (final JsonParsingException jpe) {
-            throw new IllegalArgumentException("Can\'t parse JSON: \'" + new String(payload, StandardCharsets.UTF_8) + "\'");
+            throw new IllegalArgumentException("Can\'t parse JSON: \'" + new String(payload, UTF_8) + "\'");
         } catch (final IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -193,14 +201,17 @@ public class WebSocketClient implements AutoCloseable {
                     session.addMessageHandler(ByteBuffer.class, new MessageHandler.Partial<ByteBuffer>() {
                         @Override
                         public synchronized void onMessage(final ByteBuffer part, final boolean last) {
-                            final Consumer<ByteBuffer> callback = Consumer.class.cast(session.getUserProperties().get("handler"));
+                            final Consumer<ByteBuffer> callback = Consumer.class.cast(session.getUserProperties()
+                                                                                              .get("handler"));
                             callback.accept(part);
                         }
                     });
                 }
+
                 @Override
                 public void onError(final Session session, final Throwable throwable) {
-                    final PayloadHandler handler = PayloadHandler.class.cast(session.getUserProperties().get("handler"));
+                    final PayloadHandler handler = PayloadHandler.class.cast(session.getUserProperties()
+                                                                                     .get("handler"));
                     if (handler != null) {
                         handler.latch.countDown();
                     }
@@ -231,6 +242,7 @@ public class WebSocketClient implements AutoCloseable {
 
 
     public static class V1 {
+
         private final WebSocketClient root;
 
         private V1(final WebSocketClient root) {
@@ -261,6 +273,7 @@ public class WebSocketClient implements AutoCloseable {
 
 
     public static class V1ConfigurationType {
+
         private final WebSocketClient root;
 
         private V1ConfigurationType(final WebSocketClient root) {
@@ -268,21 +281,24 @@ public class WebSocketClient implements AutoCloseable {
         }
 
         public ConfigTypeNodes getRepositoryModel() {
-            return root.sendAndWait("/v1/get/configurationtype/index", "/configurationtype/index?language=" + Locale.getDefault().getLanguage() + "&lightPayload=false", null, ConfigTypeNodes.class, true);
+            return root.sendAndWait("/v1/get/configurationtype/index", "/configurationtype/index?language=" + Locale.getDefault()
+                    .getLanguage() + "&lightPayload=false", null, ConfigTypeNodes.class, true);
         }
 
         public ConfigTypeNodes getRepositoryModel(final boolean lightPayload) {
-            return root.sendAndWait("/v1/get/configurationtype/index", "/configurationtype/index?language=" + Locale.getDefault().getLanguage() + "&lightPayload="+lightPayload, null, ConfigTypeNodes.class, true);
+            return root.sendAndWait("/v1/get/configurationtype/index", "/configurationtype/index?language=" + Locale.getDefault()
+                    .getLanguage() + "&lightPayload=" + lightPayload, null, ConfigTypeNodes.class, true);
         }
 
         public Map<String, String> migrate(final String id, final int configurationVersion, final Map<String, String> payload) {
             return root.sendAndWait("/v1/post/configurationtype/migrate/{id}/{configurationVersion}",
-                    "/configurationtype/migrate/" + id + "/" + configurationVersion, payload, Map.class, true);
+                                    "/configurationtype/migrate/" + id + "/" + configurationVersion, payload, Map.class, true);
         }
     }
 
 
     public static class V1Action {
+
         private final WebSocketClient root;
 
         private V1Action(final WebSocketClient root) {
@@ -292,7 +308,7 @@ public class WebSocketClient implements AutoCloseable {
         public <T> T execute(final Class<T> expectedResponse, final String family, final String type, final String action, final Map<String, String> payload) {
             return root.sendAndWait("/v1/post/action/execute", "/action/execute?family=" + family + "&type=" + type + "&action=" + action, payload, expectedResponse, true);
         }
-        
+
         public ActionList getActionList(final String family) {
             return root.sendAndWait("/v1/get/action/index/", "/action/index?family=" + family, null, ActionList.class, true);
         }
@@ -308,15 +324,17 @@ public class WebSocketClient implements AutoCloseable {
 
         public DocumentationContent getDocumentation(final String language, final String componentId, final String format) {
             return root.sendAndWait("/v1/get/documentation/component",
-                    "/documentation/component/" + componentId + "?language=" + language + "&format=" + format, null,
-                    DocumentationContent.class, true);
+                                    "/documentation/component/" + componentId + "?language=" + language + "&format=" + format, null,
+                                    DocumentationContent.class, true);
         }
 
     }
 
 
     public static class V1Component {
+
         private static final int BUNDLE_SIZE = 25;
+
         private final WebSocketClient root;
 
         private V1Component(final WebSocketClient root) {
@@ -343,9 +361,11 @@ public class WebSocketClient implements AutoCloseable {
             if (identifiers == null || identifiers.length == 0) {
                 return new ComponentDetailList(emptyList());
             }
-            return root.sendAndWait("/v1/get/component/details", "/component/details?language=" + language + Stream.of(identifiers).map(i -> "identifiers=" + i).collect(Collectors.joining("&", "&", "")), null, ComponentDetailList.class, true);
+            return root.sendAndWait("/v1/get/component/details", "/component/details?language=" + language + Stream.of(identifiers)
+                    .map(i -> "identifiers=" + i)
+                    .collect(Collectors.joining("&", "&", "")), null, ComponentDetailList.class, true);
         }
-        
+
         public Stream<Pair<ComponentIndex, ComponentDetail>> details(final String language) {
             final List<ComponentIndex> components = getIndex(language).getComponents();
             // create bundles
@@ -356,21 +376,40 @@ public class WebSocketClient implements AutoCloseable {
                 final int to = from + BUNDLE_SIZE;
                 return components.subList(from, Math.min(to, components.size()));
             }).flatMap(bundle -> {
-                final Map<String, ComponentIndex> byId = bundle.stream().collect(toMap(c -> c.getId().getId(), identity()));
-                return getDetail(language, bundle.stream().map(i -> i.getId().getId()).toArray(String[]::new)).getDetails().stream().map(d -> new Pair<>(byId.get(d.getId().getId()), d));
+                final Map<String, ComponentIndex> byId = bundle.stream()
+                        .collect(toMap(c -> c.getId().getId(), identity()));
+                return getDetail(language, bundle.stream().map(i -> i.getId().getId())
+                        .toArray(String[]::new)).getDetails().stream()
+                        .map(d -> new Pair<>(byId.get(d.getId().getId()), d));
             });
         }
 
         public Map<String, String> migrate(final String id, final int configurationVersion, final Map<String, String> payload) {
-            return root.sendAndWait("/v1/post/component/migrate/{id}/{configurationVersion}", "/component/migrate/" + id + "/" + configurationVersion, payload, Map.class, true);
+            Map<String, String> migrated = root.sendAndWait("/v1/post/component/migrate/{id}/{configurationVersion}", "/component/migrate/" + id + "/" + configurationVersion, payload, Map.class, true);
+            final Map<String, String> result = migrated.entrySet()
+                    .stream()
+                    .map(entry -> {
+                        if (entry.getValue().startsWith(BASE64_PREFIX)) {
+                            // it should have been encoded so decode
+                            final String b64v = new String(Base64.getUrlDecoder().decode(entry.getValue().substring(BASE64_PREFIX.length()).getBytes(UTF_8)));
+                            entry.setValue(b64v);
+                        }
+                        return entry;
+                    })
+                    .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+            return result;
         }
     }
 
 
     private static class PayloadHandler implements Consumer<ByteBuffer> {
+
         private final CountDownLatch latch = new CountDownLatch(1);
+
         private final ByteArrayOutputStream out = new ByteArrayOutputStream();
+
         private final byte[] lastBytes = new byte[2];
+
         private final WebSocketClient root;
 
         public PayloadHandler(final WebSocketClient webSocketClient) {
@@ -413,7 +452,7 @@ public class WebSocketClient implements AutoCloseable {
                 for (int idx = 0; idx < value.length - 1; idx++) {
                     if (value[idx] == '\r' && value[idx + 1] == '\n') {
                         if (failOnBadStatus) {
-                            final String header = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+                            final String header = new String(baos.toByteArray(), UTF_8);
                             if (header.startsWith("status:")) {
                                 try {
                                     if (Integer.parseInt(header.substring("status:".length()).trim()) > 399) {
@@ -456,6 +495,7 @@ public class WebSocketClient implements AutoCloseable {
 
 
     public static class ClientException extends RuntimeException {
+
         private ErrorPayload errorPayload;
 
         private ClientException(final String raw, final ErrorPayload errorPayload) {

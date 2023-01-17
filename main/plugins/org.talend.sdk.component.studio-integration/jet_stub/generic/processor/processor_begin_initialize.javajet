@@ -56,9 +56,17 @@
 
     final org.talend.sdk.component.runtime.output.Processor processorImpl_<%=cid%> = mgr_<%=cid%>.findProcessor("<%=family%>", "<%=originalName%>", <%=version%>, configuration_<%=cid%>)
                                                                                  .orElseThrow(() -> new IllegalArgumentException("Can't find <%=family%>#<%=originalName%>"));
+    org.talend.sdk.component.runtime.di.studio.RuntimeContextInjector.injectLifecycle(processorImpl_<%=cid%>, new org.talend.sdk.component.api.context.RuntimeContextHolder("<%=cid%>", globalMap));
     
+    final org.talend.sdk.component.runtime.di.studio.ParameterSetter changer_<%=cid%> = new org.talend.sdk.component.runtime.di.studio.ParameterSetter(processorImpl_<%=cid%>);
     <%
-    boolean useExistedConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
+    for(java.util.Map.Entry<String, String> entry : configurationToChange.entrySet()) {
+    %>
+        changer_<%=cid%>.change("<%=entry.getKey()%>", (<%=entry.getValue()%>));
+    <%
+    }
+    
+    boolean useExistedConnection = "Commit".equals(originalName) || "Rollback".equals(originalName) || "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
     String connection = ElementParameterParser.getValue(node,"__CONNECTION__");
     if(useExistedConnection) {//}
     %>

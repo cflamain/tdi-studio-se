@@ -27,7 +27,7 @@ import java.util.List;
  */
 public class CSVWriter implements Closeable {
 
-	public static final int INITIAL_STRING_SIZE = 128;
+    public static final int INITIAL_STRING_SIZE = 128;
 
 	private Writer rawWriter;
 
@@ -101,60 +101,68 @@ public class CSVWriter implements Closeable {
     	return this;
     }
 
+    private boolean isFirstColumn = true;
+
     /**
      * Writes the next line to the file.
      *
      * @param nextLine a string array with each comma-separated element as a separate entry.
      */
     public void writeNext(String[] nextLine) {
-
         if (nextLine == null) {
             return;
         }
 
-        StringBuilder sb = new StringBuilder(INITIAL_STRING_SIZE);
         for (int i = 0; i < nextLine.length; i++) {
-
-            if (i != 0) {
-                sb.append(separator);
-            }
-
-            String nextElement = nextLine[i];
-            if (nextElement == null) {
-            	nextElement = "";
-            }
-
-            boolean quote = false;
-
-            if(this.quotestatus == QuoteStatus.AUTO) {
-            	quote = needQuote(nextElement,i);
-            } else if(this.quotestatus == QuoteStatus.FORCE) {
-            	quote = true;
-            }
-
-            if(quote) {
-            	sb.append(quotechar);
-            }
-
-            StringBuilder escapeResult = escape(nextElement,quote);
-            if(escapeResult!=null) {
-            	sb.append(escapeResult);
-            } else {
-            	sb.append(nextElement);
-            }
-
-            if(quote) {
-            	sb.append(quotechar);
-            }
+            writeColumn(nextLine[i]);
         }
 
-        if(lineEnd!=null) {
-        	sb.append(lineEnd);
-        	pw.write(sb.toString());
+        endRow();
+    }
+
+    public void writeColumn(String value) {
+        if (!isFirstColumn) {
+            pw.append(separator);
+        }
+
+        if (value == null) {
+            value = "";
+        }
+
+        boolean quote = false;
+
+        if(this.quotestatus == QuoteStatus.AUTO) {
+            quote = needQuote(value);
+        } else if(this.quotestatus == QuoteStatus.FORCE) {
+            quote = true;
+        }
+
+        if(quote) {
+            pw.append(quotechar);
+        }
+
+        StringBuilder escapeResult = escape(value, quote);
+        if(escapeResult!=null) {
+        	pw.append(escapeResult);
         } else {
-        	pw.println(sb.toString());
+        	pw.append(value);
         }
 
+        if(quote) {
+            pw.append(quotechar);
+        }
+
+        isFirstColumn = false;
+    }
+
+    public void endRow() {
+        if(lineEnd!=null) {
+            pw.append(lineEnd);
+        } else {
+            pw.println();
+        }
+
+        isFirstColumn = true;
     }
 
     /**
@@ -173,11 +181,10 @@ public class CSVWriter implements Closeable {
         	return;
         }
 
-        StringBuilder sb = new StringBuilder(INITIAL_STRING_SIZE);
         for (int i = 0; i < nextLine.length; i++) {
             boolean isNil = false;
             if (i != 0) {
-                sb.append(separator);
+                pw.append(separator);
             }
 
             String nextElement = nextLine[i];
@@ -189,7 +196,7 @@ public class CSVWriter implements Closeable {
             boolean quote = false;
 
             if(this.quotestatus == QuoteStatus.AUTO) {
-            	quote = needQuote(nextElement,i);
+            	quote = needQuote(nextElement);
             } else if(this.quotestatus == QuoteStatus.FORCE) {
             	quote = true;
             }
@@ -201,36 +208,32 @@ public class CSVWriter implements Closeable {
             }
 
             if(quote) {
-                sb.append(quotechar);
+                pw.append(quotechar);
             }
 
             StringBuilder escapeResult = escape(nextElement,quote);
             if(escapeResult!=null) {
-            	sb.append(escapeResult);
+            	pw.append(escapeResult);
             } else {
-            	sb.append(nextElement);
+            	pw.append(nextElement);
             }
 
             if(quote) {
-            	sb.append(quotechar);
+                pw.append(quotechar);
             }
+
+            isFirstColumn = false;
         }
 
-        if(lineEnd!=null) {
-        	sb.append(lineEnd);
-        	pw.write(sb.toString());
-        } else {
-        	pw.println(sb.toString());
-        }
-
+        endRow();
     }
 
-	private boolean needQuote(String field, int fieldIndex) {
+	private boolean needQuote(String field) {
 		boolean need =  field.indexOf(quotechar) > -1
 				|| field.indexOf(separator) > -1
 				|| (lineEnd == null && (field.indexOf('\n') > -1 || field.indexOf('\r') > -1))
 				|| (lineEnd != null && field.indexOf(lineEnd) > -1)
-				|| (fieldIndex == 0 && field.length() == 0);
+				|| (isFirstColumn && field.length() == 0);
 
 		if(!need && field.length() > 0) {
 			char first = field.charAt(0);
@@ -314,9 +317,7 @@ public class CSVWriter implements Closeable {
      * @throws IOException if bad things happen
      */
     public void flush() throws IOException {
-
         pw.flush();
-
     }
 
     /**

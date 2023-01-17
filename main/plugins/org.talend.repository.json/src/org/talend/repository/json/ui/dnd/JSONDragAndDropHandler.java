@@ -230,7 +230,7 @@ public class JSONDragAndDropHandler extends AbstractDragAndDropServiceHandler {
                 for (int j = 0; j < schemaTargets.size(); j++) {
                     SchemaTarget schemaTarget = schemaTargets.get(j);
                     if (schemaTarget.getTagName() != null && !schemaTarget.getTagName().equals("")) { //$NON-NLS-1$
-                        tagName = "" + schemaTarget.getTagName().trim().replaceAll(" ", "_"); //$NON-NLS-1$ //$NON-NLS-2$
+                        tagName = "" + schemaTarget.getTagName().trim(); //$NON-NLS-1$ //$NON-NLS-2$
                         tagName = MetadataToolHelper.validateColumnName(tagName, j);
                         Map<String, Object> map = new HashMap<String, Object>();
                         map.put("SCHEMA_COLUMN", tagName); //$NON-NLS-1$

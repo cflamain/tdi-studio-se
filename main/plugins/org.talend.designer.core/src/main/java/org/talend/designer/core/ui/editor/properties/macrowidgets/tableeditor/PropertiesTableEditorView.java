@@ -57,6 +57,7 @@ import org.talend.core.model.metadata.IRuleConstant;
 import org.talend.core.model.metadata.ISAPConstant;
 import org.talend.core.model.metadata.MetadataToolHelper;
 import org.talend.core.model.process.EParameterFieldType;
+import org.talend.core.model.process.ElementParameterValueModel;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
@@ -220,13 +221,18 @@ public class PropertiesTableEditorView<B> extends AbstractPropertiesTableEditorV
                 case TACOKIT_VALUE_SELECTION:
                     final ComboBoxCellEditor cellEditor = new ComboBoxCellEditor(table, currentParam.getListItemsDisplayName());
                     final IElementParameter copyOfTmpParam = currentParam;
-                    ((CCombo) cellEditor.getControl()).setEditable(false);
+                    boolean editable = (EParameterFieldType.TACOKIT_VALUE_SELECTION == currentParam.getFieldType()) ? true
+                            : false;
+                    ((CCombo) cellEditor.getControl()).setEditable(editable);
                     ((CCombo) cellEditor.getControl())
                             .setEnabled(!(param.isRepositoryValueUsed() || param.isReadOnly() || currentParam.isReadOnly()));
                     column.setCellEditor(cellEditor, new CellEditorValueAdapter() {
 
                         @Override
                         public String getColumnText(CellEditor cellEditor, Object bean, Object cellEditorValue) {
+                            if (cellEditorValue instanceof ElementParameterValueModel) {
+                                return cellEditorValue.toString();
+                            }
                             return (String) cellEditorValue;
                         }
 
@@ -298,9 +304,14 @@ public class PropertiesTableEditorView<B> extends AbstractPropertiesTableEditorV
                     column.setModifiable((param.getElement() instanceof FakeElement || !param.isRepositoryValueUsed()) && (!param.isReadOnly())
                             && (!currentParam.isReadOnly()));
                     ModuleListCellEditor moduleEditor = new ModuleListCellEditor(table, currentParam, param);
+                    ModuleTableLabelProvider labelProvider = new ModuleTableLabelProvider();
+                    if (isTacokit(currentParam)) {
+                        labelProvider.setDriversKey(currentParam.getName());
+                    }
+
                     moduleEditor.setTableEditorView(this);
                     column.setCellEditor(moduleEditor);
-                    column.setLabelProvider(new ModuleTableLabelProvider());
+                    column.setLabelProvider(labelProvider);
                     break;
                 case COLOR:
                     column.setModifiable((!param.isRepositoryValueUsed()) && (!param.isReadOnly())
@@ -676,6 +687,9 @@ public class PropertiesTableEditorView<B> extends AbstractPropertiesTableEditorV
                             case PREV_COLUMN_LIST:
                             case TACOKIT_VALUE_SELECTION:
                                 fillDefaultItemsList(tmpParam, value);
+                                if (value instanceof ElementParameterValueModel) {
+                                    return value;
+                                }
                             case DBTYPE_LIST:
                                 if (hideValue) {
                                     return "";//$NON-NLS-1$
@@ -918,6 +932,15 @@ public class PropertiesTableEditorView<B> extends AbstractPropertiesTableEditorV
         }
     }
 
+    private boolean isTacokit(IElementParameter param) {
+        boolean isTacokit = false;
+        if (param instanceof ElementParameter) {
+            Object sourceName = ((ElementParameter) param).getTaggedValue("org.talend.sdk.component.source"); //$NON-NLS-1$
+            isTacokit = "tacokit".equalsIgnoreCase(String.valueOf(sourceName)); //$NON-NLS-1$
+        }
+        return isTacokit;
+    }
+
     private boolean isEBCDICNode(INode node) {
         if (PluginChecker.isEBCDICPluginLoaded()) {
             IEBCDICProviderService service = GlobalServiceRegister.getDefault().getService(
@@ -1036,10 +1059,20 @@ public class PropertiesTableEditorView<B> extends AbstractPropertiesTableEditorV
 
         private final String[] KEYS = new String[] { "drivers", "JAR_NAME" };
 
+        private String driversKey;
+
+        public void setDriversKey(String driversKey) {
+            this.driversKey = driversKey;
+        }
+
         @Override
         public String getLabel(Object bean) {
             if (bean instanceof Map) {
                 Map<String, String> valueMap = (Map<String, String>) bean;
+                if (StringUtils.isNotBlank(driversKey) && valueMap.containsKey(driversKey)) {
+                    return getModuleName(valueMap.get(driversKey));
+                }
+
                 for (String key : KEYS) {
                     if (valueMap.containsKey(key)) {
                         String value = valueMap.get(key);

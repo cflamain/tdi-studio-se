@@ -27,8 +27,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -145,6 +147,9 @@ import org.talend.hadoop.distribution.condition.ComponentCondition;
 import org.talend.hadoop.distribution.condition.EqualityOperator;
 import org.talend.hadoop.distribution.condition.NestedComponentCondition;
 import org.talend.hadoop.distribution.condition.SimpleComponentCondition;
+import org.talend.hadoop.distribution.constants.SparkBatchConstant;
+import org.talend.hadoop.distribution.constants.apache.ESparkMode;
+import org.talend.hadoop.distribution.constants.databricks.DatabricksRuntimeVersion;
 import org.talend.hadoop.distribution.dynamic.template.AbstractDynamicDistributionTemplate;
 import org.talend.hadoop.distribution.dynamic.template.IDynamicDistributionTemplate;
 import org.talend.hadoop.distribution.helper.DistributionsManager;
@@ -155,6 +160,7 @@ import org.talend.hadoop.distribution.model.DistributionVersionModule;
 import org.talend.hadoop.distribution.model.DynamicDistributionVersion;
 import org.talend.hadoop.distribution.utils.ComponentConditionUtil;
 import org.talend.librariesmanager.model.ModulesNeededProvider;
+import org.talend.librariesmanager.model.service.LocalLibraryManager;
 import org.talend.librariesmanager.prefs.LibrariesManagerUtils;
 
 /**
@@ -209,7 +215,7 @@ public class EmfComponent extends AbstractBasicComponent {
     private static final boolean NORMAL_PROPERTY = false;
 
     private static final String SIMPLE = "simple"; //$NON-NLS-1$
-    
+
     private static final String[] CAMEL_LANGUAGE_DISPLAY_NAMES = {
             "JavaScript", //$NON-NLS-1$
             "JSonPath", //$NON-NLS-1$
@@ -218,8 +224,8 @@ public class EmfComponent extends AbstractBasicComponent {
             "Simple", //$NON-NLS-1$
             "XPath", //$NON-NLS-1$
             "XQuery" //$NON-NLS-1$
-          };
-    
+    };
+
     private static final String[] CAMEL_LANGUAGE_ITEM_VALUES = {
             "javaScript", //$NON-NLS-1$
             "jsonpath", //$NON-NLS-1$
@@ -228,8 +234,8 @@ public class EmfComponent extends AbstractBasicComponent {
             "simple", //$NON-NLS-1$
             "xpath", //$NON-NLS-1$
             "xquery" //$NON-NLS-1$
-          };
-    
+    };
+
     private static final String[] CAMEL_LANGUAGE_DISPLAY_CODE_NAMES = {
             "JAVASCRIPT", //$NON-NLS-1$
             "JSONPATH", //$NON-NLS-1$
@@ -238,7 +244,7 @@ public class EmfComponent extends AbstractBasicComponent {
             "SIMPLE", //$NON-NLS-1$
             "XPATH", //$NON-NLS-1$
             "XQUERY" //$NON-NLS-1$
-          };
+    };
 
     private ResourceBundle resourceBundle;
 
@@ -261,6 +267,8 @@ public class EmfComponent extends AbstractBasicComponent {
 
     // weak ref used so that memory is not used by a static HashMap instance
     private static SoftReference<Map> optionMapSoftRef;
+
+    private static final String PROP_LOAD_DYNAMIC_DISTRIBUTION_MODULE = "studio.dynamic.distribution.modules.load";
 
     private AbstractComponentsProvider provider;
 
@@ -359,19 +367,19 @@ public class EmfComponent extends AbstractBasicComponent {
                     installPath.substring(installPath.lastIndexOf(IComponentsFactory.COMPONENTS_INNER_FOLDER)));
 
             if (currentProvider instanceof ComponentsLocationProvider) {
-            	return currentProvider.getResourceBundle(label);
+                return currentProvider.getResourceBundle(label);
             } else if (currentProvider.isUseLocalProvider()) {
                 // if the component use local provider as storage (for user / ecosystem components)
                 // then get the bundle resource from the current main component provider.
 
                 // note: code here to review later, service like this shouldn't be used...
                 ResourceBundle bundle = null;
-                IBrandingService brandingService = (IBrandingService) GlobalServiceRegister.getDefault().getService(
+                IBrandingService brandingService = GlobalServiceRegister.getDefault().getService(
                         IBrandingService.class);
                 if (brandingService.isPoweredOnlyCamel()) {
                     bundle = currentProvider.getResourceBundle(label);
                 } else {
-                    ITisLocalProviderService service = (ITisLocalProviderService) GlobalServiceRegister.getDefault().getService(
+                    ITisLocalProviderService service = GlobalServiceRegister.getDefault().getService(
                             ITisLocalProviderService.class);
                     bundle = service.getResourceBundle(label);
                 }
@@ -424,7 +432,7 @@ public class EmfComponent extends AbstractBasicComponent {
     @SuppressWarnings("unchecked")
     private void load() throws BusinessException {
         if (!isLoaded) {
-            File file = new File(ComponentBundleToPath.getPathFromBundle(bundleName) + uriString);
+            File file = new File((ComponentBundleToPath.getPathFromBundle(bundleName) + uriString).replaceAll("\\\\", "/")); //$NON-NLS-1$ //$NON-NLS-2$
             URI createURI = URI.createURI(file.toURI().toString());
             Resource res = getComponentResourceFactoryImpl().createResource(createURI);
             try {
@@ -884,7 +892,7 @@ public class EmfComponent extends AbstractBasicComponent {
     private String getNodeFormatIdWithoutFormatType(String nodeLabel, String nodeFamily) {
         String ids = null;
         if (GlobalServiceRegister.getDefault().isServiceRegistered(IComponentsLocalProviderService.class)) {
-            IComponentsLocalProviderService service = (IComponentsLocalProviderService) GlobalServiceRegister.getDefault()
+            IComponentsLocalProviderService service = GlobalServiceRegister.getDefault()
                     .getService(IComponentsLocalProviderService.class);
             if (service != null) {
                 ids = service.getPreferenceStore().getString(IComponentsLocalProviderService.FORMAT_IDS);
@@ -957,7 +965,7 @@ public class EmfComponent extends AbstractBasicComponent {
         ElementParameter param;
         IPreferenceStore localComponentProviderStore = null;
         if (GlobalServiceRegister.getDefault().isServiceRegistered(IComponentsLocalProviderService.class)) {
-            IComponentsLocalProviderService service = (IComponentsLocalProviderService) GlobalServiceRegister.getDefault()
+            IComponentsLocalProviderService service = GlobalServiceRegister.getDefault()
                     .getService(IComponentsLocalProviderService.class);
             if (service != null) {
                 localComponentProviderStore = service.getPreferenceStore();
@@ -1048,14 +1056,14 @@ public class EmfComponent extends AbstractBasicComponent {
         param.setDefaultValue(param.getValue());
         listParam.add(param);
     }
-    
+
     //rename for route break points
     public void addRouteExpressionParameters(final List<ElementParameter> listParam, INode node) {
         // fix for headless issue
         if (!ComponentCategory.CATEGORY_4_CAMEL.getName().equals(getPaletteType()) || !PluginChecker.isRouteletLoaded()) {
             return;
         }
-        
+
         ElementParameter param = new ElementParameter(node);
         param.setName(EParameterName.ACTIVEBREAKPOINT.getName());
         param.setDisplayName(EParameterName.ACTIVEBREAKPOINT.getDisplayName());
@@ -1066,14 +1074,14 @@ public class EmfComponent extends AbstractBasicComponent {
         param.setContextMode(false);
         param.setDefaultValue(param.getValue());
         listParam.add(param);
-        
+
         param = new ElementParameter(node);
         param.setName(EParameterName.ROUTE_BREAKPOINT_LANGUAGES.getName());
         param.setDisplayName(EParameterName.ROUTE_BREAKPOINT_LANGUAGES.getDisplayName());
         param.setFieldType(EParameterFieldType.CLOSED_LIST);
         param.setCategory(EComponentCategory.BREAKPOINT_CAMEL);
         param.setNumRow(14);
-        
+
         param.setListItemsValue(CAMEL_LANGUAGE_ITEM_VALUES);
         param.setListItemsDisplayCodeName(CAMEL_LANGUAGE_DISPLAY_CODE_NAMES);
         param.setListItemsDisplayName(CAMEL_LANGUAGE_DISPLAY_NAMES);
@@ -1087,7 +1095,7 @@ public class EmfComponent extends AbstractBasicComponent {
         param.setDefaultValue(SIMPLE);
         listParam.add(param);
 
-        
+
         param = new ElementParameter(node);
         param.setName(EParameterName.ROUTE_BREAKPOINT_EXPRESSION.getName());
         param.setDisplayName(EParameterName.ROUTE_BREAKPOINT_EXPRESSION.getDisplayName());
@@ -1108,7 +1116,7 @@ public class EmfComponent extends AbstractBasicComponent {
         param.setCategory(EComponentCategory.BREAKPOINT_CAMEL);
         param.setNumRow(16);
         listParam.add(param);
-        
+
     }
 
     public void addMainParameters(final List<ElementParameter> listParam, INode node) {
@@ -1353,7 +1361,7 @@ public class EmfComponent extends AbstractBasicComponent {
             param.setFieldType(EParameterFieldType.CHECK);
             param.setCategory(EComponentCategory.ADVANCED);
             param.setNumRow(200);
-            param.setShow(true);
+            param.setShow(defaultParalelize);
             param.setDefaultValue(param.getValue());
             listParam.add(param);
 
@@ -1405,9 +1413,6 @@ public class EmfComponent extends AbstractBasicComponent {
                 newParam.setListItemsValue(new String[] { BUILTIN, REPOSITORY });
             }
 
-            // if(xmlParam.isUSETNSFILE){
-            //
-            // }
             newParam.setValue(BUILTIN);
             newParam.setNumRow(xmlParam.getNUMROW());
             newParam.setFieldType(EParameterFieldType.TECHNICAL);
@@ -1418,7 +1423,6 @@ public class EmfComponent extends AbstractBasicComponent {
             newParam.setShowIf(xmlParam.getSHOWIF());
             newParam.setNotShowIf(xmlParam.getNOTSHOWIF());
             newParam.setParentParameter(parentParam);
-            // listParam.add(newParam);
 
             newParam = new ElementParameter(node);
             newParam.setCategory(EComponentCategory.BASIC);
@@ -1432,7 +1436,6 @@ public class EmfComponent extends AbstractBasicComponent {
             newParam.setShow(false);
             newParam.setRequired(true);
             newParam.setParentParameter(parentParam);
-            // listParam.add(newParam);
         } else if (type == EParameterFieldType.SCHEMA_TYPE) {
             String context = xmlParam.getCONTEXT();
             if (context == null) {
@@ -1521,7 +1524,6 @@ public class EmfComponent extends AbstractBasicComponent {
             newParam.setShowIf(xmlParam.getSHOWIF());
             newParam.setNotShowIf(xmlParam.getNOTSHOWIF());
             newParam.setParentParameter(parentParam);
-            // listParam.add(newParam);
         }// Ends
         else if (type == EParameterFieldType.QUERYSTORE_TYPE) {
             ElementParameter newParam = new ElementParameter(node);
@@ -1659,11 +1661,13 @@ public class EmfComponent extends AbstractBasicComponent {
             ComponentType componentType = ComponentType.getComponentType(parentParam.getName());
             DistributionsManager distributionsHelper = new DistributionsManager(componentType);
             final DistributionBean[] hadoopDistributions = distributionsHelper.getDistributions();
+
+            // Distribution parameter
             ElementParameter newParam = new ElementParameter(node);
             newParam.setCategory(EComponentCategory.BASIC);
             hadoopDistributionParamName = componentType;
             newParam.setName(componentType.getDistributionParameter());
-            newParam.setDisplayName("Distribution"); //$NON-NLS-1$
+            newParam.setDisplayName(SparkBatchConstant.getName(componentType.getDistributionParameter()));
 
             String[] displayName = new String[hadoopDistributions.length];
             String[] itemValue = new String[hadoopDistributions.length];
@@ -1678,7 +1682,6 @@ public class EmfComponent extends AbstractBasicComponent {
                 DistributionBean that = hadoopDistributions[i];
                 itemValue[i] = that.name;
                 displayName[i] = that.displayName;
-
                 showIfVersion[i] = that.getDisplayShowIf();
                 notShowIfVersion[i] = null;
                 if (!that.useCustom()) { // ignore custom version, because it's fake one
@@ -1705,7 +1708,7 @@ public class EmfComponent extends AbstractBasicComponent {
                 }
             }
 
-            String defaultValue = itemValue[0];
+            String defaultValue = itemValue.length > 0 ? itemValue[0] : "";//$NON-NLS-1$
 
             newParam.setListItemsDisplayName(displayName);
             newParam.setListItemsDisplayCodeName(displayName);
@@ -1767,12 +1770,13 @@ public class EmfComponent extends AbstractBasicComponent {
             }
             areHadoopDistribsLoaded = true;
 
-            defaultValue = itemValue[0];
+            defaultValue = itemValue.length > 0 ? itemValue[0] : defaultValue;
 
+            // Distribution version
             newParam = new ElementParameter(node);
             newParam.setCategory(EComponentCategory.BASIC);
             newParam.setName(componentType.getVersionParameter());
-            newParam.setDisplayName("Version"); //$NON-NLS-1$
+            newParam.setDisplayName(SparkBatchConstant.getName(componentType.getVersionParameter()));
             newParam.setListItemsDisplayName(displayName);
             newParam.setListItemsDisplayCodeName(displayName);
             newParam.setListItemsValue(itemValue);
@@ -1782,11 +1786,21 @@ public class EmfComponent extends AbstractBasicComponent {
             newParam.setFieldType(EParameterFieldType.CLOSED_LIST);
             newParam.setShow(true);
             String showIf = xmlParam.getSHOWIF();
-            if (showIf != null) {
-                newParam.setShowIf(showIf + " AND (" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+            Optional<ElementParameter> componentName = listParam.stream().filter(x -> "COMPONENT_NAME".equals(x.getName())).findFirst();
+            if (componentName.isPresent() && "tSparkConfiguration".equals(componentName.get().getValue())) {
+                if (showIf != null) {
+                    newParam.setShowIf(showIf + " AND (" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                } else {
+                    newParam.setShowIf("(" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                }
             } else {
-                newParam.setShowIf("(" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                if (showIf != null) {
+                    newParam.setShowIf(showIf + " AND (" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                } else {
+                    newParam.setShowIf("(" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                }
             }
+
             newParam.setNotShowIf(xmlParam.getNOTSHOWIF());
             newParam.setGroup(xmlParam.getGROUP());
             newParam.setGroupDisplayName(parentParam.getGroupDisplayName());
@@ -1828,8 +1842,8 @@ public class EmfComponent extends AbstractBasicComponent {
                 }
 
                 newParam.setCategory(EComponentCategory.BASIC);
-                newParam.setName("SUPPORTED_SPARK_VERSION"); //$NON-NLS-1$
-                newParam.setDisplayName("Spark Version"); //$NON-NLS-1$
+                newParam.setName(SparkBatchConstant.SUPPORTED_SPARK_VERSION_PARAMETER);
+                newParam.setDisplayName(SparkBatchConstant.getName(SparkBatchConstant.SUPPORTED_SPARK_VERSION_PARAMETER));
                 newParam.setListItemsDisplayName(sparkVersionLabels);
                 newParam.setListItemsDisplayCodeName(sparkVersionLabels);
                 newParam.setListItemsValue(sparkVersionValues);
@@ -1842,12 +1856,66 @@ public class EmfComponent extends AbstractBasicComponent {
                 newParam.setGroupDisplayName(parentParam.getGroupDisplayName());
                 showIf = xmlParam.getSHOWIF();
                 if (showIf != null) {
-                    newParam.setShowIf(showIf + " AND (" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                    newParam.setShowIf(showIf + " AND (" + componentType.getDistributionParameter() + "!='CUSTOM')" + " AND (" + componentType.getDistributionParameter() + "!='SPARK')"); //$NON-NLS-1$ //$NON-NLS-2$
                 } else {
-                    newParam.setShowIf("(" + componentType.getDistributionParameter() + "!='CUSTOM')"); //$NON-NLS-1$ //$NON-NLS-2$
+                    newParam.setShowIf("(" + componentType.getDistributionParameter() + "!='CUSTOM')" + " AND (" + componentType.getDistributionParameter() + "!='SPARK')"); //$NON-NLS-1$ //$NON-NLS-2$
                 }
                 newParam.setNotShowIf(xmlParam.getNOTSHOWIF());
 
+                listParam.add(newParam);
+
+                // Spark mode
+                String[] sparkModeLabels = Arrays.asList(ESparkMode.values()).stream().map(ESparkMode::getLabel)
+                        .collect(Collectors.toList()).toArray(new String[0]);
+                String[] sparkModeValues = Arrays.asList(ESparkMode.values()).stream().map(ESparkMode::getValue)
+                        .collect(Collectors.toList()).toArray(new String[0]);
+                String[] sparkModeDisplayConditions = Arrays.asList(ESparkMode.values()).stream()
+                        .map(ESparkMode::getDisplayCondition).collect(Collectors.toList()).toArray(new String[0]);
+                List<IElementParameterDefaultValue> sparkModesDefaultValues = Arrays.asList(ESparkMode.values()).stream()
+                        .map(m -> new ElementParameterDefaultValue(m.getValue(), m.getDisplayCondition()))
+                        .collect(Collectors.toList());
+
+                newParam = new ElementParameter(node);
+                newParam.setCategory(EComponentCategory.BASIC);
+                newParam.setName(SparkBatchConstant.SPARK_MODE_PARAMETER);
+                newParam.setDisplayName(SparkBatchConstant.getName(SparkBatchConstant.SPARK_MODE_PARAMETER));
+                newParam.setListItemsDisplayName(sparkModeLabels);
+                newParam.setListItemsDisplayCodeName(sparkModeLabels);
+                newParam.setListItemsValue(sparkModeValues);
+                newParam.setListItemsShowIf(sparkModeDisplayConditions);
+                newParam.setListItemsNotShowIf(new String[ESparkMode.values().length]);
+                newParam.setNumRow(xmlParam.getNUMROW() + 1);
+                newParam.setFieldType(EParameterFieldType.CLOSED_LIST);
+                newParam.setShow(true);
+                newParam.setGroup(xmlParam.getGROUP());
+                newParam.setGroupDisplayName(parentParam.getGroupDisplayName());
+                newParam.setDefaultValues(sparkModesDefaultValues);
+                newParam.setRepositoryValue(SparkBatchConstant.SPARK_MODE_PARAMETER);
+                listParam.add(newParam);
+                
+                // databricksRuntimeVersion for universal
+                String[] databricksRuntimeVersionLabels = DatabricksRuntimeVersion.getAvailableRuntimeAndSparkVersion().stream().map(x -> x.getRuntimeVersion())
+                        .collect(Collectors.toList()).toArray(new String[0]);
+                String[] databricksRuntimeVersionDisplayConditions = DatabricksRuntimeVersion.getAvailableRuntimeAndSparkVersion().stream()
+                		.map(x -> "(SPARK_VERSION=='"+x.getSparkVersion()+"')")
+                        .collect(Collectors.toList()).toArray(new String[0]);
+
+                newParam = new ElementParameter(node);
+                newParam.setCategory(EComponentCategory.BASIC);
+                newParam.setName(SparkBatchConstant.DATABRICKS_RUNTIME_VERSION);
+                newParam.setDisplayName(SparkBatchConstant.getName(SparkBatchConstant.DATABRICKS_RUNTIME_VERSION));
+                newParam.setShowIf(DatabricksRuntimeVersion.showIfCondition);
+                newParam.setListItemsDisplayName(databricksRuntimeVersionLabels);
+                newParam.setListItemsDisplayCodeName(databricksRuntimeVersionLabels);
+                newParam.setListItemsValue(databricksRuntimeVersionLabels);
+                newParam.setListItemsShowIf(databricksRuntimeVersionDisplayConditions);
+                newParam.setListItemsNotShowIf(new String[DatabricksRuntimeVersion.getAvailableRuntimeAndSparkVersion().size()]);
+                newParam.setNumRow(xmlParam.getNUMROW() + 1);
+                newParam.setFieldType(EParameterFieldType.OPENED_LIST);
+                newParam.setRepositoryValue(SparkBatchConstant.DATABRICKS_RUNTIME_VERSION);
+                newParam.setShow(true);
+                newParam.setGroup(xmlParam.getGROUP());
+                newParam.setDefaultValues(Arrays.asList(new ElementParameterDefaultValue("", "'true'=='true'")));
                 listParam.add(newParam);
             }
         }
@@ -2660,9 +2728,9 @@ public class EmfComponent extends AbstractBasicComponent {
                 case RULE_TYPE: // hywang add for feature 6484
                     newParam.setFieldType(EParameterFieldType.RULE_TYPE);
                     break;
-                // case VALIDATION_RULE_TYPE:
-                // newParam.setFieldType(EParameterFieldType.VALIDATION_RULE_TYPE);
-                // break;
+                    // case VALIDATION_RULE_TYPE:
+                    // newParam.setFieldType(EParameterFieldType.VALIDATION_RULE_TYPE);
+                    // break;
                 case MULTI_PATTERN:
                     newParam.setFieldType(EParameterFieldType.MULTI_PATTERN);
                     break;
@@ -3167,11 +3235,16 @@ public class EmfComponent extends AbstractBasicComponent {
             List<? extends INode> nodes = process.getNodesOfType("tSparkConfiguration");
             if (nodes != null && !nodes.isEmpty()) {
                 node = nodes.get(0);
+                // As we are changing the node to tSparkConfiguration we need to change compType accordingly.
+                // This is compatible also with Spark streaming jobs because compType.getVersionParameter() returns the
+                // same in batch and streaming
+                compType = ComponentType.SPARKBATCH;
             }
         }
         IElementParameter hdElemParam = node.getElementParameter(compType.getVersionParameter());
         Object value = null;
-        if (hdElemParam != null && hdElemParam.isShow(node.getElementParameters())) {
+        if (hdElemParam != null && (hdElemParam.isShow(node.getElementParameters()) || hdElemParam.getValue().toString().contains("SPARK"))) {
+            // for universal feature, the parameter is not shown in DI components, yet we still need to retrieve its value
             value = hdElemParam.getValue();
         } else {
             if (JavaProcessUtil.isUseExistingConnection(node)) {
@@ -3199,141 +3272,213 @@ public class EmfComponent extends AbstractBasicComponent {
     }
 
     private void addHadoopDistributionModuleNeededList(INode node, List<ModuleNeeded> moduleNeededList) {
-        if (node == null) {
-            return;
-        }
-        String value = getDistributionVersion(node, hadoopDistributionParamName);
-        if (value != null) {
-            List<ModuleNeeded> cachedModuleNeededList = Collections.EMPTY_LIST;
-            DistributionVersion dv = null;
-            for (Map.Entry<DistributionVersion, List<ModuleNeeded>> entry : distributionModuleNeededMap.entrySet()) {
-                DistributionVersion key = entry.getKey();
-                if (value.equals(key.getVersion())) {
-                    dv = key;
-                    cachedModuleNeededList = entry.getValue();
-                    break;
-                }
+        ExceptionHandler.logDebug("addHadoopDistributionModuleNeededList, node: " + node);
+        if (node != null) {
+            String value = null;
+            try {
+                value = getDistributionVersion(node, hadoopDistributionParamName);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
             }
-            if (cachedModuleNeededList == null) {
-                /**
-                 * Means not added yet, retrieve and add it
-                 */
-                cachedModuleNeededList = new LinkedList<>();
-                if (dv instanceof DynamicDistributionVersion) {
-                    try {
-                        IDynamicDistributionTemplate distributionTemplate = ((DynamicDistributionVersion) dv)
-                                .getDistributionTemplate();
-                        if (!distributionTemplate.isPluginExtensionsRegisted()) {
-                            distributionTemplate.registPluginExtensions();
-                        }
-                    } catch (Exception e) {
-                        ExceptionHandler.process(e);
+            if (value != null) {
+                List<ModuleNeeded> cachedModuleNeededList = Collections.EMPTY_LIST;
+                DistributionVersion dv = null;
+                for (Map.Entry<DistributionVersion, List<ModuleNeeded>> entry : distributionModuleNeededMap.entrySet()) {
+                    DistributionVersion key = entry.getKey();
+                    if (value.equals(key.getVersion())) {
+                        dv = key;
+                        cachedModuleNeededList = entry.getValue();
+                        break;
                     }
                 }
-                for (DistributionVersionModule versionModule : dv.getVersionModules()) {
-                    IMPORTType importType = ComponentFactory.eINSTANCE.createIMPORTType();
-                    importType.setMODULEGROUP(versionModule.moduleGroup.getModuleName());
-                    importType.setMRREQUIRED(versionModule.moduleGroup.isMrRequired());
-                    importType.setREQUIREDIF(versionModule.getModuleRequiredIf().getConditionString());
-                    ModulesNeededProvider.collectModuleNeeded(node.getComponent() != null ? node.getComponent().getName() : "", //$NON-NLS-1$
-                            importType, cachedModuleNeededList);
+                if (cachedModuleNeededList == null) {
+                    /**
+                     * Means not added yet, retrieve and add it
+                     */
+                    cachedModuleNeededList = new LinkedList<>();
+                    loadHadoopDistributionModules(dv, node.getComponent().getName(), moduleNeededList, cachedModuleNeededList);
+                } else {
+                    /**
+                     * Means already added
+                     */
                 }
-                distributionModuleNeededMap.put(dv, cachedModuleNeededList);
-                moduleNeededList.addAll(cachedModuleNeededList);
-            } else {
-                /**
-                 * Means already added
-                 */
+            }
+
+            if (Boolean.getBoolean(PROP_LOAD_DYNAMIC_DISTRIBUTION_MODULE)) {
+
+                for (Map.Entry<DistributionVersion, List<ModuleNeeded>> entry : distributionModuleNeededMap.entrySet()) {
+                    DistributionVersion key = entry.getKey();
+                    List<ModuleNeeded> cachedModuleNeededList = entry.getValue();
+                    if (cachedModuleNeededList == null) {
+                        /**
+                         * Means not added yet, retrieve and add it
+                         */
+                        cachedModuleNeededList = new LinkedList<>();
+                        loadHadoopDistributionModules(key, node.getComponent().getName(), moduleNeededList, cachedModuleNeededList);
+                    }
+                }
             }
         }
     }
 
-    private void addHadoopLibModuleNeededList(INode node, List<ModuleNeeded> moduleNeededList) {
-        if (node == null) {
-            return;
-        }
-        String value = getDistributionVersion(node, hadoopLibParamName);
-        if (value != null) {
-            List<ModuleNeeded> cachedModuleNeededList = Collections.EMPTY_LIST;
-            HadoopComponent hc = null;
-            for (Map.Entry<HadoopComponent, List<ModuleNeeded>> entry : hadoopLibModuleNeededMap.entrySet()) {
-                HadoopComponent key = entry.getKey();
-                if (value.equals(key.getVersion())) {
-                    hc = key;
-                    cachedModuleNeededList = entry.getValue();
-                    break;
+    private void loadHadoopDistributionModules(DistributionVersion dv, String compName, List<ModuleNeeded> moduleNeededList,List<ModuleNeeded> cachedModuleNeededList) {
+        if (dv instanceof DynamicDistributionVersion) {
+            try {
+                IDynamicDistributionTemplate distributionTemplate = ((DynamicDistributionVersion) dv).getDistributionTemplate();
+                if (!distributionTemplate.isPluginExtensionsRegisted()) {
+                    distributionTemplate.registPluginExtensions();
                 }
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
             }
-            if (cachedModuleNeededList == null) {
-                /**
-                 * means not added yet, retrieve and add it
-                 */
-                cachedModuleNeededList = new LinkedList<>();
-                try {
-                    if (hc instanceof AbstractDynamicDistributionTemplate) {
-                        AbstractDynamicDistributionTemplate ddt = (AbstractDynamicDistributionTemplate) hc;
-                        if (!ddt.isPluginExtensionsRegisted()) {
-                            ddt.registPluginExtensions();
-                        }
-                    }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
-                Set<DistributionModuleGroup> nodeModuleGroups = hc.getModuleGroups(hadoopLibParamName,
-                        node.getComponent().getName());
-                if (nodeModuleGroups != null) {
-                    Iterator<DistributionModuleGroup> moduleGroups = nodeModuleGroups.iterator();
-                    while (moduleGroups.hasNext()) {
-                        DistributionModuleGroup group = moduleGroups.next();
-                        IMPORTType importType = ComponentFactory.eINSTANCE.createIMPORTType();
-                        importType.setMODULEGROUP(group.getModuleName());
+        }
+        boolean isExtComponentProvider = LocalLibraryManager.isExtComponentProvider(provider.getId());
+        for (DistributionVersionModule versionModule : dv.getVersionModules()) {
+            IMPORTType importType = ComponentFactory.eINSTANCE.createIMPORTType();
+            importType.setMODULEGROUP(versionModule.moduleGroup.getModuleName());
+            importType.setMRREQUIRED(versionModule.moduleGroup.isMrRequired());
+            importType.setREQUIREDIF(versionModule.getModuleRequiredIf().getConditionString());
+            ModulesNeededProvider
+            .collectModuleNeeded(compName, // $NON-NLS-1$
+                            importType, cachedModuleNeededList, versionModule.distributionVersion.getVersion(),
+                            isExtComponentProvider);
+        }
+        distributionModuleNeededMap.put(dv, cachedModuleNeededList);
+        moduleNeededList.addAll(cachedModuleNeededList);
+        ExceptionHandler.logDebug("addHadoopDistributionModuleNeededList, size of cachedModuleNeededList: " + cachedModuleNeededList.size());
+    }
 
-                        ComponentCondition condition = group.getRequiredIf();
-                        if (condition != null) {
-                            importType.setREQUIREDIF(new NestedComponentCondition(condition).getConditionString());
-                        }
-                        importType.setMRREQUIRED(group.isMrRequired());
-                        ModulesNeededProvider.collectModuleNeeded(node.getComponent().getName(), importType,
-                                cachedModuleNeededList);
+    private void addHadoopLibModuleNeededList(INode node, List<ModuleNeeded> moduleNeededList) {
+        ExceptionHandler.logDebug("addHadoopDistributionModuleNeededList, node: " + node);
+        if (node != null) {
+            String value = null;
+            try {
+                value = getDistributionVersion(node, hadoopLibParamName);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+            }
+            if (value != null) {
+                List<ModuleNeeded> cachedModuleNeededList = Collections.EMPTY_LIST;
+                HadoopComponent hc = null;
+                for (Map.Entry<HadoopComponent, List<ModuleNeeded>> entry : hadoopLibModuleNeededMap.entrySet()) {
+                    HadoopComponent key = entry.getKey();
+                    if (value.equals(key.getVersion())) {
+                        hc = key;
+                        cachedModuleNeededList = entry.getValue();
+                        break;
                     }
                 }
-                hadoopLibModuleNeededMap.put(hc, cachedModuleNeededList);
-                moduleNeededList.addAll(cachedModuleNeededList);
-            } else {
-                /**
-                 * means already added
-                 */
+                if (cachedModuleNeededList == null) {
+                    /**
+                     * means not added yet, retrieve and add it
+                     */
+                    cachedModuleNeededList = new LinkedList<>();
+                    loadHadoopLibDynamicModules(hc, node.getComponent().getName(), moduleNeededList, cachedModuleNeededList);
+                } else {
+                    /**
+                     * means already added
+                     */
+                }
+            }
+
+            if (Boolean.getBoolean(PROP_LOAD_DYNAMIC_DISTRIBUTION_MODULE)) {
+                List<ModuleNeeded> cachedModuleNeededList = null;
+                for (Map.Entry<HadoopComponent, List<ModuleNeeded>> entry : hadoopLibModuleNeededMap.entrySet()) {
+                    cachedModuleNeededList = entry.getValue();
+                    if (cachedModuleNeededList == null) {
+                        /**
+                         * means not added yet, retrieve and add it
+                         */
+                        cachedModuleNeededList = new LinkedList<>();
+
+                        loadHadoopLibDynamicModules(entry.getKey(), node.getComponent().getName(), moduleNeededList, cachedModuleNeededList);
+                    }
+                }
             }
         }
+    }
+
+    private void loadHadoopLibDynamicModules(HadoopComponent hc, String compName, List<ModuleNeeded> moduleNeededList, List<ModuleNeeded> cachedModuleNeededList) {
+        try {
+            if (hc instanceof AbstractDynamicDistributionTemplate) {
+                AbstractDynamicDistributionTemplate ddt = (AbstractDynamicDistributionTemplate) hc;
+                if (!ddt.isPluginExtensionsRegisted()) {
+                    ddt.registPluginExtensions();
+                }
+            }
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
+        Set<DistributionModuleGroup> nodeModuleGroups = hc.getModuleGroups(hadoopLibParamName, compName);
+        if (nodeModuleGroups != null) {
+            Iterator<DistributionModuleGroup> moduleGroups = nodeModuleGroups.iterator();
+            boolean isExtComponentProvider = LocalLibraryManager.isExtComponentProvider(provider.getId());
+            while (moduleGroups.hasNext()) {
+                DistributionModuleGroup group = moduleGroups.next();
+                IMPORTType importType = ComponentFactory.eINSTANCE.createIMPORTType();
+                importType.setMODULEGROUP(group.getModuleName());
+
+                ComponentCondition condition = group.getRequiredIf();
+                if (condition != null) {
+                    importType.setREQUIREDIF(new NestedComponentCondition(condition).getConditionString());
+                }
+                importType.setMRREQUIRED(group.isMrRequired());
+                ModulesNeededProvider.collectModuleNeeded(compName, importType, cachedModuleNeededList, hc.getVersion(),
+                        isExtComponentProvider);
+            }
+        }
+        hadoopLibModuleNeededMap.put(hc, cachedModuleNeededList);
+        moduleNeededList.addAll(cachedModuleNeededList);
+        ExceptionHandler.logDebug("addHadoopLibModuleNeededList, size of cachedModuleNeededList: " + cachedModuleNeededList.size());
+    }
+
+    private boolean loadDynamicDistributionModules() {
+        return areHadoopDistribsLoaded || Boolean.getBoolean(PROP_LOAD_DYNAMIC_DISTRIBUTION_MODULE);
+    }
+
+    private boolean loadDynamicLibsDistributionModules() {
+        return areHadoopLibsLoaded || Boolean.getBoolean(PROP_LOAD_DYNAMIC_DISTRIBUTION_MODULE);
     }
 
     @Override
     public List<ModuleNeeded> getModulesNeeded(INode node) {
         if (componentImportNeedsList != null && componentImportNeedsList.size() > 0) {
-            if (areHadoopDistribsLoaded) {
+            if (loadDynamicDistributionModules()) {
                 try {
                     addHadoopDistributionModuleNeededList(node, componentImportNeedsList);
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
+
             }
-            if (areHadoopLibsLoaded) {
+
+            if (loadDynamicLibsDistributionModules()) {
+
                 try {
                     addHadoopLibModuleNeededList(node, componentImportNeedsList);
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
             }
+
             return componentImportNeedsList;
         }
 
         Set<String> moduleNames = new HashSet<>();
         List<IMPORTType> importTypes = info.getImportType();
+        boolean isExtComponentProvider = LocalLibraryManager.isExtComponentProvider(provider.getId());
         for (IMPORTType importType : importTypes) {
-            ModulesNeededProvider.collectModuleNeeded(this.getName(), importType, componentImportNeedsList);
+            ModulesNeededProvider.collectModuleNeeded(this.getName(), importType, componentImportNeedsList,
+                    isExtComponentProvider);
         }
         for (String name : info.getComponentNames()) {
-            IComponent component = ComponentsFactoryProvider.getInstance().get(name);
+            IComponent component = null;
+            String type = getType();
+            if (StringUtils.isNotBlank(type)) {
+                component = ComponentsFactoryProvider.getInstance().get(name, type);
+            } else {
+                component = ComponentsFactoryProvider.getInstance().get(name);
+            }
             if (component == null) {
                 continue;
             }
@@ -3404,13 +3549,14 @@ public class EmfComponent extends AbstractBasicComponent {
             componentImportNeedsList.add(componentImportNeeds);
         }
 
-        if (areHadoopDistribsLoaded) {
+        if (loadDynamicDistributionModules()) {
             addHadoopDistributionModuleNeededList(node, componentImportNeedsList);
         }
-        if (areHadoopLibsLoaded) {
+
+        if(loadDynamicLibsDistributionModules()) {
             addHadoopLibModuleNeededList(node, componentImportNeedsList);
         }
-        
+
         return componentImportNeedsList;
     }
 
@@ -3712,8 +3858,8 @@ public class EmfComponent extends AbstractBasicComponent {
             connType = (CONNECTORType) listConnType.get(i);
             if (connType.getCTYPE().equals(EConnectionType.FLOW_MAIN.getName())
                     && !(connType.isSetMAXINPUT() && connType.getMAXINPUT() == 0 && connType.isSetMAXOUTPUT()
-                            && connType.getMAXOUTPUT() == 0 || connType.isSetMININPUT() && connType.getMININPUT() == 0
-                            && connType.isSetMINOUTPUT() && connType.getMINOUTPUT() == 0)) {
+                    && connType.getMAXOUTPUT() == 0 || connType.isSetMININPUT() && connType.getMININPUT() == 0
+                    && connType.isSetMINOUTPUT() && connType.getMINOUTPUT() == 0)) {
                 useFlow = true;
                 break;
             }
@@ -4373,11 +4519,11 @@ public class EmfComponent extends AbstractBasicComponent {
         }
         return super.isActiveDbColumns();
     }
-    
+
     public ComponentInfo getComponentInfo() {
         return info;
     }
-    
+
     @SuppressWarnings("unchecked")
     public void loadForCacheAtrributes() throws BusinessException {
         info = ComponentCacheFactory.eINSTANCE.createComponentInfo();
@@ -4463,5 +4609,5 @@ public class EmfComponent extends AbstractBasicComponent {
         // providerId
         info.setProviderId(provider.getId());
     }
-    
+
 }

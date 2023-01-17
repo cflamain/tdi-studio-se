@@ -45,8 +45,6 @@ public class LoginFetchLicenseHelper {
 
     private static LoginFetchLicenseHelper instance;
 
-    private LoginHelper loginHelper;
-
     private Map<Project, Job> fetchLicenseJobMap;
 
     private IRemoteService remoteService;
@@ -59,7 +57,6 @@ public class LoginFetchLicenseHelper {
     }
 
     private LoginFetchLicenseHelper() {
-        loginHelper = LoginHelper.getInstance();
         fetchLicenseJobMap = new HashMap<Project, Job>();
     }
 
@@ -73,22 +70,22 @@ public class LoginFetchLicenseHelper {
     }
 
     public String getAdminURL() {
-        return LoginHelper.getAdminURL(loginHelper.getCurrentSelectedConnBean());
+        return LoginHelper.getAdminURL(LoginHelper.getInstance().getCurrentSelectedConnBean());
     }
 
     public void fetchLicenseIfNeeded(Project proj) {
-        if (LoginHelper.isRemotesConnection(loginHelper.getCurrentSelectedConnBean())) {
+        if (LoginHelper.isRemotesConnection(LoginHelper.getInstance().getCurrentSelectedConnBean())) {
             fetchLicense(proj);
         }
     }
 
     public Job fetchLicense(Project proj) {
         String url = getAdminURL();
-        String userId = loginHelper.getCurrentSelectedConnBean().getUser();
-        String key = loginHelper.getLicenseMapKey(url, proj.getLabel(), userId);
+        String userId = LoginHelper.getInstance().getCurrentSelectedConnBean().getUser();
+        String key = LoginHelper.getInstance().getLicenseMapKey(url, proj.getLabel(), userId);
         String license = null;
         try {
-            license = loginHelper.getLicense(key);
+            license = LoginHelper.getInstance().getLicense(key);
         } catch (PersistenceException e) {
             ExceptionHandler.process(e);
         }
@@ -119,14 +116,14 @@ public class LoginFetchLicenseHelper {
 
             @Override
             protected IStatus run(IProgressMonitor monitor) {
-                ConnectionBean cBean = loginHelper.getCurrentSelectedConnBean();
+                ConnectionBean cBean = LoginHelper.getInstance().getCurrentSelectedConnBean();
                 try {
                     String userId = cBean.getUser();
                     String url = getAdminURL();
                     JSONObject jsonObj = getRemoteService().getLicenseKey(userId, cBean.getPassword(), url, projLabel);
                     String fetchedLicense = jsonObj.getString("customerName") + "_" + jsonObj.getString("licenseKey"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                    String key = loginHelper.getLicenseMapKey(url, projLabel, userId);
-                    loginHelper.putLicense(key, fetchedLicense);
+                    String key = LoginHelper.getInstance().getLicenseMapKey(url, projLabel, userId);
+                    LoginHelper.getInstance().putLicense(key, fetchedLicense);
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
@@ -167,14 +164,14 @@ public class LoginFetchLicenseHelper {
         if (CommonsPlugin.isHeadless()) {
             return true;
         }
-        ConnectionBean conn = loginHelper.getCurrentSelectedConnBean();
+        ConnectionBean conn = LoginHelper.getInstance().getCurrentSelectedConnBean();
         if (LoginHelper.isRemotesConnection(conn)) {
             String url = getAdminURL();
             String projLabel = proj.getLabel();
             String userId = conn.getUser();
             try {
-                String key = loginHelper.getLicenseMapKey(url, projLabel, userId);
-                String license = loginHelper.getLicense(key);
+                String key = LoginHelper.getInstance().getLicenseMapKey(url, projLabel, userId);
+                String license = LoginHelper.getInstance().getLicense(key);
                 if (license == null || license.isEmpty()) {
                     Job fetchJob = getFetchLicenseJobMap().get(proj);
                     if (fetchJob == null || fetchJob.getResult() != null) {
@@ -218,7 +215,7 @@ public class LoginFetchLicenseHelper {
                             return false;
                         }
                     }
-                    license = loginHelper.getLicense(key);
+                    license = LoginHelper.getInstance().getLicense(key);
                 }
                 if (license == null || license.isEmpty()) {
                     throw new Exception(Messages.getString("LoginProjectPage.fetchLicense.error.failed")); //$NON-NLS-1$

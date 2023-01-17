@@ -195,31 +195,37 @@ public class TalendParquetUtils {
 		}
 	}
 
-	public static Binary decimalToBinary(BigDecimal decimalValue, int scale) {
-		// First we need to make sure the BigDecimal matches our schema scale:
-		decimalValue = decimalValue.setScale(scale, RoundingMode.HALF_UP);
+    public static Binary decimalToBinary(BigDecimal decimalValue, int scale) {
+        // First we need to make sure the BigDecimal matches our schema scale:
+        decimalValue = decimalValue.setScale(scale, RoundingMode.HALF_UP);
 
-		// Next we get the decimal value as one BigInteger (like there was no decimal
-		// point)
-		BigInteger unscaledDecimalValue = decimalValue.unscaledValue();
+        // Next we get the decimal value as one BigInteger (like there was no decimal
+        // point)
+        BigInteger unscaledDecimalValue = decimalValue.unscaledValue();
 
-		// Finally we serialize the integer
-		byte[] decimalBytes = unscaledDecimalValue.toByteArray();
+        byte[] decimalBuffer = null;
+        // Finally we serialize the integer
+        byte[] decimalBytes = unscaledDecimalValue.toByteArray();
 
-		byte[] decimalBuffer = new byte[16];
-		if (decimalBuffer.length >= decimalBytes.length) {
-			// Because we set our fixed byte array size as 16 bytes, we need to
-			// pad-left our original value's bytes with zeros
-			int decimalBufferIndex = decimalBuffer.length - 1;
-			for (int i = decimalBytes.length - 1; i >= 0; i--) {
-				decimalBuffer[decimalBufferIndex] = decimalBytes[i];
-				decimalBufferIndex--;
-			}
-		} else {
-			throw new IllegalArgumentException(String.format("Decimal size: %d was greater than the allowed max: %d",
-					decimalBytes.length, decimalBuffer.length));
-		}
-		return Binary.fromReusedByteArray(decimalBuffer);
-	}
+        if (decimalValue.compareTo(BigDecimal.ZERO) < 0) {
+            decimalBuffer = new byte[] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+        } else {
+            decimalBuffer = new byte[16];
+        }
+        if (decimalBuffer.length >= decimalBytes.length) {
+            // Because we set our fixed byte array size as 16 bytes, we need to
+            // pad-left our original value's bytes with 0 or -1
+            int decimalBufferIndex = decimalBuffer.length - 1;
+            for (int i = decimalBytes.length - 1; i >= 0; i--) {
+                decimalBuffer[decimalBufferIndex] = decimalBytes[i];
+                decimalBufferIndex--;
+            }
+        } else {
+            throw new IllegalArgumentException(String
+                    .format("Decimal size: %d was greater than the allowed max: %d",
+                            decimalBytes.length, decimalBuffer.length));
+        }
+        return Binary.fromReusedByteArray(decimalBuffer);
+    }
 
 }

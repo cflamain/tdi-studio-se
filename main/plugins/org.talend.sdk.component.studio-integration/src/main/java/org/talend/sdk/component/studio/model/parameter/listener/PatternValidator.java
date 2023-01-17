@@ -18,11 +18,8 @@ package org.talend.sdk.component.studio.model.parameter.listener;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
-import javax.script.Bindings;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.talend.sdk.component.studio.i18n.Messages;
 import org.talend.sdk.component.studio.model.parameter.ValidationLabel;
 
@@ -57,12 +54,6 @@ public class PatternValidator extends PropertyValidator {
 
     private static class JsRegex implements Predicate<CharSequence> {
 
-        private static final ScriptEngine ENGINE;
-
-        static {
-            ENGINE = new ScriptEngineManager().getEngineByName("javascript");
-        }
-
         private final String regex;
 
         private final String indicators;
@@ -84,16 +75,20 @@ public class PatternValidator extends PropertyValidator {
         }
 
         @Override
-        public boolean test(final CharSequence string) {
-            final Bindings bindings = ENGINE.createBindings();
-            bindings.put("text", string);
-            bindings.put("regex", regex);
-            bindings.put("indicators", indicators);
+        public boolean test(final CharSequence text) {
+            final String script = "new RegExp(regex, indicators).test(text)";
+            final Context context = Context.enter();
             try {
-                return Boolean.class.cast(ENGINE.eval("new RegExp(regex, indicators).test(text)", bindings));
-            } catch (final ScriptException e) {
+                final Scriptable scope = context.initStandardObjects();
+                scope.put("text", scope, text);
+                scope.put("regex", scope, regex);
+                scope.put("indicators", scope, indicators);
+                return Context.toBoolean(context.evaluateString(scope, script, "test", 0, null));
+            } catch (final Exception e) {
                 Logger.getLogger(PatternValidator.class.getName()).warning(e.getMessage());
                 return false;
+            } finally {
+                Context.exit();
             }
         }
     }

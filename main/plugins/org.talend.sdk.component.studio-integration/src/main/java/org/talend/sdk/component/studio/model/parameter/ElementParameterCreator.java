@@ -319,10 +319,10 @@ public class ElementParameterCreator {
     /**
      * Checks whether this component is startable, i.e. whether this component is StandAlone or Input
      *
-     * @return true if component is startable
+     * @return true if component is startable, now only pure output component can't be start component in sub job
      */
     private boolean isStartable() {
-        return ConnectorCreatorFactory.isStandAlone(detail) || ConnectorCreatorFactory.isInput(detail);
+        return ConnectorCreatorFactory.isStandAlone(detail) || ConnectorCreatorFactory.isInput(detail) || ConnectorCreatorFactory.isProcessor(detail);
     }
 
     /**
@@ -631,15 +631,16 @@ public class ElementParameterCreator {
      */
     private void addParallelizeParameter() {
         if (isCamelCategory()) {
+            boolean readonly = true;
             final ElementParameter parameter = new ElementParameter(node);
-            parameter.setReadOnly(true);
+            parameter.setReadOnly(readonly);
             parameter.setName(EParameterName.PARALLELIZE.getName());
             parameter.setValue(Boolean.FALSE);
             parameter.setDisplayName(EParameterName.PARALLELIZE.getDisplayName());
             parameter.setFieldType(EParameterFieldType.CHECK);
             parameter.setCategory(ADVANCED);
             parameter.setNumRow(200);
-            parameter.setShow(true);
+            parameter.setShow(!readonly);
             parameter.setDefaultValue(parameter.getValue());
             parameters.add(parameter);
         }

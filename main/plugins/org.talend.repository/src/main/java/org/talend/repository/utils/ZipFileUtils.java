@@ -143,7 +143,7 @@ public class ZipFileUtils {
 
     }
 
-    private static void unZipFile(File destFile, ZipFile zipFile, ZipEntry entry) throws IOException {
+    public static void unZipFile(File destFile, ZipFile zipFile, ZipEntry entry) throws IOException {
         InputStream inputStream;
         FileOutputStream fileOut;
         if (entry.isDirectory()) {

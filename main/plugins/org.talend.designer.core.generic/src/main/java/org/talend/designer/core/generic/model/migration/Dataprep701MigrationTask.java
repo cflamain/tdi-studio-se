@@ -12,11 +12,11 @@
 // ============================================================================
 package org.talend.designer.core.generic.model.migration;
 
+import static org.talend.daikon.properties.property.Property.Flags.DESIGN_TIME_ONLY;
+
 import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import static org.talend.daikon.properties.property.Property.Flags.DESIGN_TIME_ONLY;
 
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
@@ -29,9 +29,7 @@ import org.talend.core.model.components.filters.IComponentFilter;
 import org.talend.core.model.components.filters.NameComponentFilter;
 import org.talend.core.model.migration.AbstractJobMigrationTask;
 import org.talend.core.model.properties.Item;
-import org.talend.core.model.utils.ContextParameterUtils;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
-import org.talend.core.utils.TalendQuoteUtils;
 import org.talend.daikon.NamedThing;
 import org.talend.daikon.properties.Properties;
 import org.talend.daikon.properties.property.Property;
@@ -128,7 +126,7 @@ public class Dataprep701MigrationTask extends AbstractJobMigrationTask {
                 return ExecutionResult.FAILURE;
             }
         }
-        return ExecutionResult.SUCCESS_WITH_ALERT;
+        return ExecutionResult.NOTHING_TO_DO;
 
     }
 

@@ -65,7 +65,7 @@
   <ADVANCED_PARAMETERS/>
   <CODEGENERATION>
     <IMPORTS>
-      <IMPORT MODULE="MsmqTalend-1.0.0.jar" MVN="mvn:org.talend.libraries/MsmqTalend-1.0.0/6.0.1" NAME="MsmqTalend" REQUIRED="true"/>
+      <IMPORT MODULE="MsmqTalend-1.0.5.jar" MVN="mvn:org.talend.libraries/MsmqTalend-1.0.5/6.0.0" NAME="MsmqTalend" REQUIRED="true"/>
     </IMPORTS>
   </CODEGENERATION>
   <RETURNS/>

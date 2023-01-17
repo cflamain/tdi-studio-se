@@ -128,7 +128,7 @@ public class ConnectionsListComposite extends Composite {
 
         group.setLayout(new FillLayout());
 
-        table = new AbstractDataTableEditorView<ConnectionBean>(group, SWT.NONE, model, false, true, false) {
+        table = new AbstractDataTableEditorView<ConnectionBean>(group, SWT.NONE, model, false, !this.dialog.isSsoMode(), false) {
 
             @Override
             protected void setTableViewerCreatorOptions(TableViewerCreator<ConnectionBean> newTableViewerCreator) {
@@ -207,15 +207,20 @@ public class ConnectionsListComposite extends Composite {
         }
         List<ConnectionBean> target = new ArrayList<ConnectionBean>(source.size());
         Iterator<ConnectionBean> iter = source.iterator();
+        boolean isSsoMode = this.dialog.isSsoMode();
         while (iter.hasNext()) {
             ConnectionBean sourceBean = iter.next();
+            if (isSsoMode && !sourceBean.isLoginViaCloud()) {
+                continue;
+            } else if (!isSsoMode && sourceBean.isLoginViaCloud()) {
+                continue;
+            }
             try {
                 ConnectionBean targetBean = sourceBean.clone();
                 target.add(targetBean);
             } catch (CloneNotSupportedException e) {
                 CommonExceptionHandler.process(e);
             }
-
         }
         return target;
     }

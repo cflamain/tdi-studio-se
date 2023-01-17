@@ -16,16 +16,15 @@ import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.talend.core.model.metadata.IMetadataConnection;
 import org.talend.core.model.metadata.builder.ConvertionHelper;
 import org.talend.core.model.metadata.builder.connection.DatabaseConnection;
 import org.talend.core.model.process.IElement;
 import org.talend.core.sqlbuilder.util.ConnectionParameters;
 import org.talend.core.ui.services.ISQLBuilderService;
-import org.talend.designer.core.ui.AbstractMultiPageTalendEditor;
 import org.talend.designer.core.ui.editor.properties.controllers.AbstractElementPropertySectionController;
 import org.talend.sqlbuilder.erdiagram.ui.ErDiagramDialog;
+import org.talend.sqlbuilder.repository.utility.EMFRepositoryNodeManager;
 import org.talend.sqlbuilder.repository.utility.SQLBuilderRepositoryNodeManager;
 import org.talend.sqlbuilder.ui.OpenSQLBuilderDialogJob;
 import org.talend.sqlbuilder.ui.SQLBuilderDialog;
@@ -60,7 +59,9 @@ public class SQLBuilderService implements ISQLBuilderService {
         if (connParameters != null) {
             DatabaseConnection connection = createConnection(connParameters);
             if (connection != null) {
-                IMetadataConnection metadataConnection = ConvertionHelper.convert(connection);
+                EMFRepositoryNodeManager.getInstance().setCopyConnection(connection);
+                IMetadataConnection metadataConnection = ConvertionHelper.convert(connection, false,
+                        connParameters.getSelectContext());
                 metadataConnection.setAdditionalParams(ConvertionHelper.convertAdditionalParameters(connection));
                 UIUtils.checkConnection(parentShell, metadataConnection);
             }

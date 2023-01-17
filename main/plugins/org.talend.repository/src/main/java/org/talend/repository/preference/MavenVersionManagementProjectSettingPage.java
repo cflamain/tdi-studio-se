@@ -115,8 +115,6 @@ public class MavenVersionManagementProjectSettingPage extends AbstractVersionMan
 
     private boolean oldUseSnapshot;
 
-    private List<Item> modifiedJobs = new ArrayList<>();
-
     private boolean appliedFlag = false;
 
     public MavenVersionManagementProjectSettingPage() {
@@ -587,8 +585,6 @@ public class MavenVersionManagementProjectSettingPage extends AbstractVersionMan
                     AggregatorPomsHelper helper = new AggregatorPomsHelper();
                     if (isProjectVersionModified) {
                         helper.syncAllPoms();
-                    } else if (!modifiedJobs.isEmpty()) {
-                        helper.syncJobPoms(modifiedJobs);
                     }
                 } catch (Exception e) {
                     ExceptionHandler.process(e);
@@ -605,9 +601,7 @@ public class MavenVersionManagementProjectSettingPage extends AbstractVersionMan
 
         boolean hasJobOpenedInEditor = false;
         StringBuilder builder = new StringBuilder();
-        modifiedJobs.clear();
         for (ItemVersionObject object : checkedObjects) {
-            modifiedJobs.add(object.getItem());
             if (RepositoryManager.isOpenedItemInEditor(object.getRepositoryNode().getObject())) {
                 hasJobOpenedInEditor = true;
                 JobsOpenedInEditor.add(object);

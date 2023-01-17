@@ -8,13 +8,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class CSVReader {
-
-    private final static Logger log = LoggerFactory.getLogger(CSVReader.class);
-
+    
     private Reader reader;
     
     private char separator = ',';
@@ -28,6 +23,8 @@ public class CSVReader {
     private boolean skipEmptyRecords = false;
     
     private boolean trimWhitespace = true;
+    
+    private boolean safetySwitch = false;
     
     private static final int BUFFER_SIZE = 4 * 1024;
     
@@ -55,26 +52,28 @@ public class CSVReader {
     
     private boolean inQuote = false; 
     
+    private boolean closed = false;
+    
     private StringBuilder sb = new StringBuilder(16);
     
     private boolean storeRawRecord = false;
     private StringBuilder stringBuilder = new StringBuilder(16 * 10);
     private String rawRecord = "";
     
-    public CSVReader(final String filename, final char separator, final String charset) throws IOException {
+    public CSVReader(String filename,char separator,String charset) throws IOException {
         this(new FileInputStream(filename), separator, charset);
     }
     
-    public CSVReader(final InputStream inputStream, final char separator, final String charset) throws IOException {
+    public CSVReader(InputStream inputStream,char separator,String charset) throws IOException {
         this(new UnicodeReader(inputStream, charset), separator);
     }
 
-    public CSVReader(final Reader reader, final char separator) {
+    public CSVReader(Reader reader,char separator) {
         this.reader = new BufferedReader(reader,BUFFER_SIZE);
         this.separator = separator;
     }
     
-    public static CSVReader parse(final String content) {
+    public static CSVReader parse(String content) {
         if (content == null) {
             throw new IllegalArgumentException(
                     "Parameter content can not be null.");
@@ -83,31 +82,22 @@ public class CSVReader {
         return new CSVReader(new StringReader(content),',');
     }
     
-    public CSVReader setLineEnd(final String lineEnd) {
-        if ("\n".equals(lineEnd) || "\r\n".equals(lineEnd)) {
-            // classic line end (linux or windows), treat by default.
-            this.lineEnd = null;
-        }
-        else {
-            this.lineEnd = lineEnd;
-            if (lineEnd != null && lineEnd.length() != 1) {
-                log.warn("Line end params {} must be single character", lineEnd);
-            }
-        }
+    public CSVReader setLineEnd(String lineEnd) {
+        this.lineEnd = lineEnd;
         return this;
     }
 
-    public CSVReader setSeparator(final char separator) {
+    public CSVReader setSeparator(char separator) {
         this.separator = separator;
         return this;
     }
 
-    public CSVReader setEscapeChar(final char escapechar) {
+    public CSVReader setEscapeChar(char escapechar) {
         this.escapechar = escapechar;
         return this;
     }
     
-    public CSVReader setQuoteChar(final char quotechar) {
+    public CSVReader setQuoteChar(char quotechar) {
         this.quotechar = quotechar;
         return this;
     }
@@ -116,372 +106,388 @@ public class CSVReader {
         return this.quotechar;
     }
     
-    public CSVReader setTrimWhitespace(final boolean trimWhitespace) {
+    public CSVReader setTrimWhitespace(boolean trimWhitespace) {
         this.trimWhitespace = trimWhitespace;
         return this;
     }
     
-    public CSVReader setSkipEmptyRecords(final boolean skipEmptyRecords) {
+    public CSVReader setSkipEmptyRecords(boolean skipEmptyRecords) {
         this.skipEmptyRecords = skipEmptyRecords;
         return this;
     }
     
-    public CSVReader setStoreRawRecord(final boolean storeRawRecord) {
+    public CSVReader setStoreRawRecord(boolean storeRawRecord) {
         this.storeRawRecord = storeRawRecord;
         return this;
     }
     
+    public void setSafetySwitch(boolean safetySwitch) {
+        this.safetySwitch = safetySwitch;
+    }
+    
     public String getRawRecord() {
-        return this.rawRecord;
+        return rawRecord;
     }
     
     public void endRecord() {
-        this.hasNext = true;
+        hasNext = true;
     }
     
     public void endColumn() {
-        this.inColumn = false;
+        if (columnCount >= 100000 && safetySwitch) {
+            try {
+                close();
+            } catch(IOException e) {
+                //close quietly
+            }
+
+            throw new RuntimeException("Exceed the maximum column count in single record : 100000. And you can set the safetySwitch field to false to skip this check");
+        }
+    	
+        inColumn = false;
         
-        String currentValue = this.sb.toString();
+        String currentValue = sb.toString();
         
-        if(this.trimWhitespace && !this.inQuote) {
-            currentValue = this.trimTail(currentValue);
+        if(trimWhitespace && !inQuote) {
+            currentValue = trimTail(currentValue);
         }
         
-        if (this.columnCount == this.values.length) {
-            final int newLength = this.values.length * 2;
+        if (columnCount == values.length) {
+            int newLength = values.length * 2;
 
-            final String[] holder = new String[newLength];
+            String[] holder = new String[newLength];
 
-            System.arraycopy(this.values, 0, holder, 0, this.values.length);
+            System.arraycopy(values, 0, holder, 0, values.length);
 
-            this.values = holder;
+            values = holder;
         }
 
-        this.values[this.columnCount] = currentValue;
-
-        this.columnCount++;
-
-        this.sb.setLength(0);
+        values[columnCount] = currentValue;
+        
+        columnCount++;
+        
+        sb.setLength(0);
     }
     
     public boolean readNext() throws IOException {
-        this.columnCount = 0;
-        this.hasNext = false;
-
-        this.rawRecord = "";
-        boolean warningNonRFC = false;
+        columnCount = 0;
+        hasNext = false;
         
-        if(!this.hasMoreData) {
+        rawRecord = "";
+        
+        if(!hasMoreData) {
             return false;
         }
         
-        while(this.hasMoreData && !this.hasNext) {
-            if(this.arriveEnd()) {
-                this.fill();
+        while(hasMoreData && !hasNext) {
+            if(arriveEnd()) {
+                fill();
                 continue;
             }
             
-            char currentChar = this.buffer[this.currentPosition];
-
-            this.inQuote = false;
+            char currentChar = buffer[currentPosition];
             
-            if(this.quotechar !='\0' && currentChar == this.quotechar) {//quote char as start of column
-                this.inColumn = true;
-                this.inQuote = true;
-                this.currentPosition++;
-                this.escaping = false;
+            inQuote = false;
+            
+            if(quotechar!='\0' && currentChar == quotechar) {//quote char as start of column
+                inColumn = true;
+                inQuote = true;
+                currentPosition++;
+                escaping = false;
                 
                 boolean previousCharAsQuote = false;
                 boolean deleteTrailNoUseChars = false;
                 
-                if(this.storeRawRecord) {
-                    this.stringBuilder.append(currentChar);
+                if(storeRawRecord) {
+                    stringBuilder.append(currentChar);
                 }
                 
-                while(this.hasMoreData && this.inColumn) {
-                    if(this.arriveEnd()) {
-                        this.fill();
+                while(hasMoreData && inColumn) {
+                    if(arriveEnd()) {
+                        fill();
                         continue;
                     }
                     
-                    currentChar = this.buffer[this.currentPosition];
+                    currentChar = buffer[currentPosition];
                     if(deleteTrailNoUseChars){
-                        if(currentChar == this.separator) {
-                            this.endColumn();
+                        if(currentChar == separator) {
+                            endColumn();
                             
-                            if(this.storeRawRecord) {
-                                this.stringBuilder.append(currentChar);
+                            if(storeRawRecord) {
+                                stringBuilder.append(currentChar);
                             }
-                        } else if((this.lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
-                                || (this.lineEnd !=null && currentChar == this.lineEnd.charAt(0))) {
-                            this.endColumn();
-                            this.endRecord();
+                        } else if((lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
+                                || (lineEnd!=null && currentChar == lineEnd.charAt(0))) {
+                            endColumn();
+                            endRecord();
                         } else {
-                            if ((!warningNonRFC) && currentChar != ' ' && currentChar != '\t' && currentChar != '\r') {
-                                log.warn("CSV source '{}' is not conform to RFC, some data will be ignored.", this.sb.toString());
-                                warningNonRFC = true;
-                            }
-                            if(this.storeRawRecord) {
-                                this.stringBuilder.append(currentChar);
+                            if(storeRawRecord) {
+                                stringBuilder.append(currentChar);
                             }
                         }
-                    } else if(currentChar == this.quotechar) {
-                        if(this.escaping) {//quote char as text
-                            this.sb.append(currentChar);
-                            this.escaping = false;
+                    } else if(currentChar == quotechar) {
+                        if(escaping) {//quote char as text
+                            sb.append(currentChar);
+                            escaping = false;
                             previousCharAsQuote = false;
                         } else {//quote char as escape or end of column 
-                            if(this.escapechar !='\0' && currentChar == this.escapechar) {
-                                this.escaping = true;
+                            if(escapechar!='\0' && currentChar == escapechar) {
+                                escaping = true;
                             } 
                             previousCharAsQuote = true;
                         }
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
-                    } else if(this.escapechar !='\0' && this.escapechar != this.quotechar && this.escaping) {
+                    } else if(escapechar!='\0' && escapechar!=quotechar && escaping) {
                         switch (currentChar) {
                         case 'n':
-                            this.sb.append('\n');
+                            sb.append('\n');
                             break;
                         case 'r':
-                            this.sb.append('\r');
+                            sb.append('\r');
                             break;
                         case 't':
-                            this.sb.append('\t');
+                            sb.append('\t');
                             break;
                         case 'b':
-                            this.sb.append('\b');
+                            sb.append('\b');
                             break;
                         case 'f':
-                            this.sb.append('\f');
+                            sb.append('\f');
                             break;
                         case 'e':
-                            this.sb.append('\u001B');
+                            sb.append('\u001B');
                             break;
                         case 'v':
-                            this.sb.append('\u000B');
+                            sb.append('\u000B');
                             break;
                         case 'a':
-                            this.sb.append('\u0007');
+                            sb.append('\u0007');
                             break;
-                        default :
-                            this.sb.append(currentChar);
+                        default : 
+                            sb.append(currentChar);
                             break;
                         }
-
-                        this.escaping = false;
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        escaping = false;
+                        
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
-                    } else if(this.escapechar !='\0' && currentChar == this.escapechar) {
-                        this.escaping =  true;
+                    } else if(escapechar!='\0' && currentChar == escapechar) {
+                        escaping =  true;
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
                     } else if(previousCharAsQuote) {//quote char as end of column
-                        if(currentChar == this.separator) {
-                            this.endColumn();
+                        if(currentChar == separator) {
+                            endColumn();
                             
-                            if(this.storeRawRecord) {
-                                this.stringBuilder.append(currentChar);
+                            if(storeRawRecord) {
+                                stringBuilder.append(currentChar);
                             }
-                        } else if((this.lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
-                                || (this.lineEnd !=null && currentChar == this.lineEnd.charAt(0))) {
-                            this.endColumn();
-                            this.endRecord();
+                        } else if((lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
+                                || (lineEnd!=null && currentChar == lineEnd.charAt(0))) {
+                            endColumn();
+                            endRecord();
                         } else {
                             deleteTrailNoUseChars = true;
-                            if ((!warningNonRFC) && currentChar != ' ' && currentChar != '\t' && currentChar != '\r') {
-                                log.warn("CSV source '{}' is not conform to RFC, some data will be ignored.", this.sb.toString());
-                                warningNonRFC = true;
-                            }
-                            if(this.storeRawRecord) {
-                                this.stringBuilder.append(currentChar);
+                            
+                            if(storeRawRecord) {
+                                stringBuilder.append(currentChar);
                             }
                         }
                         
                         previousCharAsQuote = false;
                     } else {
-                        this.sb.append(currentChar);
+                        sb.append(currentChar);
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
                     }
-
-                    this.previousChar = currentChar;
-
-                    this.currentPosition++;
+                    
+                    previousChar = currentChar;
+                    
+                    currentPosition++;
+                    
+                    if(inColumn && safetySwitch && sb.length() > 100000) {
+                        close();
+                        
+                        throw new RuntimeException("Exceed the maximum length of single column : 100000. And you can set the safetySwitch field to false to skip this check");
+                    }
                 }
-            } else if(currentChar == this.separator) {
-                this.previousChar = currentChar;
-                this.endColumn();
-                this.currentPosition++;
+            } else if(currentChar == separator) {
+                previousChar = currentChar;
+                endColumn();
+                currentPosition++;
                 
-                if(this.storeRawRecord) {
-                    this.stringBuilder.append(currentChar);
+                if(storeRawRecord) {
+                    stringBuilder.append(currentChar);
                 }
-            } else if (this.lineEnd !=null && currentChar == this.lineEnd.charAt(0)) {
-                if (this.inColumn || this.columnCount > 0 || !this.skipEmptyRecords) {
-                    this.endColumn();
-                    this.endRecord();
+            } else if (lineEnd!=null && currentChar == lineEnd.charAt(0)) {
+                if (inColumn || columnCount > 0 || !skipEmptyRecords) {
+                    endColumn();
+                    endRecord();
                 }
-
-                this.currentPosition++;
-                this.previousChar = currentChar;
-            } else if(this.lineEnd ==null && (currentChar == '\r' || currentChar == '\n')) {
-                if (this.inColumn || this.columnCount > 0 || (!this.skipEmptyRecords && (currentChar == '\r' ||
-                        this.previousChar !='\r'))) {
-                    this.endColumn();
-                    this.endRecord();
-                }
-
-                this.currentPosition++;
-                this.previousChar = currentChar;
-            } else if(this.trimWhitespace && (currentChar == ' ' || currentChar == '\t')) {
-                this.inColumn = true;
-                this.currentPosition++;
                 
-                if(this.storeRawRecord) {
-                    this.stringBuilder.append(currentChar);
+                currentPosition++;
+                previousChar = currentChar;
+            } else if(lineEnd==null && (currentChar == '\r' || currentChar == '\n')) {
+                if (inColumn || columnCount > 0 || (!skipEmptyRecords && (currentChar == '\r' || previousChar!='\r'))) {
+                    endColumn();
+                    endRecord();
+                }
+                
+                currentPosition++;
+                previousChar = currentChar;
+            } else if(trimWhitespace && (currentChar == ' ' || currentChar == '\t')) {
+                inColumn = true;
+                currentPosition++;
+                
+                if(storeRawRecord) {
+                    stringBuilder.append(currentChar);
                 }
             } else {
-                this.inColumn = true;
-                this.escaping = false;
+                inColumn = true;
+                escaping = false;
                 
-                while(this.hasMoreData && this.inColumn) {
-                    if(this.arriveEnd()) {
-                        this.fill();
+                while(hasMoreData && inColumn) {
+                    if(arriveEnd()) {
+                        fill();
                         continue;
                     }
                     
-                    currentChar = this.buffer[this.currentPosition];
+                    currentChar = buffer[currentPosition];
                     
-                    if(this.quotechar == '\0' && this.escapechar != '\0' && currentChar == this.escapechar) {
-                        if(this.escaping) {
-                            this.sb.append(currentChar);
-                            this.escaping = false;
+                    if(quotechar == '\0' && escapechar != '\0' && currentChar == escapechar) {
+                        if(escaping) {
+                            sb.append(currentChar);
+                            escaping = false;
                         } else {
-                            this.escaping = true;
+                            escaping = true;
                         }
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
-                    } else if(this.escapechar !='\0' && this.escapechar != this.quotechar && this.escaping) {
+                    } else if(escapechar!='\0' && escapechar!=quotechar && escaping) {
                         switch (currentChar) {
                         case 'n':
-                            this.sb.append('\n');
+                            sb.append('\n');
                             break;
                         case 'r':
-                            this.sb.append('\r');
+                            sb.append('\r');
                             break;
                         case 't':
-                            this.sb.append('\t');
+                            sb.append('\t');
                             break;
                         case 'b':
-                            this.sb.append('\b');
+                            sb.append('\b');
                             break;
                         case 'f':
-                            this.sb.append('\f');
+                            sb.append('\f');
                             break;
                         case 'e':
-                            this.sb.append('\u001B');
+                            sb.append('\u001B');
                             break;
                         case 'v':
-                            this.sb.append('\u000B');
+                            sb.append('\u000B');
                             break;
                         case 'a':
-                            this.sb.append('\u0007');
+                            sb.append('\u0007');
                             break;
-                        default :
-                            this.sb.append(currentChar);
+                        default : 
+                            sb.append(currentChar);
                             break;
                         }
-
-                        this.escaping = false;
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
-                        }
-                    } else if(currentChar == this.separator) {
-                        this.endColumn();
+                        escaping = false;
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
-                    } else if((this.lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
-                            || (this.lineEnd !=null && currentChar == this.lineEnd.charAt(0))) {
-                        this.endColumn();
-                        this.endRecord();
+                    } else if(currentChar == separator) {
+                        endColumn();
+                        
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
+                        }
+                    } else if((lineEnd == null && (currentChar == '\n' || currentChar == '\r'))
+                            || (lineEnd!=null && currentChar == lineEnd.charAt(0))) {
+                        endColumn();
+                        endRecord();
                     } else {
-                        this.sb.append(currentChar);
+                        sb.append(currentChar);
                         
-                        if(this.storeRawRecord) {
-                            this.stringBuilder.append(currentChar);
+                        if(storeRawRecord) {
+                            stringBuilder.append(currentChar);
                         }
                     }
-
-                    this.previousChar = currentChar;
-                    this.currentPosition++;
                     
+                    previousChar = currentChar;
+                    currentPosition++;
+                    
+                    if(inColumn && safetySwitch && sb.length() > 100000) {
+                        close();
+                        
+                        throw new RuntimeException("Exceed the maximum length of single column : 100000. And you can set the safetySwitch field to false to skip this check");
+                    }
                 }
             }
             
         }
         
-        if(this.inColumn || this.previousChar == this.separator) {
-            this.endColumn();
-            this.endRecord();
+        if(inColumn || previousChar == separator) {
+            endColumn();
+            endRecord();
         }
         
-        if(this.storeRawRecord) {
-            this.rawRecord = this.stringBuilder.toString();
-            this.stringBuilder.setLength(0);
+        if(storeRawRecord) {
+            rawRecord = stringBuilder.toString();
+            stringBuilder.setLength(0);
         }
         
-        return this.hasNext;
+        return hasNext;
         
     }
     
-    public String get(final int index) {
-        if (index > -1 && index < this.columnCount) {
-            return this.values[index];
+    public String get(int index) {
+        if (index > -1 && index < columnCount) {
+            return values[index];
         } else {
             return "";
         }
     }
     
     public String[] getValues() {
-        final String[] result = new String[this.columnCount];
-        System.arraycopy(this.values, 0, result, 0, this.columnCount);
+        String[] result = new String[columnCount];
+        System.arraycopy(values, 0, result, 0, columnCount);
         return result;
     }
     
     private void fill() throws IOException {
-        final int count = this.reader.read(this.buffer, 0, this.buffer.length);
-        this.currentPosition = 0;
-        this.bufferCount = count;
+        int count = reader.read(buffer, 0, buffer.length);
+        currentPosition = 0;
+        bufferCount = count;
         if(count == -1) {
-            this.hasMoreData = false;
+            hasMoreData = false;
         }
     }
     
     private boolean arriveEnd() {
-        return this.currentPosition == this.bufferCount;
+        return currentPosition == bufferCount;
     }
     
     private String trimTail(String content) {
-        final int len = content.length();
+        int len = content.length();
         int newLen = len;
         
         while (newLen > 0) {
-            final char tail = content.charAt(newLen - 1);
+            char tail = content.charAt(newLen - 1);
             if(tail != ' ' && tail != '\t') {
                 break;
             }
@@ -496,8 +502,12 @@ public class CSVReader {
     }
     
     public void close() throws IOException {
-        this.reader.close();
-        this.headersReader.clear();
+        if(!closed) {
+            reader.close();
+            headersReader.clear();
+            
+            closed = true;
+        }
     }
 
     //Added 20141016 TDQ-9496
@@ -506,7 +516,7 @@ public class CSVReader {
     }
     
     public char getSeperator(){
-        return this.separator;
+        return separator;
     }
     
     /**
@@ -515,37 +525,37 @@ public class CSVReader {
      * @return If the header was successfully read or not.
      */
     public boolean readHeaders() throws IOException {
-        final boolean result = this.readNext();
+        boolean result = readNext();
 
-        this.headersReader.length = this.columnCount;
+        headersReader.length = columnCount;
 
-        this.headersReader.headers = new String[this.columnCount];
+        headersReader.headers = new String[columnCount];
 
-        for (int i = 0; i < this.headersReader.length; i++) {
-            final String columnValue = this.get(i);
-            this.headersReader.headers[i] = columnValue;
-            this.headersReader.indexByHeaderName.put(columnValue, new Integer(i));
+        for (int i = 0; i < headersReader.length; i++) {
+            String columnValue = get(i);
+            headersReader.headers[i] = columnValue;
+            headersReader.indexByHeaderName.put(columnValue, new Integer(i));
         }
 
         if (result) {
-            this.currentPosition--;
+            currentPosition--;
         }
 
-        this.columnCount = 0;
+        columnCount = 0;
         return result;
     }
     /**
      * Returns the current column value for a given column header name.
      */
-    public String get(final String headerName) throws IOException {
-        return this.get(this.getIndex(headerName));
+    public String get(String headerName) throws IOException {
+        return get(getIndex(headerName));
     }
 
-    private int getIndex(final String headerName) throws IOException {
-        if(this.headersReader.indexByHeaderName==null){
+    private int getIndex(String headerName) throws IOException {
+        if(headersReader.indexByHeaderName==null){
             return -1;
         }
-        final Object indexValue = this.headersReader.indexByHeaderName.get(headerName);
+        Object indexValue = headersReader.indexByHeaderName.get(headerName);
 
         if (indexValue != null) {
             return ((Integer) indexValue).intValue();
@@ -555,11 +565,12 @@ public class CSVReader {
     }
     
     public String[] getHeaders() throws IOException {
-        if (this.headersReader.headers == null) {
+        if (headersReader.headers == null) {
             return null;
         } else {
-            final String[] clone = new String[this.headersReader.length];
-            System.arraycopy(this.headersReader.headers, 0, clone, 0, this.headersReader.length);
+            String[] clone = new String[headersReader.length];
+            System.arraycopy(headersReader.headers, 0, clone, 0,
+                    headersReader.length);
             return clone;
         }
     }  
@@ -572,14 +583,14 @@ public class CSVReader {
         private HashMap indexByHeaderName;
 
         public HeadersReader() {
-            this.headers = null;
-            this.length = 0;
-            this.indexByHeaderName = new HashMap();
+            headers = null;
+            length = 0;
+            indexByHeaderName = new HashMap();
         }
         
         public void clear(){
-            this.headers = null;
-            this.indexByHeaderName = null;
+            headers = null;
+            indexByHeaderName = null;
         }
     }
     /**End of added by TDQ-9496 **/

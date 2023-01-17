@@ -67,6 +67,8 @@ public class SchemaUtils {
 
     private static String TABLE_TYPE = "TABLE_TYPE";
 
+    private static List updatingSchemas = new ArrayList<>();
+
     public static MetadataTable createCatalog(String tableName, String tableType, ComponentProperties properties, Connection connection,
             String schemaPropertyName, String catalogName, String schemaName) {
         if (tableName == null || properties == null || schemaPropertyName == null) {
@@ -247,6 +249,7 @@ public class SchemaUtils {
         if (schema == null || metadataTable == null) {
             return;
         }
+        metadataTable.setLabel(schema.getName());
         for (Schema.Field field : schema.getFields()) {
             MetadataColumn metadataColumn = MetadataToolAvroHelper.convertFromAvro(field, metadataTable);
             metadataTable.getColumns().add(metadataColumn);
@@ -426,7 +429,7 @@ public class SchemaUtils {
         }
         IGenericDBService dbService = null;
         if (GlobalServiceRegister.getDefault().isServiceRegistered(IGenericDBService.class)) {
-            dbService = (IGenericDBService) GlobalServiceRegister.getDefault().getService(
+            dbService = GlobalServiceRegister.getDefault().getService(
                     IGenericDBService.class);
         }
         if(dbService != null){
@@ -454,6 +457,10 @@ public class SchemaUtils {
             createSchema(name, tableType, properties, connection,
                     schemaPropertyName, schemaName);
         }
+    }
+
+    public static List getUpdatingSchemas() {
+        return updatingSchemas;
     }
 
 }

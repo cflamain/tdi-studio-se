@@ -439,13 +439,13 @@ public class CLASS {
                                     sqlSentence = sqlSentence.substring(0, sqlSentence.length() - 2);
                                     sqlSentence += "\"";
                                 }
-                                codeStringBuilder.append("String tempSQLSentence_").append(cid).append("_"+sql_id).append(" = ").append(sqlSentence).append(";\n");
-                                codeStringBuilder.append("globalMap.put(\"").append(cid).append("_QUERY\", tempSQLSentence_").append(cid).append("_"+sql_id).append(");\n");
+                                codeStringBuilder.append("String tempSQLSentence_").append(cid).append("_").append(sql_id).append("_").append(i).append(" = ").append(sqlSentence).append(";\n");
+                                codeStringBuilder.append("globalMap.put(\"").append(cid).append("_QUERY\", tempSQLSentence_").append(cid).append("_").append(sql_id).append("_").append(i).append(");\n");
                                 //fix bug 22221,if use hive DB,change addBatch() method to execute().
                                 if(useBatch){
-									codeStringBuilder.append("stmt_").append(cid).append(".addBatch(tempSQLSentence_").append(cid).append("_"+sql_id).append(");\n");
+									codeStringBuilder.append("stmt_").append(cid).append(".addBatch(tempSQLSentence_").append(cid).append("_").append(sql_id).append("_").append(i).append(");\n");
 				                }else{
-									codeStringBuilder.append("stmt_").append(cid).append(".execute(tempSQLSentence_").append(cid).append("_"+sql_id).append(");\n");
+									codeStringBuilder.append("stmt_").append(cid).append(".execute(tempSQLSentence_").append(cid).append("_").append(sql_id).append("_").append(i).append(");\n");
 								}
                                 sqlQueryBuilder.delete(0, sqlQueryBuilder.length()).append("\"");
                             } else {

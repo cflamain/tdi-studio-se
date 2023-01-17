@@ -858,7 +858,10 @@ public class ProcessController extends AbstractElementPropertySectionController 
             elem.setPropertyValue(fullChildName, childParam.getValue());
             if (valueList != null && !valueList.contains(childParam.getValue())) {
                 if (nameList != null && nameList.size() > 0) {
-                    //do not set the default value
+                    //Set to default value(Latest) if the value is empty.
+                    if (StringUtils.isEmpty((String)childParam.getValue())) {
+                        elem.setPropertyValue(fullChildName, valueList.get(valueList.size() - 1));
+                    }
                 }
             } else {
                 // force to store the value again to activate the code

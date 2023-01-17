@@ -22,7 +22,7 @@ import org.eclipse.core.runtime.MultiStatus;
  */
 public interface IOASDecoder {
 
-    public void setOASSourceFile(Path path);
+    public void setOASSourceFile(Path path, boolean isOasSwagger2);
 
     public ETranslationStatus getTranslationStatus() throws TranslationException;
 
@@ -37,5 +37,7 @@ public interface IOASDecoder {
     public Map<String, RestAPIMapping> getMappings();
 
     public byte[] getAsOASSwagger20();
+    
+    public byte[] getAsOAS3();
 
 }

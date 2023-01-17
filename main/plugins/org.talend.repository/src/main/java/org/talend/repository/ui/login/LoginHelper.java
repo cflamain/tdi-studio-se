@@ -41,6 +41,7 @@ import org.eclipse.ui.PlatformUI;
 import org.talend.commons.CommonsPlugin;
 import org.talend.commons.exception.ClientException;
 import org.talend.commons.exception.CommonExceptionHandler;
+import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.InformException;
 import org.talend.commons.exception.LoginException;
 import org.talend.commons.exception.OperationCancelException;
@@ -48,7 +49,6 @@ import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.exception.SystemException;
 import org.talend.commons.exception.WarningException;
 import org.talend.commons.ui.gmf.util.DisplayUtils;
-import org.talend.commons.ui.runtime.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
 import org.talend.commons.utils.PasswordHelper;
 import org.talend.commons.utils.system.EnvironmentUtils;
@@ -67,9 +67,9 @@ import org.talend.core.repository.model.IRepositoryFactory;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.repository.model.RepositoryFactoryProvider;
 import org.talend.core.runtime.CoreRuntimePlugin;
+import org.talend.core.service.IStudioLiteP2Service;
 import org.talend.core.services.ICoreTisService;
 import org.talend.core.services.IGITProviderService;
-import org.talend.core.services.ISVNProviderService;
 import org.talend.core.ui.branding.IBrandingConfiguration;
 import org.talend.core.ui.branding.IBrandingService;
 import org.talend.repository.ProjectManager;
@@ -119,7 +119,6 @@ public class LoginHelper {
 
     protected Shell usableShell;
 
-    protected ISVNProviderService svnProviderService;
 
     protected PreferenceManipulator prefManipulator;
 
@@ -158,14 +157,6 @@ public class LoginHelper {
     protected void init() {
         if (PluginChecker.isRemoteProviderPluginLoaded()) {
             GlobalServiceRegister gsr = GlobalServiceRegister.getDefault();
-            try {
-                if (gsr.isServiceRegistered(ISVNProviderService.class)) {
-                    svnProviderService = (ISVNProviderService) GlobalServiceRegister.getDefault()
-                            .getService(ISVNProviderService.class);
-                }
-            } catch (Exception e) {
-                ExceptionHandler.process(e);
-            }
             try {
                 if (gsr.isServiceRegistered(IGITProviderService.class)) {
                     gitProviderService = (IGITProviderService) GlobalServiceRegister.getDefault()
@@ -267,7 +258,7 @@ public class LoginHelper {
         }
         return isCloudUSConnection(connectionBean) || isCloudUSWestConnection(connectionBean)
                 || isCloudEUConnection(connectionBean) || isCloudAPACConnection(connectionBean)
-                || isCloudCustomConnection(connectionBean)|| isCloudAUSConnection(connectionBean);
+                || isCloudCustomConnection(connectionBean)|| isCloudAUSConnection(connectionBean) || isSSOCloudConnection(connectionBean);
     }
 
     public static boolean isCloudUSConnection(ConnectionBean connectionBean) {
@@ -310,6 +301,13 @@ public class LoginHelper {
             return false;
         }
         return RepositoryConstants.REPOSITORY_CLOUD_CUSTOM_ID.equals(connectionBean.getRepositoryId());
+    }
+    
+    public static boolean isSSOCloudConnection(ConnectionBean connectionBean) {
+        if (connectionBean == null) {
+            return false;
+        }        
+        return connectionBean.isLoginViaCloud();
     }
 
     public static boolean isCloudRepository(String repositoryId) {
@@ -497,10 +495,11 @@ public class LoginHelper {
         }
         String lastUsedBranch = null;
         if (isRemoteConnection) {
-            if (svnProviderService != null) {
-                String projectUrl = svnProviderService.getProjectUrl(lastUsedProject);
-                String projectName = lastUsedProject.getTechnicalLabel();
-                lastUsedBranch = prefManipulator.getLastSVNBranch(projectUrl, projectName);
+            String jsonStr = lastUsedProject.getEmfProject().getUrl();
+            try {
+                lastUsedBranch = prefManipulator.getLastSVNBranch(new JSONObject(jsonStr).getString("location"), lastUsedProject.getTechnicalLabel());
+            } catch (JSONException ex) {
+                ExceptionHandler.process(ex);
             }
             List<String> branches = null;
             try {
@@ -508,9 +507,8 @@ public class LoginHelper {
                  * Auto login, means there should be local repository
                  */
                 branches = getProjectBranches(lastUsedProject, true);
-            } catch (JSONException e) {                         
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (Exception e) {
+                org.talend.commons.exception.ExceptionHandler.process(e);
             }
             if (branches == null || branches.isEmpty()) {
                 return false;
@@ -592,6 +590,10 @@ public class LoginHelper {
                 try {
                     factory.logOnProject(project, monitor);
                 } catch (LoginException e) {
+                    if (IStudioLiteP2Service.RESULT_CANCEL == e.getErrCode()) {
+                        CommonExceptionHandler.process(e);
+                        throw new InterruptedException(e.getMessage());
+                    }
                     throw new InvocationTargetException(e);
                 } catch (PersistenceException e) {
                     throw new InvocationTargetException(e);
@@ -631,7 +633,19 @@ public class LoginHelper {
                 LoginHelper.isRestart = true;
                 return true;
             } else {
-                MessageBoxExceptionHandler.process(e.getTargetException(), getUsableShell());
+                if (e.getTargetException() != null && e.getTargetException().getCause() instanceof LoginException
+                        && ((LoginException) e.getTargetException().getCause())
+                                .getErrCode() == IStudioLiteP2Service.RESULT_CANCEL) {
+                    org.talend.commons.exception.ExceptionHandler.process(e);
+                } else {
+                    Display.getDefault().syncExec(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            MessageBoxExceptionHandler.showMessage(e, shell);
+                        }
+                    });                   
+                }            
             }
             factory.getRepositoryContext().setProject(null);
             // } else {
@@ -692,6 +706,15 @@ public class LoginHelper {
         }
         if (branch.startsWith("branches/")) {
             branch = branch.substring("branches/".length());
+        }
+        
+        IGITProviderService gs = IGITProviderService.get();
+        try {
+            if (gs != null && gs.isGITProject(project) && gs.isStandardMode()) {
+                location = gs.getProjectLocationKey(project);
+            }
+        } catch (PersistenceException e) {
+            ExceptionHandler.process(e);
         }
         JSONObject json = prefManipulator.getLogonLocalBranchStatus(location, projectName);
         if (json != null) {
@@ -870,7 +893,7 @@ public class LoginHelper {
      * @return
      * @throws JSONException
      */
-    public List<String> getProjectBranches(Project p, boolean onlyLocalIfPossible) throws JSONException {
+    public List<String> getProjectBranches(Project p, boolean onlyLocalIfPossible) throws Exception {
         IRepositoryService repositoryService = GlobalServiceRegister.getDefault()
                 .getService(IRepositoryService.class);
         if (repositoryService != null) {
@@ -974,7 +997,12 @@ public class LoginHelper {
         if (iStoredConnections == null) {
             return null;
         }
-        List<ConnectionBean> filteredConnections = new ArrayList<ConnectionBean>(iStoredConnections);
+        List<ConnectionBean> filteredConnections = new ArrayList<ConnectionBean>();
+        for (ConnectionBean conn: iStoredConnections) {
+            if (!conn.isLoginViaCloud()) {
+                filteredConnections.add(conn);
+            }
+        }
         boolean isOnlyRemoteConnection = false;
         IBrandingConfiguration brandingConfiguration = brandingService.getBrandingConfiguration();
         if (brandingConfiguration != null) {

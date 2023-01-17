@@ -11,6 +11,7 @@ imports="
     CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
     INode node = (INode)codeGenArgument.getArgument();
     String cid = node.getUniqueName();
+    String dieOnError = ElementParameterParser.getValue(node, "__DIE_ON_ERROR__");
 	%>
 	<%@ include file="../tS3Connection/S3Client.javajet" %>
 
@@ -37,21 +38,25 @@ imports="
 				try{
 					objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,<%=objects_prefix!=null && objects_prefix.trim().length()>0 ?objects_prefix:null%>);
 				}catch(com.amazonaws.AmazonClientException e_<%=cid%>){
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
+					globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 					<%
-			    	if(isLog4jEnabled){
+					if (("true").equals(dieOnError)) {
 					%>
-						log.warn("<%=cid%> - Failed to list objects from bucket "+currentBucketName_<%=cid%>);
-						log.warn("<%=cid%> - "+e_<%=cid%>.getMessage());
+						throw(e_<%=cid%>);
 					<%
-					}else{
-			    	%>
-						System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
-						System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
-					<%
-					}
-					%>
-					continue;
+					} else {
+						if(isLog4jEnabled){
+						%>
+							log.warn("<%=cid%> - Failed to list objects from bucket "+currentBucketName_<%=cid%>);
+							log.warn("<%=cid%> - "+e_<%=cid%>.getMessage());
+						<%
+						}else{
+						%>
+							System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
+							System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
+						<%}%>
+						continue;
+					<%}%>
 				}
 		<%
 		} else if(buckets.size()>0){
@@ -94,21 +99,25 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 					%>
 					objects_<%=cid%> = conn_<%=cid%>.listObjects(currentBucketName_<%=cid%>,currentPrefix_<%=cid%>);
 				}catch(com.amazonaws.AmazonClientException e_<%=cid%>){
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
+					globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 					<%
-			    	if(isLog4jEnabled){
+					if (("true").equals(dieOnError)) {
 					%>
-						log.warn("<%=cid%> - Failed to list objects from bucket "+currentBucketName_<%=cid%>);
-						log.warn("<%=cid%> - "+e_<%=cid%>.getMessage());
+						throw(e_<%=cid%>);
 					<%
-					}else{
-			    	%>
-						System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
-						System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
-					<%
-					}
-					%>
-					continue;
+					} else {
+						if(isLog4jEnabled){
+						%>
+							log.warn("<%=cid%> - Failed to list objects from bucket "+currentBucketName_<%=cid%>);
+							log.warn("<%=cid%> - "+e_<%=cid%>.getMessage());
+						<%
+						}else{
+						%>
+							System.err.println("WARNING: [<%=cid%>] failed to list objects from bucket "+currentBucketName_<%=cid%>);
+							System.err.println("WARNING: [<%=cid%>] "+e_<%=cid%>.getMessage());
+						<%}%>
+						continue;
+					<%}%>
 				}
 			<%
 			}

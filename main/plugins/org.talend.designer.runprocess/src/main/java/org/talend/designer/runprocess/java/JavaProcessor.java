@@ -110,6 +110,7 @@ import org.talend.core.hadoop.HadoopConstants;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.core.model.components.EComponentType;
 import org.talend.core.model.general.ModuleNeeded;
+import org.talend.core.model.metadata.designerproperties.SapJcoVersion;
 import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
@@ -136,6 +137,7 @@ import org.talend.core.runtime.process.LastGenerationInfo;
 import org.talend.core.runtime.process.TalendProcessArgumentConstant;
 import org.talend.core.runtime.process.TalendProcessOptionConstants;
 import org.talend.core.runtime.projectsetting.RuntimeLineageManager;
+import org.talend.core.runtime.util.ModuleAccessHelper;
 import org.talend.core.ui.ITestContainerProviderService;
 import org.talend.core.ui.services.IRulesProviderService;
 import org.talend.core.utils.BitwiseOptionUtils;
@@ -271,12 +273,8 @@ public class JavaProcessor extends AbstractJavaProcessor implements IJavaBreakpo
             } else {
                 // for shadow process/data preview
                 this.talendJavaProject = TalendJavaProjectManager.getTempJavaProject();
-                if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class)) {
-                    IRunProcessService service = GlobalServiceRegister.getDefault()
-                            .getService(IRunProcessService.class);
-                    if (service != null) {
-                        service.updateLogFiles(talendJavaProject, true);
-                    }
+                if (IRunProcessService.get() != null) {
+                    IRunProcessService.get().updateLogFiles(talendJavaProject, true);
                 }
             }
             Assert.isNotNull(this.talendJavaProject, Messages.getString("JavaProcessor.notFoundedProjectException"));
@@ -1303,7 +1301,7 @@ public class JavaProcessor extends AbstractJavaProcessor implements IJavaBreakpo
 
     protected String getCommand() {
         // init java interpreter
-        if (isExportConfig() || isRunAsExport()) {
+        if (isExportConfig() || (isRunAsExport() && !CommonsPlugin.isHeadless())) {
             return JavaUtils.JAVA_APP_NAME;
         }
         String command;
@@ -1665,7 +1663,7 @@ public class JavaProcessor extends AbstractJavaProcessor implements IJavaBreakpo
                 IPath jarPath = JavaProcessorUtilities.getJavaProjectLibFolder2()
                         .getFile(MavenUrlHelper.generateModuleNameByMavenURI(neededModule.getMavenUri())).getLocation();
                 String artifactId = artifact.getArtifactId();
-                boolean hasSapjco3 = "sapjco3".equals(artifactId) //$NON-NLS-1$
+                boolean hasSapjco3 = SapJcoVersion.SAP3.getModulName().startsWith(artifactId)
                         && compareSapjco3Version(jarPath.toPortableString()) > 0;
                 boolean hasSapidoc3 = "sapidoc3".equals(artifactId); //$NON-NLS-1$
                 if (hasCXFComponent) {
@@ -1864,6 +1862,8 @@ public class JavaProcessor extends AbstractJavaProcessor implements IJavaBreakpo
                 asList.add("-Dcom.sun.management.jmxremote.authenticate=false"); //$NON-NLS-1$
             }
         }
+
+        asList.addAll(ModuleAccessHelper.getModuleAccessVMArgsForProcessor(this));
 
         vmargs = asList.toArray(new String[0]);
         return vmargs;

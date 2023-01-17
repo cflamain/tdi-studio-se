@@ -4,15 +4,23 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.talend.components</groupId>
 	<artifactId>talend-ws</artifactId>
-	<version>1.0.5-20210629</version>
+	<version>2.0-20221219</version>
 	<packaging>jar</packaging>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+			<distribution>may be downloaded from the Maven repository</distribution>
+		</license>
+	</licenses>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
 
-		<cxf.version>3.3.10</cxf.version>
+		<cxf.version>3.4.10</cxf.version>
 		<odata.version>4.3.0</odata.version>
 		<slf4j.version>1.7.12</slf4j.version>
 		<httpclient.version>4.5.13</httpclient.version>

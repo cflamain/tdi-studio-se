@@ -750,7 +750,7 @@ public class MainComposite extends AbstractTabComposite {
                                     }
                                 }
                             };
-                            repositoryWorkUnit.setAvoidSvnUpdate(true);
+                            repositoryWorkUnit.setAvoidUpdate(true);
                             repositoryWorkUnit.setAvoidUnloadResources(true);
                             ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(repositoryWorkUnit);
                             if (newItem != null && repositoryObject instanceof IProcess2) {
@@ -816,7 +816,7 @@ public class MainComposite extends AbstractTabComposite {
                                     }
                                 }
                             };
-                            repositoryWorkUnit.setAvoidSvnUpdate(true);
+                            repositoryWorkUnit.setAvoidUpdate(true);
                             repositoryWorkUnit.setAvoidUnloadResources(true);
                             ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(repositoryWorkUnit);
 

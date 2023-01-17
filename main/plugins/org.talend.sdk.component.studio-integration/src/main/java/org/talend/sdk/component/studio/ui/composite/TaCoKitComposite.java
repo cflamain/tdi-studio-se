@@ -15,8 +15,8 @@
  */
 package org.talend.sdk.component.studio.ui.composite;
 
-import static java.util.stream.Stream.*;
-import static org.talend.sdk.component.studio.model.parameter.SchemaElementParameter.*;
+import static java.util.stream.Stream.of;
+import static org.talend.sdk.component.studio.model.parameter.SchemaElementParameter.guessButtonName;
 
 import java.beans.PropertyChangeListener;
 import java.util.List;
@@ -332,9 +332,13 @@ public class TaCoKitComposite extends MissingSettingsMultiThreadDynamicComposite
             addWidgetIfActive(composite, current);
         } else {
             Composite previousLevel = previous;
+            final Composite subComposite = new Composite(composite, SWT.NONE);
+            subComposite.setBackground(composite.getBackground());
+            subComposite.setLayout(new FormLayout());
+            subComposite.setLayoutData(levelLayoutData(previousLevel));
             for (final Level level : layout.getLevels()) {
-                final Composite levelComposite = new Composite(composite, SWT.NONE);
-                levelComposite.setBackground(composite.getBackground());
+                final Composite levelComposite = new Composite(subComposite, SWT.NONE);
+                levelComposite.setBackground(subComposite.getBackground());
                 levelComposite.setLayout(new FormLayout());
                 levelComposite.setLayoutData(levelLayoutData(previousLevel));
                 previousLevel = levelComposite;

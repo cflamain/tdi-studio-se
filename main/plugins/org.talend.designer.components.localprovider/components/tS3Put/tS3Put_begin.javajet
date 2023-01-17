@@ -193,20 +193,33 @@ accessCtrlList.grantPermission(grantee_<%=cid%>_<%=grantee_id%>, com.amazonaws.s
 				java.io.InputStream sourceStream_<%=cid%> = ((java.io.InputStream)fileOrStream_<%=cid%>);
 				
   			class S3StreamUtil {
-	    	    public int getLength(byte[] output) {
-	    		    for (int i = output.length - 1; i > 0; i--) {
-	    			    if (output[i] != 0) {
-	    				    return i + 1;
-	    			    }
-	    		    }
-	    		    return 0;
-	    	    }
+	    		//read content to buffer as many as possible
+	    		public int readFully(final java.io.InputStream input, final byte[] buffer) throws java.io.IOException {
+	    			return readFully(input, buffer, 0, buffer.length);
+	    		}
+	    		
+	    		public int readFully(final java.io.InputStream input, final byte[] buffer, final int offset, final int length) throws java.io.IOException {
+	    			if (length < 0) {
+	    				throw new java.lang.IllegalArgumentException("Length must not be negative: " + length);
+	    			}
+	    		
+	    			int remaining = length;
+	    			while (remaining > 0) {
+	    				final int location = length - remaining;
+	    				final int count = input.read(buffer, offset + location, remaining);
+	    				if (count == -1) {
+	    					break;
+	    				}
+	    				remaining -= count;
+	    			}
+	    			return length - remaining;
+	    		}
 	      	}
       	
       	S3StreamUtil streamUtil_<%=cid%> = new S3StreamUtil();
     		byte[] buffer_<%=cid%> = new byte[partSizeInBytes_<%=cid%>];
-    		sourceStream_<%=cid%>.read(buffer_<%=cid%>);
-    		long curPartSize_<%=cid%> = streamUtil_<%=cid%>.getLength(buffer_<%=cid%>);
+    		long curPartSize_<%=cid%> = streamUtil_<%=cid%>.readFully(sourceStream_<%=cid%>, buffer_<%=cid%>);
+    		<%//if stream size is bigger than buffer size, or 100% the same with buffer size, we treat as multiupload both%>
     		boolean multiUpload_<%=cid%> = curPartSize_<%=cid%> == partSizeInBytes_<%=cid%>;
     		
     		if(!multiUpload_<%=cid%>) {
@@ -259,7 +272,7 @@ accessCtrlList.grantPermission(grantee_<%=cid%>_<%=grantee_id%>, com.amazonaws.s
                     	.withPartNumber(partNumber_<%=cid%>)
 						.withPartSize(curPartSize_<%=cid%>);
             		    uploadRequest_<%=cid%>.setInputStream(uploadStream_<%=cid%>);
-            		    streamHasNext_<%=cid%> = sourceStream_<%=cid%>.read(probeAvailability_<%=cid%>) != -1;
+            		    streamHasNext_<%=cid%> = (1 == streamUtil_<%=cid%>.readFully(sourceStream_<%=cid%>, probeAvailability_<%=cid%>));
             		    if(!streamHasNext_<%=cid%>){
                     	    uploadRequest_<%=cid%>.setLastPart(true);
                     	}
@@ -271,10 +284,9 @@ accessCtrlList.grantPermission(grantee_<%=cid%>_<%=grantee_id%>, com.amazonaws.s
       		         			uploadStream_<%=cid%>.close();
           		     	}
           		     	buffer_<%=cid%> = new byte[partSizeInBytes_<%=cid%>];
-          		     	sourceStream_<%=cid%>.read(buffer_<%=cid%>,1,partSizeInBytes_<%=cid%>-1);
+          		     	curPartSize_<%=cid%> = 1 + streamUtil_<%=cid%>.readFully(sourceStream_<%=cid%>, buffer_<%=cid%>, 1, partSizeInBytes_<%=cid%>-1);
           		     	buffer_<%=cid%>[0] = probeAvailability_<%=cid%>[0];
           		     	probeAvailability_<%=cid%> = new byte[1];
-          		     	curPartSize_<%=cid%> = streamUtil_<%=cid%>.getLength(buffer_<%=cid%>);
           		     	uploadStream_<%=cid%> = new java.io.ByteArrayInputStream(buffer_<%=cid%>);
         				}
         				

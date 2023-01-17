@@ -64,7 +64,7 @@ skeleton="../templates/db_output_bulk.skeleton"
     boolean createGeometryColumns = ("true").equals(ElementParameterParser.getValue(node,"__GEOMETRY_COLUMNS__"));
 
     //feature:2880
-    ((OracleManager)getManager(dbmsId, cid, node)).setDbVersion(dbVersion);
+    getManager(dbmsId, cid, node).setDbVersion(dbVersion);
     boolean whereSupportNull = ElementParameterParser.getValue(node, "__SUPPORT_NULL_WHERE__").equals("true");
     
     boolean containBlobFromOtherDB = "true".equals(ElementParameterParser.getValue(node, "__CONTAIN_BLOB_FROM_OTHER_DB__"));
@@ -87,14 +87,12 @@ skeleton="../templates/db_output_bulk.skeleton"
 
     INode connectionNode = NodeUtil.getNodeByUniqueName(node.getProcess(), connection);
 	
-    boolean isUseBatchByDBVersion = (!useExistingConnection && !"ORACLE_8".equalsIgnoreCase(dbVersion)) 
-		|| (useExistingConnection && (connectionNode==null || (connectionNode!=null && !"ORACLE_8".equalsIgnoreCase(connectionNode.getUniqueName()))));
 
     boolean useBatch = true;
     if(useExistingConnection){
-        useBatch = rejectConnName == null && isUseBatchByDBVersion && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchAndUseConn);
+        useBatch = rejectConnName == null  && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchAndUseConn);
     }else{
-        useBatch = rejectConnName == null && isUseBatchByDBVersion && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchSize);
+        useBatch = rejectConnName == null  && (("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)) && ("true").equals(useBatchSize);
     }
 
     List<IMetadataColumn> rejectColumnList = null;
@@ -353,6 +351,15 @@ skeleton="../templates/db_output_bulk.skeleton"
     for(Column colStmt : stmtStructure) {
         if(!colStmt.isReplaced() && !colStmt.isAddCol() && !colStmt.isDynamic()) {
             colStruct.add(colStmt);
+        } else if ( colStmt.isReplaced() ) {
+             List <Column> replacements = colStmt.getReplacement() ;
+             for (int i=0; i < replacements.size() ; i++) {
+                 Column columnTest = replacements.get(i);
+                 String sqlExpression = columnTest.getSqlStmt();
+                 if (sqlExpression.contains("?")) {
+                     colStruct.add(colStmt);
+                 }
+             }
         }
     }
     if(isEnableDebug) {

@@ -19,7 +19,6 @@ class CSVReaderTest {
         Assertions.assertNotNull(values);
     }
 
-
     @Test
     void readNext() throws IOException {
 
@@ -136,6 +135,38 @@ class CSVReaderTest {
                 () -> this.checkNextValues("line 3", reader, "One\"Column", "ddzs")
         );
         Assertions.assertFalse(reader.readNext());
+    }
+
+    @Test
+    void testSetSafetySwitchWithTooManyColumns() {
+        Assertions.assertThrows(RuntimeException.class, ()-> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("v");
+            for(int i=0;i<100000;i++) {
+                sb.append(",").append("v");
+            }
+
+            final String line = sb.toString();
+            final CSVReader reader = new CSVReader(new StringReader(line), ',');
+            reader.setSafetySwitch(true);
+            reader.readNext();
+        });
+    }
+
+    @Test
+    void testSetSafetySwitchWithTooBigColumn() {
+        Assertions.assertThrows(RuntimeException.class, ()-> {
+            StringBuilder sb = new StringBuilder();
+            sb.append("v,");
+            for(int i=0;i<=100000;i++) {
+                sb.append("v");
+            }
+
+            final String line = sb.toString();
+            final CSVReader reader = new CSVReader(new StringReader(line), ',');
+            reader.setSafetySwitch(true);
+            reader.readNext();
+        });
     }
 
     void checkNextValues(final String comment, final CSVReader reader, final String... excepted) throws IOException {

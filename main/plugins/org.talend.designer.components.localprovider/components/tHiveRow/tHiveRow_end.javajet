@@ -17,6 +17,7 @@ imports="
 	
     String theDistribution = ElementParameterParser.getValue(node, "__DISTRIBUTION__");
     String theVersion = ElementParameterParser.getValue(node, "__HIVE_VERSION__");
+	String connMode = ElementParameterParser.getValue(node, "__CONNECTION_MODE__");
 
     if("true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"))) {
         String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
@@ -24,6 +25,7 @@ imports="
             if(connection!=null && connection.equals(pNode.getUniqueName())) {
                 theDistribution = ElementParameterParser.getValue(pNode, "__DISTRIBUTION__");
                 theVersion = ElementParameterParser.getValue(pNode, "__HIVE_VERSION__");
+                connMode = ElementParameterParser.getValue(pNode, "__CONNECTION_MODE__");
             }
         }
     }
@@ -37,10 +39,10 @@ imports="
     }
     boolean isCustom = hiveDistrib instanceof org.talend.hadoop.distribution.custom.CustomDistribution;
 
-	if(!hiveDistrib.useCloudLauncher()) {
+	if(!hiveDistrib.useCloudLauncher() && !"DATAPROC".equalsIgnoreCase(connMode)) {
 		if (usePrepareStatement) {
 		%>
-			pstmt_<%=cid %>.close();	
+			pstmt_<%=cid %>.close();
 		<%
 		} 
 		%>
@@ -99,3 +101,4 @@ imports="
 <%
 	}
 %>
+

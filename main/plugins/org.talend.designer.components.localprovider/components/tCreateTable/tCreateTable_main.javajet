@@ -63,6 +63,7 @@ abstract class Manager {
         return additionalParams;
     }
     
+    //this is not good way, it make trouble if want to add jdbc parameters, that need a complex string append action, not good, we should avoid that
     public String difineConnParam(){
         StringBuilder javaCode = new StringBuilder();
         javaCode.append("String driverClass_"+cid+"=\"" + getDriver()+ "\";\r\n");
@@ -549,6 +550,8 @@ class HSQLDBManager extends Manager {
         this.tls = tls;
     }
     protected String getDriver() {
+    	System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
+    	
         return "org.hsqldb.jdbcDriver";
     }
     public String getSeparator(){
@@ -1996,12 +1999,51 @@ class RedshiftManager extends Manager {
     public String getSpecificConnectionURL() {
         return "\"jdbc:redshift://\" + " + host + " + \":\" + " + port + " + \"/\" + " + dbName;
     }
+
+        public String getConnectionURL(){
+            boolean useStringProperties = "true".equals(ElementParameterParser.getValue(node, "__USE_STRING_PROPERTIES__"));
+            int driveVersion = "DRIVER_V2".equals(ElementParameterParser.getValue(node, "__REDSHIFT_DRIVER_VERSION__"))? 2 : 1;
+
+            if (getAdditionalParams() == null || "\"\"".equals(getAdditionalParams().trim()) || (!useStringProperties && driveVersion == 2) ){
+                return getSpecificConnectionURL();
+            }else{
+                return getSpecificConnectionURL() + " + \"" + getSeparator() + "\" + " + getAdditionalParams();
+            }
+        }
+
     public String getConnection() {
+        boolean useStringProperties = "true".equals(ElementParameterParser.getValue(node, "__USE_STRING_PROPERTIES__"));
+        int driveVersion = "DRIVER_V2".equals(ElementParameterParser.getValue(node, "__REDSHIFT_DRIVER_VERSION__"))? 2 : 1;
         StringBuilder javaCode = new StringBuilder();
         if(useExistingConnection) {
             javaCode.append(retrieveTable());
             javaCode.append("java.sql.Connection conn_" + cid + " = (java.sql.Connection)globalMap.get(\"conn_" + connection + "\");");
-        } else {
+        } else if(!useStringProperties && driveVersion == 2){
+
+                javaCode.append(retrieveTable());
+                javaCode.append("java.lang.Class jdbcclazz_" + cid + "= java.lang.Class.forName(\"" + getDriver()+ "\");\r\n");
+
+                newInstance(javaCode);
+
+                log4jCodeGenerateUtil.connect_begin();
+                String passwordFieldName = "__PASS__";
+                if(ElementParameterParser.canEncrypt(node, passwordFieldName)) {
+                	javaCode.append("final String decryptedPassword_" + cid + "= routines.system.PasswordEncryptUtil.decryptPassword(" + ElementParameterParser.getEncryptedValue(node, passwordFieldName) + ");\r\n");
+                } else {
+                	javaCode.append("final String decryptedPassword_" + cid + "= " + ElementParameterParser.getValue(node, passwordFieldName) + ";\r\n");
+                }
+                java.util.List<java.util.Map<String, String>> properties = (java.util.List<java.util.Map<String,String>>)ElementParameterParser.getObjectValue(node, "__ENTRY_PROPERTIES__");
+
+
+                javaCode.append("java.util.Properties atnParamsPrope_" + cid + "= new java.util.Properties();\r\n");
+                javaCode.append("atnParamsPrope_" + cid + ".put(\"user\",dbUser_"+ cid + ");\r\n");
+      			javaCode.append("atnParamsPrope_" + cid + ".put(\"password\",decryptedPassword_" + cid + ");\r\n");
+      		    for(java.util.Map<String, String> entry : properties){
+                      javaCode.append("atnParamsPrope_" + cid + ".put(" + entry.get("KEY") + "," + entry.get("VALUE") + ");\r\n");
+                }
+                javaCode.append("java.sql.Connection conn_" + cid + " = java.sql.DriverManager.getConnection(url_" + cid + ", atnParamsPrope_" + cid + ");\r\n");
+
+        }else {
             javaCode.append(super.getConnection());
         }
         return javaCode.toString();
@@ -2428,9 +2470,41 @@ if(columnList != null && columnList.size() > 0) {
         <%
         boolean useExistingConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
         if(!useExistingConnection) {
-        %>
+            if("MYSQL".equals(dbType)) {
+                String dbproperties = ElementParameterParser.getValue(node,"__PROPERTIES__");
+                String dbhost = ElementParameterParser.getValue(node, "__HOST__");
+                String dbport = ElementParameterParser.getValue(node, "__PORT__");
+                String dbname = ElementParameterParser.getValue(node, "__DBNAME__");
+                String userName = ElementParameterParser.getValue(node, "__USER__");
+                
+                String dbVersion = ElementParameterParser.getValue(node, "__DB_MYSQL_VERSION__");
+                
+                String jdbcURL = "jdbc:mysql";
+                if("MARIADB".equals(dbVersion)){
+                	jdbcURL = "jdbc:mariadb";
+                }
+                
+                String driverClass = null;
+                if("MARIADB".equals(dbVersion)){
+                    driverClass = "org.mariadb.jdbc.Driver";
+                } else if ("MYSQL_8".equals(dbVersion)){
+                    driverClass = "com.mysql.cj.jdbc.Driver";
+                } else {
+                    driverClass = "com.mysql.jdbc.Driver";
+                }
+                %>
+                
+                String driverClass_<%=cid%> = "<%=driverClass%>";
+                
+                <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Mysql/jdbcurl4basic.javajet"%>
+                
+                String dbUser_<%=cid%> = <%=userName%>;
+            <%
+            } else {
+            %>
             <%=manager.difineConnParam()%>
             <%
+            }
             log4jCodeGenerateUtil.debugConnectionParams(node);
             //log4jCodeGenerateUtil.connect_begin();
         }
@@ -2657,10 +2731,13 @@ if(columnList != null && columnList.size() > 0) {
                 <%
             }
         }
-        log4jCodeGenerateUtil.close_begin();
+        if(!useExistingConnection){
+            log4jCodeGenerateUtil.close_begin();
+            %>
+            <%=manager.closeConnection()%>
+            <%log4jCodeGenerateUtil.close_end();
+        }
         %>
-        <%=manager.closeConnection()%>
-        <%log4jCodeGenerateUtil.close_end();%>
         globalMap.put("<%=cid%>_QUERY", "<%=manager.getCreateTableSQL(columnList)%>");        
     } catch(java.lang.Exception e) {
         globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());

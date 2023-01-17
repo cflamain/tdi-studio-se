@@ -19,12 +19,15 @@ import java.util.Map;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.util.EList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.talend.core.model.properties.ContextItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.constants.FileConstants;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.designer.core.model.utils.emf.talendfile.ContextType;
 import org.talend.repository.items.importexport.handlers.ImportExportHandlersManager;
 import org.talend.repository.items.importexport.handlers.model.ImportItem;
 import org.talend.repository.items.importexport.manager.ResourcesManager;
@@ -68,17 +71,30 @@ public class BigDataEeImportTest extends DemosImportTest {
 		Assert.assertTrue(currentJobItemsSize > 0);
 		Assert.assertEquals(demoJobItemFiles.size(), currentJobItemsSize);
 
-		// test the hadoop items under BigDataDemo_ee.zip
-		int currentMrItemsSize = ProxyRepositoryFactory.getInstance().getAll(ERepositoryObjectType.PROCESS_MR).size();
-		List<File> demoMrItemsFiles = getDemoItemFileList(rootPath + File.separator + processMrPath);
-		Assert.assertTrue(demoMrItemsFiles.size() > 0);
-		Assert.assertTrue(currentMrItemsSize > 0);
-		Assert.assertEquals(demoMrItemsFiles.size(), currentMrItemsSize);
-
 		// test the context items under BigDataDemo_ee.zip
 		int currentContextItemsSize = ProxyRepositoryFactory.getInstance().getAll(ERepositoryObjectType.CONTEXT).size();
 		List<File> demoContextItemsFiles = getDemoItemFileList(rootPath + File.separator + contextItemPath);
 		Assert.assertTrue(demoContextItemsFiles.size() > 0);
+
+        // TUP-35909:test the ContextType content
+        List<ContextItem> contextItemList = null;
+        contextItemList = ProxyRepositoryFactory.getInstance().getContextItem();
+        for (ContextItem contextItem : contextItemList) {
+            if (contextItem.getProperty().getDisplayName().equals("HDP")
+                    || contextItem.getProperty().getDisplayName().equals("SQOOP_SCENARIO_CONTEXT")) {
+                EList contexts = ((ContextItem) contextItem).getContext();
+                for (Object context : contexts) {
+                    if (context instanceof ContextType) {
+                        List<Object> contextParamList = ((ContextType) context).getContextParameter();
+                        // default
+                        Assert.assertNotNull("Name of ContextType should not be null", ((ContextType) context).getName());
+                        // host, port, user...
+                        Assert.assertTrue("contextParameter items should be more than 0",
+                                contextParamList.size() > 0);
+                    }
+                }
+            }
+        }
 
 		Assert.assertTrue(currentContextItemsSize > 0);
 		Assert.assertEquals(demoContextItemsFiles.size(), currentContextItemsSize);
@@ -106,7 +122,6 @@ public class BigDataEeImportTest extends DemosImportTest {
 	protected Map<String, String> getCollectFolderMap(String rootPath) {
 		Map<String, String> map = super.getCollectFolderMap(rootPath);
 		map.put(rootPath + File.separator + processItemPath, FileConstants.ITEM_EXTENSION);
-		map.put(rootPath + File.separator + processMrPath, FileConstants.ITEM_EXTENSION);
 		map.put(rootPath + File.separator + contextItemPath, FileConstants.ITEM_EXTENSION);
 		map.put(rootPath + File.separator + connectionItemPath, FileConstants.ITEM_EXTENSION);
 		map.put(rootPath + File.separator + documentionPath, FileConstants.ITEM_EXTENSION);

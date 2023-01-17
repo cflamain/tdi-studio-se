@@ -12,22 +12,16 @@
 // ============================================================================
 package org.talend.designer.core.utils;
 
-import java.util.Locale;
-
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.program.Program;
 import org.talend.commons.utils.VersionUtils;
-import org.talend.core.CorePlugin;
-import org.talend.core.PluginChecker;
-import org.talend.core.prefs.ITalendCorePrefConstants;
+import org.talend.core.prefs.GeneralParametersProvider;
 
 public class ComponentsHelpUtil {
 
     private static final String JVM_PARAM_ONLINE_HELP_VERSION = "online.help.version"; //$NON-NLS-1$
 
     private static String INTERNAL_VERSION = null;
-
-    private static Boolean IS_RELEASE_VERSION = null;
 
     private static String PRODUCT_BASE_VERSION = null;
 
@@ -39,10 +33,8 @@ public class ComponentsHelpUtil {
         if (INTERNAL_VERSION == null) {
             INTERNAL_VERSION = VersionUtils.getInternalVersion();
         }
-        if (IS_RELEASE_VERSION == null) {
-            IS_RELEASE_VERSION = INTERNAL_VERSION.indexOf("-") < 0 //$NON-NLS-1$
-                    || INTERNAL_VERSION.toLowerCase().indexOf("patch") >= 0;
-            PRODUCT_BASE_VERSION = INTERNAL_VERSION.substring(0, 3);
+        if (PRODUCT_BASE_VERSION == null) {
+            PRODUCT_BASE_VERSION = INTERNAL_VERSION.substring(0, 1) + INTERNAL_VERSION.substring(2, 3);
         }
     }
 
@@ -51,20 +43,16 @@ public class ComponentsHelpUtil {
     }
 
     public static String calOnLineHelpURL(String componentName) {
-        StringBuilder sb = new StringBuilder();
-        if (IS_RELEASE_VERSION) {
-            sb.append("https://help.talend.com/access/sources/content/topic?pageid="); //$NON-NLS-1$
-        } else {
-            sb.append("https://talend-staging.fluidtopics.net/access/sources/content/topic?pageid="); //$NON-NLS-1$
-        }
+        StringBuilder sb = new StringBuilder("https://document-link.us.cloud.talend.com/std_");
         sb.append(componentName.toLowerCase());
-        sb.append("&afs:lang=").append(getLanguage()); //$NON-NLS-1$
-        sb.append("&EnrichVersion="); //$NON-NLS-1$
+        sb.append("?version="); //$NON-NLS-1$
         if (!StringUtils.isEmpty(System.getProperty(JVM_PARAM_ONLINE_HELP_VERSION))) {
             sb.append(System.getProperty(JVM_PARAM_ONLINE_HELP_VERSION));
         } else {
             sb.append(PRODUCT_BASE_VERSION);
         }
+        sb.append("&lang=").append(GeneralParametersProvider.getOnLineHelpLanguageSetting()); //$NON-NLS-1$
+        sb.append("&env=prd");
         return sb.toString();
     }
 
@@ -73,17 +61,8 @@ public class ComponentsHelpUtil {
         Program.launch(url);
     }
 
-    public static String getLanguage() {
-        String language = CorePlugin.getDefault().getPluginPreferences().getString(ITalendCorePrefConstants.LANGUAGE_SELECTOR);
-        if (StringUtils.isBlank(language)) {
-            language = Locale.getDefault().getLanguage();
-        }
-        return Locale.FRENCH.getLanguage().equals(language) ? "fr" : "en"; //$NON-NLS-1$ //$NON-NLS-2$
-    }
-
     public static void resetVersionData(String version) {
         INTERNAL_VERSION = version;
-        IS_RELEASE_VERSION = null;
         PRODUCT_BASE_VERSION = null;
         initVersionData();
     }

@@ -85,7 +85,7 @@ skeleton="../templates/db_output_bulk.skeleton"
 
   boolean useBatch = useBatchSize && (rejectConnName == null)
                    && (
-                        ("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("DELETE").equals(dataAction)
+                        ("INSERT").equals(dataAction) || ("UPDATE").equals(dataAction) || ("UPSERT").equals(dataAction) || ("DELETE").equals(dataAction)
                       );
 %>
 
@@ -272,9 +272,41 @@ if(columnList != null && columnList.size()>0) {
     StringBuilder updateWhereStmt = actionSQLMap.get(UPDATE_WHERE_STMT);
     StringBuilder deleteWhereStmt = actionSQLMap.get(DELETE_WHERE_STMT);
 
-	if(("INSERT").equals(dataAction)) {
-	    %>
-	    String insert_<%=cid%> = "INSERT INTO \"" + tableName_<%=cid%> + "\" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)";
+    if(("INSERT").equals(dataAction) || ("UPSERT").equals(dataAction)) {
+        %>
+        java.lang.StringBuilder sb_<%=cid%> = new java.lang.StringBuilder();
+        sb_<%=cid%>.append("INSERT INTO \"").append(tableName_<%=cid%>).append("\" (<%=insertColName.toString()%>) VALUES (<%=insertValueStmt.toString()%>)");
+
+        <%if (("UPSERT").equals(dataAction)) {
+            java.lang.StringBuilder primaryKeysSB = new java.lang.StringBuilder();
+            java.lang.StringBuilder updateColumnSB = new java.lang.StringBuilder();
+            for(Column column : stmtStructure) {
+                String columnName = column.getColumnName();
+                if (column.isReplaced()) {
+                    for (Column replacedColumn : column.getReplacement()) {
+                        columnName = replacedColumn.getColumnName();
+                    }
+                }
+                if (column.isKey()) {
+                    primaryKeysSB.append("\\\"").append(columnName).append("\\\"").append(",");
+                } else {
+                    updateColumnSB.append("\\\"").append(columnName).append("\\\"").append(" = EXCLUDED.").append("\\\"").append(columnName).append("\\\"").append(",");
+                }
+            }
+            String primaryKeys = primaryKeysSB.toString();
+            primaryKeys = (primaryKeys.length() == 0) ? "" : primaryKeys.substring(0, primaryKeys.length() - 1);
+            String updateColumns = updateColumnSB.toString();
+            updateColumns = (updateColumns.length() == 0) ? "" : updateColumns.substring(0, updateColumns.length() - 1);
+            %>
+
+            sb_<%=cid%>.append(" ON CONFLICT (").append("<%=primaryKeys%>").append(")").append(" DO UPDATE SET ").append("<%=updateColumns%>");
+
+            <%
+        }%>
+        String insert_<%=cid%> = sb_<%=cid%>.toString();
+        
+        <%dbLog.data().sqlExecuteTry("insert_"+cid);%>
+        
 	    <%
 	    boolean usingStatsLogs = cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("talendMeter_DB");
 	    if(!usingStatsLogs) {

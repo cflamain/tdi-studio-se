@@ -12,12 +12,15 @@
 // ============================================================================
 package org.talend.repository.generic.persistence;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.components.api.properties.ComponentProperties;
 import org.talend.core.model.metadata.builder.connection.Connection;
+import org.talend.core.model.metadata.builder.connection.MetadataTable;
 import org.talend.core.model.properties.ConnectionItem;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.properties.Property;
@@ -30,6 +33,8 @@ import org.talend.designer.core.generic.utils.ComponentsUtils;
 import org.talend.designer.core.generic.utils.SchemaUtils;
 import org.talend.repository.generic.model.genericMetadata.GenericMetadataFactory;
 import org.talend.repository.generic.model.genericMetadata.SubContainer;
+import org.talend.repository.generic.update.GenericUpdateManager;
+
 import orgomg.cwm.objectmodel.core.ModelElement;
 
 /**
@@ -37,6 +42,8 @@ import orgomg.cwm.objectmodel.core.ModelElement;
  *
  */
 public class GenericRepository implements Repository<ComponentProperties> {
+
+    private Map<String, MetadataTable> nameAndTableMap = new HashMap<String, MetadataTable>();
 
     @Override
     public String storeProperties(ComponentProperties properties, String name, String repositoryLocation,
@@ -58,7 +65,7 @@ public class GenericRepository implements Repository<ComponentProperties> {
             if (item == null) {
                 throw new RuntimeException("Failed to find the GenericConnectionItem for location:" + repositoryLocation); //$NON-NLS-1$
             }
-            Connection connection = (Connection) item.getConnection();
+            Connection connection = item.getConnection();
             orgomg.cwm.objectmodel.core.Package parentContainer = null;
             if (repositoryLocation.endsWith(IGenericConstants.REPOSITORY_LOCATION_SEPARATOR)) {// first nested property
                 parentContainer = connection;
@@ -75,16 +82,22 @@ public class GenericRepository implements Repository<ComponentProperties> {
                 if (schemaProperty != null) {
                     schemaProperty.setTaggedValue(IGenericConstants.REPOSITORY_VALUE, null);
                 }
-//                SchemaUtils.createCatalog(name, properties, connection, schemaPropertyName);
-                childElement = SchemaUtils.createSchema(name, properties, schemaPropertyName);
+                // SchemaUtils.createCatalog(name, properties, connection, schemaPropertyName);
+                List updatingSchemas = SchemaUtils.getUpdatingSchemas();
+                if (!updatingSchemas.contains(name) && nameAndTableMap.containsKey(name)) {
+                    childElement = nameAndTableMap.get(name);
+                } else {
+                    childElement = SchemaUtils.createSchema(name, properties, schemaPropertyName);
+                }
             }
             parentContainer.getOwnedElement().add(childElement);
             return repositoryLocation + IGenericConstants.REPOSITORY_LOCATION_SEPARATOR + name;
         } else {// simple properties to be set
             ConnectionItem item = getGenericConnectionItem(repositoryLocation);
             if (item != null) {
-                Connection connection = (Connection) item.getConnection();
+                Connection connection = item.getConnection();
                 connection.setCompProperties(serializedProperties);
+                nameAndTableMap = GenericUpdateManager.getNameAndTableMap(item);
                 connection.getOwnedElement().clear();
                 try {
                     // in case compProperties lost

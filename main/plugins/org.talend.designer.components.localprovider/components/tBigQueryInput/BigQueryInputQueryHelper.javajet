@@ -257,7 +257,9 @@ class BigQueryUtil_<%=cid%> {
             <%
                 }
             %>
-            jobList.add(job);
+            if (job.getStatistics().getScriptStatistics() == null || !"EXPRESSION".equals(job.getStatistics().getScriptStatistics().getEvaluationKind())){
+                jobList.add(job);
+            }
             statistics_<%=cid %>.add(job.getStatistics().toString());
         }
         java.util.Collections.reverse(jobList);

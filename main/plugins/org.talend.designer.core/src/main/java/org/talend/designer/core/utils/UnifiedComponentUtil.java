@@ -137,9 +137,10 @@ public class UnifiedComponentUtil {
             for (IComponent component : componentList) {
                 String databaseName = service.getUnifiedCompDisplayName(service.getDelegateComponent(component),
                         component.getName());
-                if (StringUtils.isNotBlank(databaseName) && !databaseName.equals(dbTypeName)) {
+                if (("JDBC".equals(databaseName) || isAdditionalJDBC(databaseName)) && !dbTypeName.equals(databaseName)) {
                     continue;
                 }
+
                 if (isAdditionalJDBC(databaseName)) {
                     String compKey = StringUtils.deleteWhitespace(databaseName);
                     boolean unsupport = UnifiedComponentUtil.isUnsupportedComponent(
@@ -273,12 +274,13 @@ public class UnifiedComponentUtil {
                 node.getElementParameter("connection.driverClass").setValue(TalendQuoteUtils.addQuotes(bean.getDriverClass()));
             }
             ComponentProperties componentProperties = node.getComponentProperties();
-            Map<String, Object> map = new HashMap<String, Object>();
-            map.put("jdbcUrl", TalendQuoteUtils.addQuotes(bean.getUrl()));
-            map.put("driverClass", TalendQuoteUtils.addQuotes(bean.getDriverClass()));
-            map.put("drivers", bean.getPaths());
-            setCompPropertiesForJDBC(componentProperties, map);
-
+            if(componentProperties != null) {
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("jdbcUrl", TalendQuoteUtils.addQuotes(bean.getUrl()));
+                map.put("driverClass", TalendQuoteUtils.addQuotes(bean.getDriverClass()));
+                map.put("drivers", bean.getPaths());
+                setCompPropertiesForJDBC(componentProperties, map);
+            }
         }
     }
 

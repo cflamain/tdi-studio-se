@@ -49,6 +49,7 @@ public class ResetVMArgumentMigrationTask extends AbstractJobMigrationTask {
         if (parameters == null) {
             return ExecutionResult.NOTHING_TO_DO;
         }
+        boolean modified = false;
         ProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
         try {
             EList listParamType = parameters.getElementParameter();
@@ -67,6 +68,7 @@ public class ResetVMArgumentMigrationTask extends AbstractJobMigrationTask {
                             root.put("JOB_RUN_VM_ARGUMENTS", args);//$NON-NLS-1$
                             pType.setValue(root.toString());
                             factory.save(item, true);
+                            modified = true;
                             break;
                         } catch (JSONException e) {
                             ExceptionHandler.process(e);
@@ -76,7 +78,11 @@ public class ResetVMArgumentMigrationTask extends AbstractJobMigrationTask {
 
                 }
             }
-            return ExecutionResult.SUCCESS_WITH_ALERT;
+            if (modified) {
+                return ExecutionResult.SUCCESS_WITH_ALERT;
+            } else {
+                return ExecutionResult.NOTHING_TO_DO;
+            }
         } catch (Exception e) {
             ExceptionHandler.process(e);
             return ExecutionResult.FAILURE;

@@ -33,25 +33,21 @@ import org.talend.commons.exception.CommonExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.runtime.exception.MessageBoxExceptionHandler;
 import org.talend.core.CorePlugin;
-import org.talend.core.GlobalServiceRegister;
 import org.talend.core.context.Context;
 import org.talend.core.context.RepositoryContext;
 import org.talend.core.language.ECodeLanguage;
 import org.talend.core.model.general.ConnectionBean;
 import org.talend.core.model.general.Project;
-import org.talend.core.model.repository.SVNConstant;
+import org.talend.core.model.repository.GITConstant;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.repository.model.RepositoryFactoryProvider;
 import org.talend.core.repository.utils.ProjectHelper;
-import org.talend.core.runtime.util.SharedStudioUtils;
-import org.talend.core.service.IUpdateService;
 import org.talend.core.utils.ProjectUtils;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
 import org.talend.repository.ui.actions.importproject.ImportDemoProjectAction;
 import org.talend.repository.ui.actions.importproject.ImportProjectAsAction;
 import org.talend.repository.ui.login.connections.ConnectionsDialog;
-import org.talend.utils.json.JSONException;
 
 /**
  * created by cmeng on May 22, 2015 Detailled comment
@@ -85,8 +81,6 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
 
     protected String finishButtonAction;
 
-    protected LoginHelper loginHelper;
-
     public LoginFirstTimeStartupActionPage(Composite parent, LoginDialogV2 dialog, int style) {
         super(parent, dialog, style);
     }
@@ -99,12 +93,11 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
     @Override
     public void init() throws Throwable {
         super.init();
-        loginHelper = LoginHelper.getInstance();
         List<ConnectionBean> storedConnections = LoginHelper.getInstance().getStoredConnections();
         if (storedConnections == null) {
             storedConnections = new ArrayList<ConnectionBean>();
         } else {
-            storedConnections = loginHelper.filterUsableConnections(storedConnections);
+            storedConnections = LoginHelper.getInstance().filterUsableConnections(storedConnections);
         }
         if (storedConnections.size() == 0) {
             defaultConnectionBean = LoginHelper.createDefaultLocalConnection();
@@ -216,27 +209,8 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
 
     @Override
     public void check() {
-        try {
-            if (SharedStudioUtils.isSharedStudioMode()) {
-                validatePatchForSharedMode();
-            }
-        } catch (JSONException e) {
-            CommonExceptionHandler.process(e);
-            log.error(e);
-        }
+        // nothing to do
     }
-    
-    protected void validatePatchForSharedMode() throws JSONException {
-        String missingPatchVersion = null;
-        if (GlobalServiceRegister.getDefault().isServiceRegistered(IUpdateService.class)) {
-            IUpdateService updateService = GlobalServiceRegister.getDefault().getService(IUpdateService.class);
-            missingPatchVersion = updateService.getSharedStudioMissingPatchVersion();
-        }
-        if (missingPatchVersion != null) {
-            errorManager.setWarnMessage(Messages.getString("LoginProjectPage.sharedModeMissingPatchFile", missingPatchVersion));
-        }
-    }
-
 
     @Override
     protected void addListeners() {
@@ -500,7 +474,7 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
         if (importedDemoProjectName == null || importedDemoProjectName.isEmpty()) {
             return;
         }
-        Project selectedProject = loginHelper.getProjectByName(loginHelper.getProjects(defaultConnectionBean),
+        Project selectedProject = LoginHelper.getInstance().getProjectByName(LoginHelper.getInstance().getProjects(defaultConnectionBean),
                 importedDemoProjectName);
         openProject(selectedProject);
     }
@@ -519,7 +493,7 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
         if (importedExistingProjectName == null || importedExistingProjectName.isEmpty()) {
             return;
         }
-        Project selectedProject = loginHelper.getProjectByName(loginHelper.getProjects(defaultConnectionBean),
+        Project selectedProject = LoginHelper.getInstance().getProjectByName(LoginHelper.getInstance().getProjects(defaultConnectionBean),
                 importedExistingProjectName);
         openProject(selectedProject);
     }
@@ -529,10 +503,10 @@ public class LoginFirstTimeStartupActionPage extends AbstractLoginActionPage {
             return;
         }
         LoginHelper.setRepositoryContextInContext(defaultConnectionBean, LoginHelper.getUser(defaultConnectionBean), project,
-                SVNConstant.NAME_TRUNK);
-        if (loginHelper.logIn(defaultConnectionBean, project)) {
-            loginHelper.saveLastConnectionBean(defaultConnectionBean);
-            loginHelper.getPrefManipulator().setLastProject(project.getLabel());
+                GITConstant.NAME_TRUNK);
+        if (LoginHelper.getInstance().logIn(defaultConnectionBean, project)) {
+            LoginHelper.getInstance().saveLastConnectionBean(defaultConnectionBean);
+            LoginHelper.getInstance().getPrefManipulator().setLastProject(project.getLabel());
             LoginHelper.setAlwaysAskAtStartup(alwaysAsk.getSelection());
             loginDialog.okPressed();
         }

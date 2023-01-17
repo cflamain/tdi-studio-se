@@ -65,6 +65,8 @@ import org.talend.repository.ui.wizards.exportjob.util.ExportJobUtil;
  */
 public class JobExportAction implements IRunnableWithProgress {
 
+    private static final String JOB_TYPE = "Job";
+
     private List<? extends IRepositoryNode> nodes;
 
     private String jobVersion;
@@ -75,7 +77,7 @@ public class JobExportAction implements IRunnableWithProgress {
 
     private String bundleVersion;
 
-    private String type = "Job";
+    private String type = JOB_TYPE;
 
     private boolean isBuildSuccessful;
 
@@ -186,7 +188,8 @@ public class JobExportAction implements IRunnableWithProgress {
             resourcesToExport = manager.getExportResources(processes.toArray(new ExportFileResource[] {}));
             IStructuredSelection selection = new StructuredSelection(nodes);
             // if job has compile error, will not export to avoid problem if run jobscript
-            boolean hasErrors = CorePlugin.getDefault().getRunProcessService().checkExportProcess(selection, true);
+            boolean hasErrors = CorePlugin.getDefault().getRunProcessService().checkExportProcess(selection,
+                    JOB_TYPE.equals(type));
             if (hasErrors) {
                 manager.deleteTempFiles();
                 return false;

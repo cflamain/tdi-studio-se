@@ -14,6 +14,7 @@ package org.talend.designer.core.ui.editor.properties.controllers;
 
 import java.beans.PropertyChangeEvent;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.jface.fieldassist.DecoratedField;
@@ -95,7 +96,7 @@ public class FileController extends AbstractElementPropertySectionController {
      */
     public Command createCommand(Button button) {
 
-        FileDialog dial = new FileDialog(composite.getShell(), SWT.NONE);
+        FileDialog dial = new FileDialog(composite.getShell(), isRequireSave() ? SWT.SAVE : SWT.NONE);
         String propertyName = (String) button.getData(PARAMETER_NAME);
         Text filePathText = (Text) hashCurControls.get(propertyName);
         String extractedFilePath = PathExtractor.extractPath(filePathText.getText());
@@ -114,6 +115,16 @@ public class FileController extends AbstractElementPropertySectionController {
             }
         }
         return null;
+    }
+
+    private boolean isRequireSave() {
+        if (elem instanceof Node) {
+            Node node = (Node) elem;
+            if (node.getComponent() != null && StringUtils.isNotBlank(node.getComponent().getName())){
+                return node.getComponent().getName().contains("Output") || node.getComponent().getName().contains("Bulk");
+            }
+        }
+        return false;
     }
 
     private void setDragAndDropActionBool() {

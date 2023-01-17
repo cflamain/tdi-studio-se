@@ -71,7 +71,11 @@ public class TaCoKitEditWizard extends TaCoKitConfigurationWizard {
         updateConnectionItem();
         refreshInFinish(getWizardPropertiesPage().isNameModifiedByUser());
         TaCoKitUpdateManager.updateTaCoKitSubConnection(getRuntimeData());
-        TaCoKitUpdateManager.updateTaCoKitConnection(connectionItem);
+    }
+
+    @Override
+    protected boolean updateRelatedItems() {
+        return TaCoKitUpdateManager.updateTaCoKitConnection(connectionItem);
     }
 
 }

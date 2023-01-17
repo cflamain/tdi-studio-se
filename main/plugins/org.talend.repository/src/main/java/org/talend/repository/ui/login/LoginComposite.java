@@ -100,7 +100,7 @@ import org.talend.core.model.general.ConnectionBean;
 import org.talend.core.model.general.Project;
 import org.talend.core.model.properties.PropertiesFactory;
 import org.talend.core.model.properties.User;
-import org.talend.core.model.repository.SVNConstant;
+import org.talend.core.model.repository.GITConstant;
 import org.talend.core.prefs.PreferenceManipulator;
 import org.talend.core.repository.model.IRepositoryFactory;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
@@ -109,7 +109,6 @@ import org.talend.core.repository.model.provider.LoginConnectionManager;
 import org.talend.core.repository.services.ILoginConnectionService;
 import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.services.ICoreTisService;
-import org.talend.core.services.ISVNProviderService;
 import org.talend.core.ui.TalendBrowserLaunchHelper;
 import org.talend.core.ui.branding.IBrandingService;
 import org.talend.core.ui.workspace.ChooseWorkspaceData;
@@ -1630,7 +1629,7 @@ public class LoginComposite extends Composite {
                             .getPreferenceStore());
                     String branch = getBranch();
                     if (branch == null) {
-                        branch = SVNConstant.EMPTY;
+                        branch = GITConstant.EMPTY;
                     }
                     Project project = getProject();
                     prefManipulator.setLastSVNBranch(project.getEmfProject().getUrl(), project.getTechnicalLabel(), branch);
@@ -2534,30 +2533,12 @@ public class LoginComposite extends Composite {
         return this.storedConnections;
     }
 
-    private ISVNProviderService getSVNService() {
-        ISVNProviderService service = null;
-        if (PluginChecker.isSVNProviderPluginLoaded()) {
-            try {
-                service = (ISVNProviderService) GlobalServiceRegister.getDefault().getService(ISVNProviderService.class);
-            } catch (RuntimeException e) {
-                // nothing to do
-            }
-        }
-        return service;
-    }
-
     public String getBranch() {
         Project project = getProject();
         if (branchesViewer != null && !branchesViewer.getSelection().isEmpty() && project != null) {
             IStructuredSelection ss = (IStructuredSelection) branchesViewer.getSelection();
             String branch = (String) ss.getFirstElement();
-            /*
-             * verify branches
-             */
-            // List<String> branchList = getProjectBranches(project);
-            // if (branchList != null && branchList.contains(branch)) {
             return branch;
-            // }
         }
         return null;
     }
@@ -2591,7 +2572,6 @@ public class LoginComposite extends Composite {
                     @Override
                     protected IStatus run(IProgressMonitor monitor) {
                         projectBranches.clear();
-                        projectBranches.addAll(getProjectBranches(currentProjectSettings));
                         return org.eclipse.core.runtime.Status.OK_STATUS;
                     }
 
@@ -2630,26 +2610,6 @@ public class LoginComposite extends Composite {
             }
             backgroundGUIUpdate.schedule();
         }
-    }
-
-    private List<String> getProjectBranches(Project p) {
-        List<String> brancesList = new ArrayList<String>();
-        ISVNProviderService svnService = getSVNService();
-        if (p != null && svnService != null) {
-            try {
-                if (!p.isLocal() && svnService.isSVNProject(p)) {
-                    brancesList.add(SVNConstant.NAME_TRUNK);
-                    String[] branchList = svnService.getBranchList(p);
-                    if (branchList != null) {
-                        brancesList.addAll(Arrays.asList(branchList));
-                    }
-
-                }
-            } catch (PersistenceException e) {
-                ExceptionHandler.process(e);
-            }
-        }
-        return brancesList;
     }
 
     public int calStatusLabelFont(int defaultSize, String text) {
@@ -2708,7 +2668,7 @@ public class LoginComposite extends Composite {
 
                 @Override
                 public void linkActivated(HyperlinkEvent e) {
-                    String url = "https://help.talend.com/pages/viewpage.action?pageId=14230347";
+                    String url = "https://document-link.us.cloud.talend.com/ts_ig_install-external-modules?version=80&lang=en&env=prd";
                     TalendBrowserLaunchHelper.openURL(url);
                 }
             });

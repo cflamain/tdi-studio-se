@@ -69,7 +69,7 @@ public class TaCoKitTocProvider extends AbstractTocProvider {
                 client.v1().component().details(expLocale.getLanguage());
         details.forEach(pair -> {
             final ComponentIndex index = pair.getFirst();
-            final String familyName = index.getFamilyDisplayName();
+            final String familyName = index.getId().getFamily();
             String displayName = TaCoKitUtil.getDisplayName(index);
             IContext existsContext = HelpSystem.getContext(TaCoKitConst.BASE_HELP_LINK + displayName);
             if (existsContext != null) {

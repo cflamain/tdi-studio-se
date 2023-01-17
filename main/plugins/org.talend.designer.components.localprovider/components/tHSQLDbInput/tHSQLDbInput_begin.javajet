@@ -12,6 +12,8 @@ imports="
 		java.util.Map" 
 %>
 	<%@ include file="../templates/DB/Input/HelpClass.javajet"%>
+	
+	System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
 <%
 
 	class DBInputBeginUtil extends DefaultDBInputUtil{

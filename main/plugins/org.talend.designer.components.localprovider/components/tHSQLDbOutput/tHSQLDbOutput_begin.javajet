@@ -14,6 +14,8 @@ imports="
 skeleton="../templates/db_output_bulk.skeleton"
 %>
     <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Log4j/DBLogUtil.javajet"%>
+    
+    System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
 <%
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 	INode node = (INode)codeGenArgument.getArgument();

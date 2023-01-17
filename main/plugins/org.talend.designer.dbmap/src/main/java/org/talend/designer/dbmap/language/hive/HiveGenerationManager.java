@@ -39,7 +39,7 @@ public class HiveGenerationManager extends DbGenerationManager {
     public String buildSqlSelect(DbMapComponent component, String outputTableName) {
         String query = super.buildSqlSelect(component, outputTableName);
         // tELTHiveMap no need DBName/SchemaName in the SELECT stattement of the HIVE QL generated
-        ExternalDbMapData data = (ExternalDbMapData) component.getExternalData();
+        ExternalDbMapData data = component.getExternalData();
         for (ExternalDbMapTable input : data.getInputTables()) {
             String inputTableName = input.getTableName();
             if (inputTableName != null && inputTableName.contains(".")) {

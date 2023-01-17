@@ -71,6 +71,7 @@ import org.talend.core.ILibraryManagerService;
 import org.talend.core.PluginChecker;
 import org.talend.core.language.ECodeLanguage;
 import org.talend.core.model.general.ModuleNeeded;
+import org.talend.core.model.metadata.MetadataTalendType;
 import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IProcess;
 import org.talend.core.model.process.JobInfo;
@@ -118,6 +119,7 @@ import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
 import org.talend.repository.ui.utils.Log4jPrefsSettingManager;
 import org.talend.repository.ui.utils.UpdateLog4jJarUtils;
+import org.talend.repository.ui.wizards.exportjob.scriptsmanager.JobScriptsManager.ExportChoice;
 import org.talend.repository.utils.EmfModelUtils;
 import org.talend.repository.utils.EsbConfigUtils;
 import org.talend.resources.util.EMavenBuildScriptProperties;
@@ -1051,11 +1053,8 @@ public class JobJavaScriptsManager extends JobScriptsManager {
         try {
             boolean hasDynamicMetadata = false;
             if (resource.getItem() instanceof ProcessItem) {
-                List<JobInfo> list = new ArrayList<JobInfo>();
-
                 hasDynamicMetadata = LastGenerationInfo.getInstance().isUseDynamic(resource.getItem().getProperty().getId(),
                         resource.getItem().getProperty().getVersion());
-
             }
             if (hasDynamicMetadata) {
                 needMappingInSystemRoutine = true;
@@ -1068,14 +1067,9 @@ public class JobJavaScriptsManager extends JobScriptsManager {
                     // for db mapping xml
                     IFolder xmlMappingFolder = talendProcessJavaProject.getExternalResourcesFolder()
                             .getFolder(JavaUtils.JAVA_XML_MAPPING);
-                    if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class)) {
-                        IRunProcessService runService = (IRunProcessService) GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
-                        ITalendProcessJavaProject talendJavaProject = runService.getTalendJobJavaProject(resource.getItem().getProperty());
-                        if (GlobalServiceRegister.getDefault().isServiceRegistered(ICoreService.class)) {
-                            ICoreService coreService = (ICoreService) GlobalServiceRegister.getDefault().getService(ICoreService.class);
-                            coreService.synchronizeMapptingXML(talendJavaProject);
-                            coreService.syncLog4jSettings(talendJavaProject);
-                        }
+                    MetadataTalendType.syncMappingFiles(xmlMappingFolder.getLocation().toFile(), true);
+                    if (ICoreService.get() != null) {
+                        ICoreService.get().syncLog4jSettings(talendProcessJavaProject);
                     }
                     List<URL> xmlMappingFileUrls = new ArrayList<URL>();
                     if (xmlMappingFolder.exists()) {

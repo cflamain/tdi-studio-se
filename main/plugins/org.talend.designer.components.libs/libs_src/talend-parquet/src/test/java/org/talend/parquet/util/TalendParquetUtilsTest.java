@@ -266,6 +266,21 @@ public class TalendParquetUtilsTest {
 		group.append("aDecimal", TalendParquetUtils.decimalToBinary(decimalValue, 0));
 		Assert.assertEquals(decimalValue, TalendParquetUtils.binaryToDecimal(group.getBinary(0, 0), 10, 0));
 
+		decimalValue = new BigDecimal("-93.5788130000");
+		group = new SimpleGroup(schema);
+		group.append("aDecimal", TalendParquetUtils.decimalToBinary(decimalValue, 10));
+		Assert.assertEquals(decimalValue, TalendParquetUtils.binaryToDecimal(group.getBinary(0, 0), 38, 10));
+		
+		decimalValue = new BigDecimal("-0.00");
+		group = new SimpleGroup(schema);
+		group.append("aDecimal", TalendParquetUtils.decimalToBinary(decimalValue, 2));
+		Assert.assertEquals(decimalValue, TalendParquetUtils.binaryToDecimal(group.getBinary(0, 0), 38, 2));
+		
+		decimalValue = new BigDecimal("0.000");
+		group = new SimpleGroup(schema);
+		group.append("aDecimal", TalendParquetUtils.decimalToBinary(decimalValue, 3));
+		Assert.assertEquals(decimalValue, TalendParquetUtils.binaryToDecimal(group.getBinary(0, 0), 38, 3));
+		
 	}
 
 }

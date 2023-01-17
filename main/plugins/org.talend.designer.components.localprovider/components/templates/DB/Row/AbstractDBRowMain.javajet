@@ -196,6 +196,7 @@ try {
 				log4jCodeGenerateUtil.logError(node,"error");
 				%>
 				System.err.print(e.getMessage());
+				globalMap.put("<%=cid %>_ERROR_MESSAGE", e.getMessage());
 				<%
 			}
 		}

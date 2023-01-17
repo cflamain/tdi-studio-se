@@ -175,6 +175,7 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
     public void createPartControl(Composite parent) {
         this.parent = parent;
         tabFactory.initComposite(parent, true);
+        tabFactory.getTabbedPropertyTitle().setIsComponentTitle(true);
         tabFactory.addSelectionChangedListener(new ISelectionChangedListener() {
 
             @Override
@@ -425,6 +426,7 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
     public void cleanDisplay() {
         tabFactory.setInput(null);
         tabFactory.setTitle(null, null);
+        tabFactory.getTabbedPropertyTitle().setComponentName(null);
         tabFactory.getTabbedPropertyComposite().setCompactViewVisible(false);
         if (tabFactory.getTabComposite() != null) {
             for (Control curControl : tabFactory.getTabComposite().getChildren()) {
@@ -565,6 +567,7 @@ public class ComponentSettingsView extends ViewPart implements IComponentSetting
                 }
             }
             image = CoreImageProvider.getComponentIcon(node.getComponent(), ICON_SIZE.ICON_24);
+            tabFactory.getTabbedPropertyTitle().setComponentName(node.getComponent().getDisplayName());
         } else if (elem instanceof Connection) {
             label = ((Connection) elem).getElementName();
             image = ImageProvider.getImage(EImage.RIGHT_ICON);

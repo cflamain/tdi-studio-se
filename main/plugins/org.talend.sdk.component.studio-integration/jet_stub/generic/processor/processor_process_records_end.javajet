@@ -26,3 +26,14 @@ final java.util.Map<String, Object> afterVariablesMap_<%=cid%> = org.talend.sdk.
 for (java.util.Map.Entry<String, Object> entry_<%=cid %> : afterVariablesMap_<%=cid%>.entrySet()) {
     globalMap.put("<%=cid %>_"+entry_<%=cid %>.getKey(), entry_<%=cid %>.getValue());
 }
+
+<%
+// Not the best place. Because process_data_begin+end gonna be invoke after one more time
+// But this one close resources after the data were flushed
+// Should be moved if processor_*.javajet order will be changed
+%>
+if (processor_<%=cid%> != null) {
+    processor_<%=cid%>.stop();
+}
+
+globalMap.remove("processor_<%=cid%>");

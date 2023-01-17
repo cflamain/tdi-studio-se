@@ -37,13 +37,12 @@ import org.talend.core.repository.utils.XmiResourceManager;
 import org.talend.core.runtime.process.ITalendProcessJavaProject;
 import org.talend.core.utils.CodesJarResourceCache;
 import org.talend.designer.maven.tools.AggregatorPomsHelper;
-import org.talend.designer.maven.tools.BuildCacheManager;
+import org.talend.designer.maven.tools.CodeM2CacheManager;
 import org.talend.designer.maven.tools.CodesJarM2CacheManager;
 import org.talend.designer.maven.utils.CodesJarMavenUtil;
 import org.talend.designer.runprocess.IRunProcessService;
 import org.talend.designer.runprocess.java.TalendJavaProjectManager;
 import org.talend.repository.ProjectManager;
-import org.talend.repository.RepositoryWorkUnit;
 import org.talend.repository.documentation.ERepositoryActionName;
 
 public class CodesJarChangeListener implements PropertyChangeListener {
@@ -53,34 +52,26 @@ public class CodesJarChangeListener implements PropertyChangeListener {
         String propertyName = event.getPropertyName();
         Object oldValue = event.getOldValue();
         Object newValue = event.getNewValue();
-        RepositoryWorkUnit<Object> workUnit = new RepositoryWorkUnit<Object>("update codesjar by " + propertyName) { //$NON-NLS-1$
 
-            @Override
-            protected void run() {
-                try {
-                    if (propertyName.equals(ERepositoryActionName.PROPERTIES_CHANGE.getName())) {
-                        casePropertiesChange(oldValue, newValue);
-                    } else if (propertyName.equals(ERepositoryActionName.DELETE_FOREVER.getName())
-                            || propertyName.equals(ERepositoryActionName.DELETE_TO_RECYCLE_BIN.getName())) {
-                        caseDelete(propertyName, newValue);
-                    } else if (propertyName.equals(ERepositoryActionName.SAVE.getName())
-                            || propertyName.equals(ERepositoryActionName.CREATE.getName())) {
-                        caseCreateOrSave(newValue);
-                    } else if (propertyName.equals(ERepositoryActionName.IMPORT.getName())) {
-                        caseImport(propertyName, newValue);
-                    } else if (propertyName.equals(ERepositoryActionName.RESTORE.getName())) {
-                        caseRestore(newValue);
-                    } else if (propertyName.equals(ERepositoryActionName.COPY.getName())) {
-                        caseCopy(newValue);
-                    }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
+        try {
+            if (propertyName.equals(ERepositoryActionName.PROPERTIES_CHANGE.getName())) {
+                casePropertiesChange(oldValue, newValue);
+            } else if (propertyName.equals(ERepositoryActionName.DELETE_FOREVER.getName())
+                    || propertyName.equals(ERepositoryActionName.DELETE_TO_RECYCLE_BIN.getName())) {
+                caseDelete(propertyName, newValue);
+            } else if (propertyName.equals(ERepositoryActionName.SAVE.getName())
+                    || propertyName.equals(ERepositoryActionName.CREATE.getName())) {
+                caseCreateOrSave(newValue);
+            } else if (propertyName.equals(ERepositoryActionName.IMPORT.getName())) {
+                caseImport(propertyName, newValue);
+            } else if (propertyName.equals(ERepositoryActionName.RESTORE.getName())) {
+                caseRestore(newValue);
+            } else if (propertyName.equals(ERepositoryActionName.COPY.getName())) {
+                caseCopy(newValue);
             }
-
-        };
-        workUnit.setAvoidUnloadResources(true);
-        ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(workUnit);
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
     }
 
     private void casePropertiesChange(Object oldValue, Object newValue) throws Exception {
@@ -165,9 +156,7 @@ public class CodesJarChangeListener implements PropertyChangeListener {
             if (RoutinesUtil.isInnerCodes(item.getProperty())) {
                 updateModifiedDateForCodesJar(item);
             }
-            // FIXME after optimized global routines/beans m2 cache, should update cache status here.
-            BuildCacheManager.getInstance().clearCodesCache(ERepositoryObjectType.getItemType(item));
-            // buildCodeProject(item);
+            CodeM2CacheManager.updateCacheStatus(null, ERepositoryObjectType.getItemType(item), false);
         }
     }
 

@@ -82,7 +82,6 @@ import org.talend.designer.core.ui.editor.subjobcontainer.sparkstreaming.SparkSt
 import org.talend.designer.core.utils.ConnectionUtil;
 import org.talend.designer.core.utils.ParallelExecutionUtils;
 import org.talend.designer.maven.tools.BuildCacheManager;
-import org.talend.designer.maven.utils.PomUtil;
 import org.talend.designer.runprocess.ProcessMessage.MsgType;
 import org.talend.designer.runprocess.i18n.Messages;
 import org.talend.designer.runprocess.jmx.JMXPerformanceChangeListener;
@@ -659,10 +658,6 @@ public class RunProcessContext {
                         TimeMeasure.begin(generateCodeId);
                         try {
                             BuildCacheManager.getInstance().clearCurrentCache();
-                            //TESB-29071
-                            if (ProcessorUtilities.isRemoteProject()) {
-                                BuildCacheManager.getInstance().clearAllCodesCache();
-                            }
                             ProcessorUtilities.resetExportConfig();
                             ProcessorUtilities
                                     .generateCode(processor, process, context,
@@ -672,7 +667,6 @@ public class RunProcessContext {
                                             true, progressMonitor);
                         } catch (Throwable e) {
                             BuildCacheManager.getInstance().performBuildFailure();
-                            PomUtil.restorePomFile(processor.getTalendJavaProject());
                             // catch any Exception or Error to kill the process,
                             // see bug 0003567
                             running = true;
@@ -758,7 +752,6 @@ public class RunProcessContext {
                                                 kill();
                                             }
                                         } finally {
-                                            PomUtil.restorePomFile(processor.getTalendJavaProject());
                                             refreshUiAndWait[0] = false;
                                         }
                                     }
@@ -1995,6 +1988,8 @@ public class RunProcessContext {
                 .getPreferencesService()
                 .getString("org.talend.designer.esb.components.rs.provider", "restServiceDefaultUri",
                         "http://127.0.0.1:8090/", null);
+        
+        String customRoutinePattern = "[\\w\\_\\$]+\\..+";
 
         Collection<NodeType> restComponents = EmfModelUtils
                 .getComponentsByName((ProcessItem) process.getProperty().getItem(), "cREST", "tRESTRequest");
@@ -2009,6 +2004,8 @@ public class RunProcessContext {
                 endpoint = ComponentUtilities.getNodePropertyValue(restComponent, "REST_ENDPOINT");
 
             String decodedEndpoint = "";
+            
+            boolean endpointContainsCustomRoutine = false;
 
             if (!StringUtils.isEmpty(endpoint)) {
 
@@ -2030,8 +2027,10 @@ public class RunProcessContext {
                                 break;
                             }
                         }
-
-                    } else {
+                    } else if (endpointElement.matches(customRoutinePattern)) {
+                    	decodedEndpoint += "...";
+                    	endpointContainsCustomRoutine = true;
+                	} else {
                         decodedEndpoint += TalendTextUtils.removeQuotes(endpointElement);
                     }
                 }
@@ -2041,6 +2040,10 @@ public class RunProcessContext {
                 } else {
                     String fullURL = defaultRestUri + decodedEndpoint;
                     url = fullURL.replaceAll("(?<!(http:|https:))//", "/");
+                }
+                
+                if (endpointContainsCustomRoutine) {
+                	url += "(Endpoint cannot be calculated as it contains custom routine.)";
                 }
 
                 if (url != null)

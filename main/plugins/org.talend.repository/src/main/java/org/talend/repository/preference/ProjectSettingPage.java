@@ -20,6 +20,8 @@ import org.talend.repository.ProjectManager;
  * DOC aimingchen class global comment. Detailled comment
  */
 public abstract class ProjectSettingPage extends PreferencePage {
+    
+    public static boolean isRestart = false;
 
     /**
      * The Project Object.
@@ -27,4 +29,16 @@ public abstract class ProjectSettingPage extends PreferencePage {
     protected Project pro = ProjectManager.getInstance().getCurrentProject();
 
     public abstract void refresh();
+
+    
+    public static boolean isRestart() {
+        return isRestart;
+    }
+
+    
+    public static void setRestart(boolean isRestart) {
+        ProjectSettingPage.isRestart = isRestart;
+    }
+    
+    
 }

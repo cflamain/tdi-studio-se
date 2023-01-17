@@ -43,6 +43,9 @@
    </PARAMETERS>
 
    <ADVANCED_PARAMETERS>
+    <PARAMETER NAME="USE_12_HOUR_FORMAT" FIELD="CHECK" REQUIRED="true" NUM_ROW="20" REPOSITORY_VALUE="USE_12_HOUR_FORMAT" SHOW="false">
+      <DEFAULT>false</DEFAULT>
+    </PARAMETER>
    	<PARAMETER NAME="ROWSEPARATOR" FIELD="TEXT" REQUIRED="true" NUM_ROW="30" REPOSITORY_VALUE="ROW_SEPARATOR" SHOW="false">
       <DEFAULT>"\n"</DEFAULT>
     </PARAMETER>
@@ -100,7 +103,7 @@
    </ADVANCED_PARAMETERS>
 	<CODEGENERATION>
 	  <IMPORTS>
-	    <IMPORT NAME="Talend_CSV" MODULE="talendcsv.jar" MVN="mvn:org.talend.libraries/talendcsv/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv.jar" REQUIRED="true" />
+	    <IMPORT NAME="Talend_CSV" MODULE="talendcsv-1.0.0.jar" MVN="mvn:org.talend.components/talendcsv/1.0.0"  UrlPath="platform:/plugin/org.talend.libraries.csv/lib/talendcsv-1.0.0.jar" REQUIRED="true" />
 	  </IMPORTS>
 	</CODEGENERATION>
    <RETURNS>

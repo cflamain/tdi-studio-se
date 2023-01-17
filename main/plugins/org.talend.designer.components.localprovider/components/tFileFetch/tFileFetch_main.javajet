@@ -87,15 +87,16 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 		}
 %>
 	}
+  final org.apache.http.impl.client.HttpClientBuilder httpClientBuilder_<%=cid%> = org.apache.http.impl.client.HttpClientBuilder.create();
 	<%
 	if ("https".equals(protocol)) {
 	%>
-	
-		class SocketFactory_<%=cid%> implements org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory {
 
-			private javax.net.ssl.SSLContext sslcontext = null;
+		 class tFileFetchHelper_<%=cid%>  {
 
-			private javax.net.ssl.SSLContext createSSLContext() throws java.io.IOException{
+			private  javax.net.ssl.SSLContext sslcontext = null;
+
+			private  javax.net.ssl.SSLContext createSSLContext() throws java.io.IOException{
 				javax.net.ssl.SSLContext sslcontext = null;
 				try {
                     sslcontext = javax.net.ssl.SSLContext.getInstance("SSL");
@@ -111,7 +112,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                             kmf.init(keyStore, keyStorePassword.toCharArray());
                             keyManagers = kmf.getKeyManagers();
                         } catch (java.security.UnrecoverableKeyException|java.security.KeyStoreException|java.security.cert.CertificateException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+                            globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                             <%if(isLog4jEnabled) {%>
                             log.error(e.getLocalizedMessage());
                             <%}%>
@@ -131,7 +132,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                             trustManagers = tmf.getTrustManagers();
 
                         } catch (java.security.KeyStoreException|java.security.cert.CertificateException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+                            globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                             <%if(isLog4jEnabled) {%>
                             log.error(e.getLocalizedMessage());
                             <%}%>
@@ -142,13 +143,13 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                     }
                     sslcontext.init(keyManagers, trustManagers, new java.security.SecureRandom());
                 } catch (java.security.NoSuchAlgorithmException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+                    globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 					<%if(isLog4jEnabled){%>
 						log.error("<%=cid%> - " + e.getMessage());
 					<%}%>
 					e.printStackTrace();
 				} catch (java.security.KeyManagementException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+                    globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 					<%if(isLog4jEnabled){%>
 						log.error("<%=cid%> - " + e.getMessage());
 					<%}%>
@@ -158,47 +159,12 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			}
 
 			private javax.net.ssl.SSLContext getSSLContext() throws java.io.IOException{
-
 				if (this.sslcontext == null) {
 					this.sslcontext = createSSLContext();
 				}
 				return this.sslcontext;
 			}
 
-			public java.net.Socket createSocket(java.net.Socket socket, String host, int port, boolean autoClose)
-				throws java.io.IOException, java.net.UnknownHostException {
-				return getSSLContext().getSocketFactory().createSocket(socket, host, port, autoClose);
-			}
-
-			public java.net.Socket createSocket(String host, int port) throws java.io.IOException, java.net.UnknownHostException {
-				return getSSLContext().getSocketFactory().createSocket(host, port);
-			}
-
-			public java.net.Socket createSocket(String host, int port, java.net.InetAddress clientHost, int clientPort)
-				throws java.io.IOException, java.net.UnknownHostException {
-				return getSSLContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
-			}
-
-			public java.net.Socket createSocket(String host, int port, java.net.InetAddress localAddress, int localPort, org.apache.commons.httpclient.params.HttpConnectionParams params) 
-				throws java.io.IOException, java.net.UnknownHostException, org.apache.commons.httpclient.ConnectTimeoutException {
-
-				if (params == null) {
-					throw new IllegalArgumentException("Parameters may not be null");
-				}
-				int timeout = params.getConnectionTimeout();
-				javax.net.SocketFactory socketfactory = getSSLContext().getSocketFactory();
-
-				if (timeout == 0) {
-					return socketfactory.createSocket(host, port, localAddress, localPort);
-				} else {
-					java.net.Socket socket = socketfactory.createSocket();
-					java.net.SocketAddress localaddr = new java.net.InetSocketAddress(localAddress, localPort);
-					java.net.SocketAddress remoteaddr = new java.net.InetSocketAddress(host, port);
-					socket.bind(localaddr);
-					socket.connect(remoteaddr, timeout);
-					return socket;
-				}
-			}
 
 			class TrustAnyTrustManager implements javax.net.ssl.X509TrustManager {
 				public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
@@ -213,98 +179,37 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			}
 		}
 
-			org.apache.commons.httpclient.protocol.Protocol myhttps_<%=cid%> = new org.apache.commons.httpclient.protocol.Protocol("https", new SocketFactory_<%=cid%>(), 443);
-			org.apache.commons.httpclient.protocol.Protocol.registerProtocol("https", myhttps_<%=cid%>);
+		org.apache.http.conn.ssl.SSLConnectionSocketFactory sslConSocFactory_<%=cid %> =
+		new org.apache.http.conn.ssl.SSLConnectionSocketFactory(new tFileFetchHelper_<%=cid%>().getSSLContext()
+		, new org.apache.http.conn.ssl.NoopHostnameVerifier());
+		httpClientBuilder_<%=cid %>.setSSLSocketFactory(sslConSocFactory_<%=cid %>);
+
 <%
 	}
 %>
-	org.apache.commons.httpclient.HttpClient client_<%=cid %> = new org.apache.commons.httpclient.HttpClient();
-	<%if(isLog4jEnabled){%>
-		log.info("<%=cid%> - Connection attempt to '" + <%=uri %>);
-	<%}%>
-	client_<%=cid %>.getHttpConnectionManager().getParams().setConnectionTimeout(<%=timeout %>);
-	<%if(isLog4jEnabled){%>
-		log.info("<%=cid%> - Connection to '" +  <%=uri %> + "' has succeeded.");
-	<%}%>
-	client_<%=cid %>.getParams().setCookiePolicy(org.apache.commons.httpclient.cookie.CookiePolicy.<%=cookiePolicy %>);
-	<%if(singleCookie){%>
-	client_<%=cid%>.getParams().setBooleanParameter(org.apache.commons.httpclient.params.HttpMethodParams.SINGLE_COOKIE_HEADER, true);
-	<%}%>
-	<%if (readCookie) {%>
-		List<org.apache.commons.httpclient.Cookie> cookieList_<%=cid%> = null;
-		java.io.FileInputStream fis_<%=cid%> = null;
-		java.io.ObjectInputStream is_<%=cid%> = null;
-		
-		try {
-			cookieList_<%=cid%> = new java.util.ArrayList<org.apache.commons.httpclient.Cookie>();
-			fis_<%=cid%> = new java.io.FileInputStream(new java.io.File(<%=cookieDir%>));
-			is_<%=cid%> = new java.io.ObjectInputStream(fis_<%=cid%>);
-			Object obj_<%=cid%> = is_<%=cid%>.readObject();
 
-			while (obj_<%=cid%> != null) {
-				cookieList_<%=cid%>.add((org.apache.commons.httpclient.Cookie) obj_<%=cid%>);
 
-				try {
-					obj_<%=cid%> = is_<%=cid%>.readObject();
-				} catch (java.io.IOException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
-					<%if(isLog4jEnabled){%>
-						log.warn("<%=cid%> - " + e.getMessage());
-					<%}%>
-					obj_<%=cid%> = null;
-				}
-			}
-		} catch (java.io.FileNotFoundException e1) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e1.getMessage());
-			<%if(isLog4jEnabled){%>
-				log.error("<%=cid%> - " + e1.getMessage());
-			<%}%>
-			e1.printStackTrace();
-		} catch (java.io.IOException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
-			<%if(isLog4jEnabled){%>
-				log.error("<%=cid%> - " + e.getMessage());
-			<%}%>
-			e.printStackTrace();
-		} catch (java.lang.ClassNotFoundException e) {
-globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
-			<%if(isLog4jEnabled){%>
-				log.error("<%=cid%> - " + e.getMessage());
-			<%}%>
-			e.printStackTrace();
-		} finally {
-			if (is_<%=cid%> != null) is_<%=cid%>.close();
-			if (fis_<%=cid%> != null) fis_<%=cid%>.close();
-		}
+org.apache.http.client.CredentialsProvider credsProvider_<%=cid %> = new org.apache.http.impl.client.BasicCredentialsProvider();
+<%
+		if (useProxy) {
 
-		if (cookieList_<%=cid%> != null)
-			client_<%=cid %>.getState().addCookies(cookieList_<%=cid%>.toArray(new org.apache.commons.httpclient.Cookie[0]));
-	<%
-	}
+    		String passwordFieldName = "__PROXY_PASSWORD__";
+    		%>
+    		httpClientBuilder_<%=cid %>.setProxy(new org.apache.http.HttpHost(<%=proxyHost %>, Integer.parseInt(<%=proxyPort%>)));
 
-	if (useProxy) {%> 
-		client_<%=cid %>.getHostConfiguration().setProxy(<%=proxyHost %>, Integer.parseInt(<%=proxyPort%>));
-	        
-		<%
-		String passwordFieldName = "__PROXY_PASSWORD__";
-		%>
-		
-		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
-	   	
-		<%if (useProxyNTLM) {%>
-			client_<%=cid %>.getState().setProxyCredentials(
-			new org.apache.commons.httpclient.auth.AuthScope( <%=proxyHost %>, Integer.parseInt(<%=proxyPort%>), null ),
-			new org.apache.commons.httpclient.NTCredentials( <%=proxyUser %>,
-			decryptedPassword_<%=cid%>, <%=proxyHost %>, <%=proxyDomain %> ));
-		<%} else {%>
-			client_<%=cid %>.getState().setProxyCredentials(
-			new org.apache.commons.httpclient.auth.AuthScope(<%=proxyHost %>, Integer.parseInt(<%=proxyPort%>), null),
-			new org.apache.commons.httpclient.UsernamePasswordCredentials(<%=proxyUser %>, decryptedPassword_<%=cid%>));
-			
-			java.util.List<String> authPrefs_<%=cid %> = java.util.Collections.singletonList(org.apache.commons.httpclient.auth.AuthPolicy.BASIC);
-			client_<%=cid %>.getParams().setParameter(org.apache.commons.httpclient.auth.AuthPolicy.AUTH_SCHEME_PRIORITY, authPrefs_<%=cid %>);
-		<%}
-	}
+    		<%@ include file="@{org.talend.designer.components.localprovider}/components/templates/password.javajet"%>
+    		
+
+    		<%if (useProxyNTLM) {%>
+    			credsProvider_<%=cid %>.setCredentials(new org.apache.http.auth.AuthScope(<%=proxyHost %>, Integer.parseInt(<%=proxyPort%>)), new
+                                org.apache.http.auth.NTCredentials( <%=proxyUser %>,
+                                                 decryptedPassword_<%=cid%>, <%=proxyHost %>, <%=proxyDomain %> ));
+    		<%} else {%>
+    			credsProvider_<%=cid %>.setCredentials(new org.apache.http.auth.AuthScope(<%=proxyHost %>, Integer.parseInt(<%=proxyPort%>)), new
+                                                org.apache.http.auth.UsernamePasswordCredentials( <%=proxyUser %>,
+                                                                 decryptedPassword_<%=cid%> ));
+    		<%}
+    	}
 
 	if (needAuth) {
 		if (ElementParameterParser.canEncrypt(node, "__AUTH_PASSWORD__")) {
@@ -316,22 +221,111 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 		String decryptedPwd_<%=cid%> = <%= ElementParameterParser.getValue(node, "__AUTH_PASSWORD__")%>;
 		<%
 		}
-		
+
 		if ((!useProxy) && useProxyNTLM && (!"".equals(proxyDomain))) {
 		%>
-			client_<%=cid %>.getState().setCredentials(org.apache.commons.httpclient.auth.AuthScope.ANY, new org.apache.commons.httpclient.NTCredentials(<%=username %>, decryptedPwd_<%=cid%>, new java.net.URL(<%=uri%>).getHost(), <%=proxyDomain%>));
+						   credsProvider_<%=cid %>.setCredentials( org.apache.http.auth.AuthScope.ANY, new
+                                                                        org.apache.http.auth.NTCredentials( <%=username %>, decryptedPwd_<%=cid%>, 
+																		new java.net.URL(<%=uri%>).getHost(), <%=proxyDomain%>));
 		<%} else {%>
-			client_<%=cid %>.getState().setCredentials(org.apache.commons.httpclient.auth.AuthScope.ANY, new org.apache.commons.httpclient.UsernamePasswordCredentials(<%=username %>, decryptedPwd_<%=cid%>));
-		<%}
+			    			credsProvider_<%=cid %>.setCredentials( org.apache.http.auth.AuthScope.ANY, new
+                                                            org.apache.http.auth.UsernamePasswordCredentials( <%=username %>, decryptedPwd_<%=cid%>));
+		<%}%>
+		
+		<%
 	}
+
+    	%>
+		httpClientBuilder_<%=cid %>.setDefaultCredentialsProvider(credsProvider_<%=cid %>);
+
+     org.apache.http.impl.client.CloseableHttpClient client_<%=cid %> = httpClientBuilder_<%=cid%>.build();
+	<%if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Connection attempt to '" + <%=uri %>);
+	<%}%>
+	final org.apache.http.client.config.RequestConfig.Builder builder_<%=cid%> = org.apache.http.client.config.RequestConfig.custom();
+	builder_<%=cid%>.setConnectTimeout(<%=timeout %>);
+	<%if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Connection to '" +  <%=uri %> + "' has succeeded.");
+	<%
+	}
+	%>
+        org.apache.http.conn.util.PublicSuffixMatcher publicSuffixMatcher_<%=cid%> = org.apache.http.conn.util.PublicSuffixMatcherLoader.getDefault();
+        org.apache.http.config.Registry<org.apache.http.cookie.CookieSpecProvider> cookieSpecReg_<%=cid%> = org.apache.http.config.RegistryBuilder.<org.apache.http.cookie.CookieSpecProvider>create()
+                .register(org.apache.http.client.config.CookieSpecs.DEFAULT, new org.apache.http.impl.cookie.DefaultCookieSpecProvider(org.apache.http.impl.cookie.DefaultCookieSpecProvider.CompatibilityLevel.DEFAULT, publicSuffixMatcher_<%=cid%>, null, <%=singleCookie%>))
+                .register(org.apache.http.client.config.CookieSpecs.STANDARD, new org.apache.http.impl.cookie.RFC6265CookieSpecProvider(publicSuffixMatcher_<%=cid%>)).build();
+         org.apache.http.client.CookieStore cookieStore_<%=cid%> = new org.apache.http.impl.client.BasicCookieStore();
+
+        final org.apache.http.client.protocol.HttpClientContext context_<%=cid%> = org.apache.http.client.protocol.HttpClientContext.create();
+        context_<%=cid%>.setCookieSpecRegistry(cookieSpecReg_<%=cid%>);
+        context_<%=cid%>.setCookieStore(cookieStore_<%=cid%>);
+
+
+	<%if (readCookie) {%>
+		List<org.apache.http.cookie.Cookie> cookieList_<%=cid%> = null;
+		java.io.FileInputStream fis_<%=cid%> = null;
+		java.io.ObjectInputStream is_<%=cid%> = null;
+		
+		try {
+			cookieList_<%=cid%> = new java.util.ArrayList<org.apache.http.cookie.Cookie>();
+			fis_<%=cid%> = new java.io.FileInputStream(new java.io.File(<%=cookieDir%>));
+			is_<%=cid%> = new java.io.ObjectInputStream(fis_<%=cid%>);
+		    Object obj_<%=cid%> = null;
+		try{
+		        obj_<%=cid%> = is_<%=cid%>.readObject();
+		}catch (java.io.EOFException e){
+             <%if(isLog4jEnabled){%>
+		        log.warn("<%=cid%> - cookie file {} {}",<%=cookieDir%>," is empty." );
+             <%}%>
+		    }
+			while (obj_<%=cid%> != null) {
+				cookieList_<%=cid%>.add((org.apache.http.cookie.Cookie) obj_<%=cid%>);
+
+				try {
+					obj_<%=cid%> = is_<%=cid%>.readObject();
+				} catch (java.io.IOException e) {
+                    globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+					<%if(isLog4jEnabled){%>
+						log.warn("<%=cid%> - " + e.getMessage());
+					<%}%>
+					obj_<%=cid%> = null;
+				}
+			}
+		} catch (java.io.IOException e1) {
+            globalMap.put("<%=cid%>_ERROR_MESSAGE",e1.getMessage());
+			<%if(isLog4jEnabled){%>
+				log.error("<%=cid%> - " + e1.getMessage());
+			<%}%>
+			e1.printStackTrace();
+		} catch (java.lang.ClassNotFoundException e) {
+            globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+			<%if(isLog4jEnabled){%>
+		        log.error("<%=cid%> - " + "Existing cookie is not compatible with library, please check the \"Save cookie\" option to regenerate.");
+			<%}else{%>
+		        System.err.println("Existing cookie is not compatible with library, please check the \"Save cookie\" option to regenerate.");
+		    <%}%>
+		} finally {
+			if (is_<%=cid%> != null) is_<%=cid%>.close();
+			if (fis_<%=cid%> != null) fis_<%=cid%>.close();
+		}
+
+		if (cookieList_<%=cid%> != null)
+			cookieList_<%=cid%>.forEach(cookieStore_<%=cid%>::addCookie);
+	<%
+	}
+
 
 	if (post) {
 	%>
-		org.apache.commons.httpclient.HttpMethod method_<%=cid%> = new org.apache.commons.httpclient.methods.PostMethod(uriToFetch_<%=cid %><% if (encodeURI) { %>.toASCIIString()<% } else {%>.toString() <% } %>);
+		org.apache.http.client.methods.HttpPost method_<%=cid%> = new org.apache.http.client.methods.HttpPost(uriToFetch_<%=cid %><% if (encodeURI) { %>.toASCIIString()<% } else {%>.toString() <% } %>);
+		List<org.apache.http.NameValuePair> nameValuePairList_<%=cid%> = new java.util.ArrayList<>();
 		<%
 		List<Map<String, String>> commonParams = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__COMMON_PARAMS__");	
 		List<String> varPartList = new ArrayList<String>();	//common string parameter part	
 		int i = 0;
+		%>
+		org.apache.http.entity.mime.MultipartEntityBuilder entityBuilder_<%=cid%> = org.apache.http.entity.mime.MultipartEntityBuilder.create();
+		<%
+
 
 		for (Map<String, String> param : commonParams) {
 			i++;
@@ -339,7 +333,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			String value = param.get("COMMON_PARAMS_VALUE");
 			varPartList.add("common_" + i + "_" + cid);
 			%>
-			org.apache.commons.httpclient.methods.multipart.StringPart common_<%=i%>_<%=cid%> = new org.apache.commons.httpclient.methods.multipart.StringPart(<%=name %>, <%=value %>, <%=paramsCharset %>);
+		    entityBuilder_<%=cid%>.addTextBody(<%=name %>, <%=value %>);
 			<%
 		}
 
@@ -355,15 +349,20 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 				String charset = param.get("FILE_PARAMS_CHARSET");
 				varPartList.add("file_" + j + "_" + cid);
 				%>
-				org.apache.commons.httpclient.methods.multipart.FilePart file_<%=j%>_<%=cid%>  = new org.apache.commons.httpclient.methods.multipart.FilePart(<%=name %>, new java.io.File(<%=value %>), <%=content_type%>, <%=charset%>);
+
+                entityBuilder_<%=cid%>.setCharset(java.nio.charset.Charset.forName(<%=charset%>));
+                entityBuilder_<%=cid%>.addBinaryBody(<%=name%>,new java.io.File(<%=value %>),
+                org.apache.http.entity.ContentType.parse(<%=content_type%>),new java.io.File(<%=value %>).getName());
+
+
 			<%
 			}
 		}
 		%>
-		org.apache.commons.httpclient.methods.multipart.Part[] parts_<%=cid %> = new org.apache.commons.httpclient.methods.multipart.Part[]{<%for(String var: varPartList){%><%=var %>,<%}%>};    
-		((org.apache.commons.httpclient.methods.PostMethod)method_<%=cid%>).setRequestEntity(new org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity(parts_<%=cid %>, method_<%=cid%>.getParams()));
+		method_<%=cid%>.setEntity(entityBuilder_<%=cid%>.build());
+
 	<%} else {%>
-		org.apache.commons.httpclient.HttpMethod method_<%=cid%> = new org.apache.commons.httpclient.methods.GetMethod(uriToFetch_<%=cid %><% if (encodeURI) { %>.toASCIIString()<% } else {%>.toString() <% } %>);
+		org.apache.http.client.methods.HttpGet method_<%=cid%> = new org.apache.http.client.methods.HttpGet(uriToFetch_<%=cid %><% if (encodeURI) { %>.toASCIIString()<% } else {%>.toString() <% } %>);
 	<%}
 
 	if (addHeader) {
@@ -371,63 +370,68 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 		
 		for (Map<String, String> header : headers) {
 		%>
-			method_<%=cid%>.addRequestHeader(<%=header.get("HEADER_NAME")%>,<%=header.get("HEADER_VALUE")%>);
+			method_<%=cid%>.setHeader(<%=header.get("HEADER_NAME")%>,<%=header.get("HEADER_VALUE")%>);
 		<%
 		}
 	}
 	%>
 	boolean isContinue_<%=cid%> = true;
 	int status_<%=cid%>;
+	org.apache.http.client.methods.CloseableHttpResponse httpResponse_<%=cid%> = null;
 	String finalURL_<%=cid%> = uriToFetch_<%=cid %><% if (encodeURI) { %>.toASCIIString()<% } else {%>.toString() <% } %>;
 
 	try { // B_01
 		<%if (redirect) { //Bug13155, add support of redirection%>
 			boolean redirect_<%=cid%> = true;
+			 org.apache.http.client.methods.HttpRequestBase request_<%=cid%> = method_<%=cid%>;
 
 			while (redirect_<%=cid%>) {
-				status_<%=cid%> = client_<%=cid %>.executeMethod(method_<%=cid%>);
 
-				if ((status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_MOVED_TEMPORARILY) 
-					|| (status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_MOVED_PERMANENTLY)
-						|| (status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_SEE_OTHER) 
-							|| (status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_TEMPORARY_REDIRECT)) {
+				httpResponse_<%=cid%> = client_<%=cid %>.execute( request_<%=cid%> ,context_<%=cid%>);
+				status_<%=cid%> = httpResponse_<%=cid%>.getStatusLine().getStatusCode();
+
+				if ((status_<%=cid%> == org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY)
+					|| (status_<%=cid%> == org.apache.http.HttpStatus.SC_MOVED_PERMANENTLY)
+						|| (status_<%=cid%> == org.apache.http.HttpStatus.SC_SEE_OTHER)
+							|| (status_<%=cid%> == org.apache.http.HttpStatus.SC_TEMPORARY_REDIRECT)) {
 					<%if(isLog4jEnabled){%>
 						log.info("<%=cid%> - Closing the connection to the server.");
 					<%}%>
-					method_<%=cid%>.releaseConnection();
+					request_<%=cid%>.releaseConnection();
 					<%if(isLog4jEnabled){%>
 						log.info("<%=cid%> - Connection to the server closed.");
 					<%}%>
 
-					String redirect_url_<%=cid%> = method_<%=cid%>.getResponseHeader("location").getValue();
+					String redirect_url_<%=cid%> = httpResponse_<%=cid%>.getFirstHeader("location").getValue();
                     if(!redirect_url_<%=cid%>.startsWith("http")){
-                        redirect_url_<%=cid%> = method_<%=cid%>.getHostConfiguration().getProtocol().getScheme()+"://" + method_<%=cid%>.getURI().getHost() + ":" + method_<%=cid%>.getURI().getPort() + redirect_url_<%=cid%>;
+                        redirect_url_<%=cid%> = request_<%=cid%>.getURI().getScheme()+"://" + request_<%=cid%>.getURI().getHost() + ":" + request_<%=cid%>.getURI().getPort() + redirect_url_<%=cid%>;
                     }
 
-                    if(status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_SEE_OTHER<% if(redirect_302_as_303) {%> || status_<%=cid%> == org.apache.commons.httpclient.HttpStatus.SC_MOVED_TEMPORARILY<% } %>) {
-                        method_<%=cid%> = new org.apache.commons.httpclient.methods.GetMethod(redirect_url_<%=cid%>);
+                    if(status_<%=cid%> == org.apache.http.HttpStatus.SC_SEE_OTHER<% if(redirect_302_as_303) {%> || status_<%=cid%> == org.apache.http.HttpStatus.SC_MOVED_TEMPORARILY<% } %>) {
+                        request_<%=cid%> = new org.apache.http.client.methods.HttpGet(redirect_url_<%=cid%>);
                     }
                     else{
-                        method_<%=cid%> = new org.apache.commons.httpclient.methods.<%if(post){%>Post<%}else{%>Get<%}%>Method(redirect_url_<%=cid%>);
+                        request_<%=cid%> =new org.apache.http.client.methods.Http<%if(post){%>Post<%}else{%>Get<%}%>(redirect_url_<%=cid%>);
                     }
 
-					System.out.println("Redirect to: " + method_<%=cid%>.getURI());
-					finalURL_<%=cid%> = method_<%=cid%>.getURI().toString();
+					System.out.println("Redirect to: " + request_<%=cid%>.getURI());
+					finalURL_<%=cid%> = request_<%=cid%>.getURI().toString();
 				} else if (status_<%=cid%> >= 200 && status_<%=cid%> < 300) { //Status code 2XX indicates success
 					redirect_<%=cid%> = false;
 				} else {
-					throw new java.lang.Exception("Method failed: " + method_<%=cid%>.getStatusLine());
+					throw new java.lang.Exception("Method failed: " + httpResponse_<%=cid%>.getStatusLine());
 				}
 			}
 		<%} else {%>
-			status_<%=cid%>  = client_<%=cid %>.executeMethod(method_<%=cid%>);
+			httpResponse_<%=cid%> = client_<%=cid %>.execute(method_<%=cid%>,context_<%=cid%>);
+            status_<%=cid%> = httpResponse_<%=cid%>.getStatusLine().getStatusCode();
 		<%
 		}
 
 		if (!redirect) {
 		%>
 			if (!(status_<%=cid%> >= 200 && status_<%=cid%> < 300)){//Status code 2XX indicates success
-				throw new java.lang.Exception("Method failed: " + method_<%=cid%>.getStatusLine());
+				throw new java.lang.Exception("Method failed: " + httpResponse_<%=cid%>.getStatusLine());
 			}
 		<%
 		}
@@ -448,7 +452,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 	}
     <% if(saveCookie){ %>
 	finally {
-        org.apache.commons.httpclient.Cookie[] cookies_<%=cid%> = client_<%=cid %>.getState().getCookies();
+        List<org.apache.http.cookie.Cookie> cookies_<%=cid%> = context_<%=cid%>.getCookieStore().getCookies();
         java.io.File cookieFile_<%=cid%> = new java.io.File(<%=cookieDir%>);
         java.io.File cookieDir_<%=cid%>= cookieFile_<%=cid%>.getParentFile();
         if(!cookieDir_<%=cid%>.exists()){
@@ -457,7 +461,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
         java.io.FileOutputStream fos_<%=cid%> = new java.io.FileOutputStream(cookieFile_<%=cid%>);
         java.io.ObjectOutputStream os_<%=cid%> = new java.io.ObjectOutputStream(fos_<%=cid%>);
 
-        for (org.apache.commons.httpclient.Cookie c : cookies_<%=cid%>) {
+        for (org.apache.http.cookie.Cookie c : cookies_<%=cid%>) {
             os_<%=cid%>.writeObject(c);
         }
         os_<%=cid%>.close();
@@ -467,20 +471,20 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 
 	if (isContinue_<%=cid%>) {    
 		<%if (printResponse) {%>
-			System.out.println("Status Line: " + method_<%=cid%>.getStatusLine());  
+			System.out.println("Status Line: " + httpResponse_<%=cid%>.getStatusLine());  
 			System.out.println("*** Response Header ***");  
-			org.apache.commons.httpclient.Header[] responseHeaders_<%=cid %> = method_<%=cid%>.getResponseHeaders();  
+			org.apache.http.Header[] responseHeaders_<%=cid %> = httpResponse_<%=cid%>.getAllHeaders();
 
 			for (int i = 0; i < responseHeaders_<%=cid %>.length; i++) {
-				System.out.print(responseHeaders_<%=cid %>[i]);
+				System.out.println(responseHeaders_<%=cid %>[i]);
 			}
 		<%
 		}
 
 		if (bUseCache) {%>
-			retIS_<%=cid%> = method_<%=cid%>.getResponseBodyAsStream();
+			retIS_<%=cid%> = httpResponse_<%=cid%>.getEntity().getContent();
 		<%} else {%>
-			java.io.InputStream in_<%=cid %> = method_<%=cid%>.getResponseBodyAsStream();
+			java.io.InputStream in_<%=cid %> = httpResponse_<%=cid%>.getEntity().getContent();
 			String sDir_<%=cid%> = (<%=directory%>).trim();
 			String fileName_<%=cid %> = (<%=filename%>).trim();    
 			//open directory

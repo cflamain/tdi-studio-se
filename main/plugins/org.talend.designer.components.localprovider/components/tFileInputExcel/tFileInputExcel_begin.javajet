@@ -54,6 +54,9 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 
 		String mode = ElementParameterParser.getValue(node,"__GENERATION_MODE__");
 		final boolean eventMode = "EVENT_MODE".equals(mode);
+		
+		boolean configureRatio = ("true").equals(ElementParameterParser.getValue(node,"__CONFIGURE_INFLATION_RATIO__"));
+		String ratio = ElementParameterParser.getValue(node,"__INFLATION_RATIO__");
 
         if (version07) {
             String passwordFieldName = "__PASSWORD__";
@@ -101,21 +104,24 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 						<%}%>){
 								continue;
 							}
+						int row_length_<%=cid %>;
 						<%
 						if(!version07){
 						%>
-							int colsLen_<%=cid %> = row_<%= cid %>.length-start_column_<%=cid %>;
+							row_length_<%=cid %> = row_<%= cid %>.length;
 						<%
 						}else if(!eventMode){
 						%>
-		    				int colsLen_<%=cid %> =  row_<%= cid %>.getLastCellNum()-start_column_<%= cid %>;
+							row_length_<%=cid %> = row_<%= cid %>.getLastCellNum();
 		    			<%
 		    			}else{
 		    			%>
-		    				int colsLen_<%=cid %> = row_<%= cid %>.size()-start_column_<%= cid %>;
+							row_length_<%=cid %> = row_<%= cid %>.size();
 		    			<%
 		    			}
 		    			%>
+		    			int temp_last_<%=cid %>=(end_column_<%=cid %> >= 0 && end_column_<%=cid %> < row_length_<%= cid %> ) ? end_column_<%=cid %> : row_length_<%= cid %>;
+		    			int colsLen_<%=cid %> = temp_last_<%=cid %>-start_column_<%= cid %>;
 		    			dynamic_column_count_<%=cid%> = colsLen_<%=cid %>-<%=colLen-1%>;
 		    			for (int i = <%=dynamic_index-1%> + start_column_<%= cid %>; i < colsLen_<%=cid %>-<%=colLen-dynamic_index%> + start_column_<%= cid %>; i++) {
 					    	routines.system.DynamicMetadata dynamicMetadata_<%=cid%> = new routines.system.DynamicMetadata();
@@ -708,7 +714,13 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 
 		Object source_<%=cid %> = <%=fileName%>;
 		org.apache.poi.xssf.usermodel.XSSFWorkbook workbook_<%=cid%> = null;
-
+		<%
+		if(configureRatio && !("").equals(ratio)) {
+		%>
+			org.apache.poi.openxml4j.util.ZipSecureFile.setMinInflateRatio(<%=ratio %>);
+		<%
+		}
+		%>
 		if(source_<%=cid %> instanceof String){
 			workbook_<%=cid%> = (org.apache.poi.xssf.usermodel.XSSFWorkbook) org.apache.poi.ss.usermodel.WorkbookFactory.create(new java.io.File((String)source_<%=cid %>), password_<%=cid%>, true);
 		} else if(source_<%=cid %> instanceof java.io.InputStream) {
@@ -1094,21 +1106,12 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 							dynamic_index = i;
 							%>
 							dynamic_<%=cid %>.clearColumnValues();
-							int fieldCount_<%=cid %> = 0;
-							if(row_<%= cid %>!=null){
-								fieldCount_<%=cid %> = row_<%= cid %>.getLastCellNum()-row_<%= cid %>.getFirstCellNum()+1;
-							}
 							dynamic_column_count_<%=cid%> = dynamic_<%=cid %>.getColumnCount();
 							for (int i = 0; i < dynamic_column_count_<%=cid%> ; i++) {
-								if ((<%=dynamic_index%>+i) <= fieldCount_<%=cid %>){
-									if(temp_row_<%= cid %>[<%=dynamic_index%>+i]<%=(isTrimAll || (!trimSelects.isEmpty() && ("true").equals(trimSelects.get(i).get("TRIM"))))?".trim()":"" %>.length() < 1){
-										emptyColumnCount_<%= cid %>++;
-									}
-									dynamic_<%=cid %>.addColumnValue(temp_row_<%= cid %>[<%=dynamic_index%>+i]<%=(isTrimAll || (!trimSelects.isEmpty() && ("true").equals(trimSelects.get(i).get("TRIM"))))?".trim()":"" %>);
-								}else{
-									dynamic_<%=cid %>.addColumnValue("");
+								if(temp_row_<%= cid %>[<%=dynamic_index%>+i]<%=(isTrimAll || (!trimSelects.isEmpty() && ("true").equals(trimSelects.get(i).get("TRIM"))))?".trim()":"" %>.length() < 1){
 									emptyColumnCount_<%= cid %>++;
 								}
+								dynamic_<%=cid %>.addColumnValue(temp_row_<%= cid %>[<%=dynamic_index%>+i]<%=(isTrimAll || (!trimSelects.isEmpty() && ("true").equals(trimSelects.get(i).get("TRIM"))))?".trim()":"" %>);
 							}
 							<%=firstConnName %>.<%=column.getLabel() %> =dynamic_<%=cid %>;
 						<%
@@ -1226,6 +1229,14 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 		Object source_<%=cid %> = <%=fileName%>;
 		com.talend.excel.xssf.event.ExcelReader excelReader_<%=cid%> = null;
 
+<%
+		if(configureRatio && !("").equals(ratio)) {
+%>
+			org.apache.poi.openxml4j.util.ZipSecureFile.setMinInflateRatio(<%=ratio %>);
+<%
+		}
+%>
+		
 		if(source_<%=cid %> instanceof java.io.InputStream || source_<%=cid %> instanceof String){
 			excelReader_<%=cid%> = new com.talend.excel.xssf.event.ExcelReader();
 			excelReader_<%=cid%>.setIncludePhoneticRuns(<%=includePhoneticRuns%>);

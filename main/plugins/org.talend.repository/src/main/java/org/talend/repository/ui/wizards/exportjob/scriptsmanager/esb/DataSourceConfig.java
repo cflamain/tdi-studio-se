@@ -40,7 +40,7 @@ import org.talend.utils.json.JSONObject;
  */
 public class DataSourceConfig {
 
-    private static final String TRUN_JOB = "tRunJob"; //$NON-NLS-1$
+	private static final String TRUN_JOB = "tRunJob"; //$NON-NLS-1$
 
     private static final Set<String> PROCESSES_SUB_JOB = new HashSet<>();
 
@@ -65,18 +65,45 @@ public class DataSourceConfig {
         }
         Collection<String> aliases = new HashSet<String>();
 
-//        List<? extends INode> generatingNodes = processItem.getGeneratingNodes();
-//
-//
-//        for (INode node : generatingNodes) {
-//            getDatasourceAliasesFrom(node, aliases, "SPECIFY_DATASOURCE_ALIAS", "DATASOURCE_ALIAS");
-//            getDatasourceAliasesFrom(node, aliases, "useDataSource", "dataSource");
-//        }
-
+        getJobletAliases(processItem, aliases);
         getAliases(processItem.getId(), aliases);
         return aliases;
     }
-
+    
+    private static boolean isNotEmptyDataSourceValue(String dataSource) {
+        return StringUtils.isNoneBlank(dataSource) && StringUtils.isNotBlank(dataSource.replace("\"", ""));
+    }
+    
+    private static void getJobletAliases(IProcess process, Collection<String> ds) {
+        for (Iterator<?> e = process.getGeneratingNodes().iterator(); e.hasNext();) {
+            INode node = (INode) e.next();
+            String dataSourceAlias = null;
+            boolean specifyDataSourceAlias = false;
+            boolean useExistingConnection = false;
+            for (Iterator<?> iterator = node.getElementParameters().iterator(); iterator.hasNext();) {
+            	IElementParameter elementParameter = (IElementParameter)iterator.next();
+                if (StringUtils.equals(elementParameter.getName(), "SPECIFY_DATASOURCE_ALIAS")) {
+                    specifyDataSourceAlias = (boolean) elementParameter.getValue();
+                } else if (StringUtils.equals(elementParameter.getName(), "DATASOURCE_ALIAS")) {
+                    dataSourceAlias = (String) elementParameter.getValue();
+                } else if(StringUtils.equals(elementParameter.getName(), "USE_EXISTING_CONNECTION")) {
+                    useExistingConnection= (null != elementParameter.getValue() && (boolean) elementParameter.getValue());
+                }
+            }
+            if (specifyDataSourceAlias && !useExistingConnection && isNotEmptyDataSourceValue(dataSourceAlias)) {
+                ds.add(TalendQuoteUtils.removeQuotes(dataSourceAlias.trim()));
+            }
+           
+        }
+    }
+    private static boolean isJson(String jsonString){
+        try {
+            new JSONObject(jsonString);
+        } catch (JSONException e) {
+            return false;
+        }
+        return true;
+    }
     /**
      * DOC sunchaoqun Comment method "getAliases".
      * 
@@ -103,7 +130,7 @@ public class DataSourceConfig {
                 for (Iterator<?> iterator = node.getElementParameter().iterator(); iterator.hasNext();) {
                     ElementParameterType elementParameter = (ElementParameterType) iterator.next();
 
-                    if (StringUtils.equals(elementParameter.getName(), "PROPERTIES")) {
+                    if (StringUtils.equals(elementParameter.getName(), "PROPERTIES") && isJson(elementParameter.getValue())) {
                         JSONObject val = null;
                         try {
                             val = new JSONObject(elementParameter.getValue());
@@ -111,9 +138,14 @@ public class DataSourceConfig {
                                 JSONObject dataSource = (JSONObject) val.get("dataSource");
                                 if (dataSource != null && !Arrays.asList("null","{}").contains(dataSource.getString("storedValue"))) {
                                     String storeValue = dataSource.getString("storedValue");
-                                    if (StringUtils.isNoneBlank(storeValue)) {
-                                        useDS = true;
-                                        value = storeValue;
+                                    // for hidden case:
+                                    // "flags":{"@items":[{"@type":"org.talend.daikon.properties.property.Property$Flags","name":"HIDDEN"}],"@type":"java.util.RegularEnumSet"}
+                                    // for use:
+                                    // "flags":{"@type":"java.util.RegularEnumSet"}
+                                    if (isNotEmptyDataSourceValue(storeValue) && !dataSource.getJSONObject("flags").has("@items") ) {
+                                        value = TalendQuoteUtils.removeQuotes(storeValue.trim());
+                                        ds.add(value);
+                                        break;
                                     }
                                 }
                             }
@@ -122,10 +154,9 @@ public class DataSourceConfig {
                         }
                     }
 
-                    if ((StringUtils.equals(elementParameter.getName(), "SPECIFY_DATASOURCE_ALIAS")
-                            || StringUtils.equals(elementParameter.getName(), "useDataSource"))
-                            && BooleanUtils.toBoolean(elementParameter.getValue()) && elementParameter.isShow()) {
-                        useDS = true;
+                    if ((StringUtils.equals(elementParameter.getName(), "SPECIFY_DATASOURCE_ALIAS") && elementParameter.isShow())
+                            || StringUtils.equals(elementParameter.getName(), "useDataSource")){
+                       useDS = BooleanUtils.toBoolean(elementParameter.getValue()) ; 
                     }
 
                     if (StringUtils.equals(elementParameter.getName(), "DATASOURCE_ALIAS")
@@ -134,8 +165,9 @@ public class DataSourceConfig {
                         value = TalendQuoteUtils.removeQuotes(result.trim());
                     }
 
-                    if (useDS && StringUtils.isNotBlank(value)) {
+                    if (useDS && isNotEmptyDataSourceValue(value)) {
                         ds.add(value);
+                        break;
                     }
                 }
             }

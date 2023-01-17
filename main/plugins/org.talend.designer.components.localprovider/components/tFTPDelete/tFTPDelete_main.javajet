@@ -149,7 +149,7 @@
 <%
 				}
 %>
-				org.apache.commons.net.ftp.FTPFile[] filesInDirectory_<%=cid%> = null;
+org.apache.commons.net.ftp.FTPFile[] filesInDirectory_<%=cid%> = null;
 				boolean getFileNamesFailed_<%=cid%> = false;
 				try {
 					filesInDirectory_<%=cid%> = ftp_<%=cid %>.listFiles();
@@ -165,6 +165,24 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 %>
 				}
 
+								String[] listNamesInDirectory_<%=cid%> = null;
+                				try {
+                					listNamesInDirectory_<%=cid%> = ftp_<%=cid %>.listNames();
+                					if(filesInDirectory_<%=cid%> == null){
+                					    getFileNamesFailed_<%=cid%> = true;
+                					}
+                				} catch(java.io.IOException e_<%=cid%>) {
+                                    globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
+                					getFileNamesFailed_<%=cid%> = true;
+                <%
+                					if(isLog4jEnabled) {
+                %>
+                						log.warn("<%=cid%> - " + e_<%=cid%>.getMessage());
+                <%
+                					}
+                %>
+                				}
+
 				if (getFileNamesFailed_<%=cid %>) {
 <%
 					if (isLog4jEnabled) {
@@ -179,6 +197,42 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 %>
 				} else {
 					<% /*search files matches to filemask and delete them*/ %>
+					if( listNamesInDirectory_<%=cid%>!=null && (filesInDirectory_<%=cid%> == null || filesInDirectory_<%=cid%>.length == 0)){
+					    for (String fileName_<%=cid%> : listNamesInDirectory_<%=cid%>) {
+					        if (fileName_<%=cid%>.matches(mask<%=cid %>)) {
+					            boolean successDeleted_<%=cid %> = false;
+<%
+								if("FILE".equals(targetType)){
+%>
+                                successDeleted_<%=cid %> = ftp_<%=cid %>.deleteFile(fileName_<%=cid%>);
+
+<%
+								}else{
+%>
+                                successDeleted_<%=cid %> = ftp_<%=cid %>.removeDirectory(fileName_<%=cid%>);
+<%}%>
+										if (successDeleted_<%=cid %>) {
+											globalMap.put("<%=cid %>_CURRENT_STATUS", "File deleted.");
+											nb_file_<%=cid%>++;
+											<%if(isLog4jEnabled){%>
+												log.debug("<%=cid%> - <%=targetType%> '" + fileName_<%=cid%>  + "' was deleted from the remote directory " + <%=remotedir %>);
+											<%}%>
+										} else {
+											String responceFTPMessage = ftp_<%=cid %>.getReplyString();
+											String errorMessageDeleteFail = "<%=cid%> - <%=targetType%> '" + fileName_<%=cid%>  + "' was not deleted. Error message: " + responceFTPMessage;
+											<%if(isLog4jEnabled){%>
+												log.error(errorMessageDeleteFail);
+											<%} else { %>
+												System.err.println(errorMessageDeleteFail);
+											<%}%>
+
+											<%if (("true").equals(dieOnError)) { %>
+												throw new RuntimeException(errorMessageDeleteFail);
+											<% } %>
+										}
+					        }
+					    }
+					}else{
 					for (org.apache.commons.net.ftp.FTPFile file_<%=cid %> : filesInDirectory_<%=cid%>) {
 						String fileName_<%=cid%> = file_<%=cid %>.getName();
 						if (fileName_<%=cid%>.matches(mask<%=cid %>)) {
@@ -239,6 +293,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
 							}
 					}
 				}
+				}// listNamesInDirectory_<%=cid%>!=null
 			}
 
 			<% /*return to root dir for next filemask*/ %>

@@ -78,7 +78,7 @@ public class GenericService implements IGenericService {
             String folder = "metadata/" + name; //$NON-NLS-1$
             int ordinal = 100;
             ERepositoryObjectType repositoryType = interService.createRepositoryType(name, displayName, name, folder, ordinal);
-            if (curParentNode == null && "JDBC".equals(name)) { //$NON-NLS-1$
+            if ("JDBC".equals(name)) { //$NON-NLS-1$
                 Class<ComponentProperties> jdbcClass = ReflectionUtils.getClass(
                         "org.talend.components.jdbc.wizard.JDBCConnectionWizardProperties",
                         wizardDefinition.getClass().getClassLoader());
@@ -87,12 +87,12 @@ public class GenericService implements IGenericService {
                     if (GlobalServiceRegister.getDefault().isServiceRegistered(IGenericDBService.class)) {
                         dbService = (IGenericDBService) GlobalServiceRegister.getDefault().getService(IGenericDBService.class);
                     }
-                    if (dbService != null) {
+                    if (dbService != null && !dbService.getExtraTypes().contains(repositoryType)) {
                         dbService.getExtraTypes().add(repositoryType);
                     }
                 }
             }
-            if (curParentNode != null && !needHide(repositoryType)) {
+            if (curParentNode != null && !needHide(repositoryType)&&!"JDBC".equals(repositoryType.getAlias())) {//$NON-NLS-1$
                 repNodes.add(interService.createRepositoryNode(curParentNode, wizardDefinition.getDisplayName(), repositoryType,
                         ENodeType.SYSTEM_FOLDER));
             }

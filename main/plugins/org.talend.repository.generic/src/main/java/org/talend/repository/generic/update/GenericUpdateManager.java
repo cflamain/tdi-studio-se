@@ -87,6 +87,18 @@ public class GenericUpdateManager extends RepositoryUpdateManager {
         return idAndNameMap;
     }
 
+    public static Map<String, MetadataTable> getNameAndTableMap(ConnectionItem connItem) {
+        if (connItem == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, MetadataTable> nameAndTableMap = new HashMap<>();
+        List<MetadataTable> metadataTables = SchemaUtils.getMetadataTables(connItem.getConnection(), SubContainer.class);
+        for (MetadataTable table : metadataTables) {
+            nameAndTableMap.put(table.getName(), table);
+        }
+        return nameAndTableMap;
+    }
+
     public static boolean updateSingleSchema(ConnectionItem connItem, final MetadataTable newTable,
             final IMetadataTable oldMetadataTable, Map<String, String> oldTableMap) {
         if (connItem == null) {
@@ -97,7 +109,7 @@ public class GenericUpdateManager extends RepositoryUpdateManager {
         if (!update) {
             if (newTable != null && oldMetadataTable != null && oldTableMap.containsKey(newTable.getId())) {
                 if (GlobalServiceRegister.getDefault().isServiceRegistered(IMetadataManagmentService.class)) {
-                    IMetadataManagmentService service = (IMetadataManagmentService) GlobalServiceRegister.getDefault()
+                    IMetadataManagmentService service = GlobalServiceRegister.getDefault()
                             .getService(IMetadataManagmentService.class);
                     IMetadataTable newMetadataTable = service.convertMetadataTable(newTable);
                     update = !oldMetadataTable.sameMetadataAs(newMetadataTable, IMetadataColumn.OPTIONS_NONE);

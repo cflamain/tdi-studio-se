@@ -459,7 +459,7 @@ public class JavaProcessorUtilities {
         if (ModulesNeededProvider.installModuleForRoutineOrBeans()) {
             try {
                 IProgressMonitor monitor = new NullProgressMonitor();
-                new AggregatorPomsHelper().updateCodeProjects(monitor, false, true);
+                new AggregatorPomsHelper().updateCodeProjects(monitor, true);
                 CodesJarM2CacheManager.updateCodesJarProject(monitor);
                 ModulesNeededProvider.setInstallModuleForRoutineOrBeans();
             } catch (Exception e) {

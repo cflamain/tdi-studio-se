@@ -29,6 +29,7 @@ import org.eclipse.jdt.ui.JavadocContentAccess;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IViewPart;
@@ -36,8 +37,12 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.MultiPageEditorPart;
+import org.talend.analysistask.AnalysisReportRecorder;
+import org.talend.camel.core.model.camelProperties.CamelPropertiesPackage;
 import org.talend.commons.CommonsPlugin;
 import org.talend.commons.exception.ExceptionHandler;
+import org.talend.commons.exception.PersistenceException;
+import org.talend.commons.ui.gmf.util.DisplayUtils;
 import org.talend.core.CorePlugin;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.core.model.components.IComponent;
@@ -74,10 +79,12 @@ import org.talend.designer.core.convert.IProcessConvertService;
 import org.talend.designer.core.convert.ProcessConvertManager;
 import org.talend.designer.core.debug.JobLaunchShortcutManager;
 import org.talend.designer.core.i18n.Messages;
+import org.talend.designer.core.model.analysistask.ProjectAnalysisTask;
 import org.talend.designer.core.model.components.DummyComponent;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.components.EmfComponent;
 import org.talend.designer.core.model.components.Expression;
+import org.talend.designer.core.model.process.AbstractProcessProvider;
 import org.talend.designer.core.model.process.DataNode;
 import org.talend.designer.core.model.utils.emf.talendfile.ParametersType;
 import org.talend.designer.core.ui.AbstractMultiPageTalendEditor;
@@ -100,6 +107,7 @@ import org.talend.designer.core.ui.views.problems.Problems;
 import org.talend.designer.core.ui.views.properties.ComponentSettings;
 import org.talend.designer.core.ui.views.properties.ComponentSettingsView;
 import org.talend.designer.core.utils.BigDataJobUtil;
+import org.talend.designer.core.utils.ComponentsHelpUtil;
 import org.talend.designer.core.utils.JavaProcessUtil;
 import org.talend.designer.core.utils.UnifiedComponentUtil;
 import org.talend.designer.runprocess.ProcessorException;
@@ -270,8 +278,16 @@ public class DesignerCoreService implements IDesignerCoreService {
      */
     @Override
     public IProcess getCurrentProcess() {
-        IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-        if (!(editor instanceof AbstractMultiPageTalendEditor)) {
+        IEditorPart editor;
+        if (Display.getCurrent() == null) {
+            List<IEditorPart> list = new ArrayList<>();
+            DisplayUtils.getDisplay().syncExec(
+                    () -> list.add(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor()));
+            editor = list.get(0);
+        } else {
+            editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        }
+        if (editor == null || !(editor instanceof AbstractMultiPageTalendEditor)) {
             return null;
         }
         IProcess process = ((AbstractMultiPageTalendEditor) editor).getProcess();
@@ -888,6 +904,33 @@ public class DesignerCoreService implements IDesignerCoreService {
     
     @Override
     public String[] getNeedRemoveModulesForLog4j() {
-        return UpdateLog4jJarUtils.NEEDREMOVEMODULES;
+        return UpdateLog4jJarUtils.NEED_REMOVE_MODULES;
+    }
+
+    @Override
+    public void openComponentOnlineHelp(String componentName) {
+        ComponentsHelpUtil.openLineHelp(componentName);
+    }
+
+    @Override
+    public IProcess getJobletProcessByItem(Item item) {
+        
+        if (item.eClass() == CamelPropertiesPackage.Literals.ROUTELET_PROCESS_ITEM) {
+
+            return getProcessFromItemByExtendion(item,true);
+        }
+        
+        AbstractProcessProvider jobletProcessProvider = AbstractProcessProvider
+                .findProcessProviderFromPID(IComponent.JOBLET_PID);
+        if (jobletProcessProvider != null) {
+            return jobletProcessProvider.buildNewGraphicProcess(item, true);
+        }
+        return null;
+    }
+
+    @Override
+    public List<AnalysisReportRecorder> analysis(Project project) throws PersistenceException {
+        ProjectAnalysisTask analysisTask = new ProjectAnalysisTask();
+        return analysisTask.analysis(project);
     }
 }

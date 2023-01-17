@@ -168,7 +168,7 @@ public abstract class DemosImportTest {
 		tdqLibrariesRuleSqlPath = new Path("/TDQ_Libraries/Rules/SQL");
 		tdqLibrariesPatternPath = new Path("/TDQ_Libraries/Patterns");
 		routesItemPath = new Path("/routes/");
-		routeResourcePath = new Path("/route_resources/");
+		routeResourcePath = new Path("/resources/");
 		servicesItemPath = new Path("/services/");
 
 		mdmDatacontainerPath = new Path("/MDM/datacontainer/");
@@ -326,7 +326,7 @@ public abstract class DemosImportTest {
 	protected void collectDemoData(String rootPath) throws PersistenceException {
 		Map<String, String> map = getCollectFolderMap(rootPath);
 		for (String path : map.keySet()) {
-			Assert.assertTrue(new File(path).exists());
+            Assert.assertTrue("Path:" + path + " does not exist!", new File(path).exists());
 			File tempFolder = new File(path);
 			List<File> itemFiles = DemoImportTestUtil.collectProjectFilesFromDirectory(tempFolder, map.get(path), true);
 			demoDataMap.put(path, itemFiles);

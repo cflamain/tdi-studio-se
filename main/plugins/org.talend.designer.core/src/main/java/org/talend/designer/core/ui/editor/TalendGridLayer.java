@@ -19,9 +19,9 @@ import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.editparts.GridLayer;
 import org.eclipse.swt.graphics.Color;
+import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.ui.gmf.draw2d.AnimatableZoomManager;
-import org.talend.commons.ui.runtime.image.EImage;
-import org.talend.commons.ui.runtime.image.ImageProvider;
+import org.talend.commons.ui.runtime.ITalendThemeService;
 
 /**
  * Grid that will be used for the designer. (modification of the default grid to have black points)
@@ -33,9 +33,32 @@ public class TalendGridLayer extends GridLayer {
 
     public static final Color GRID_COLOR = ColorConstants.black;
 
+    private static final Color GRID_LIGHT_COLOR = new Color(232, 235, 239);
+
+    private static final Color GRID_DARK_COLOR = new Color(125, 135, 150);
+
     public TalendGridLayer() {
         super();
         setForegroundColor(GRID_COLOR);
+    }
+
+    private Color getLightColor() {
+        return ITalendThemeService.getColor("org.talend.designer.core.lightColor").orElse(GRID_LIGHT_COLOR);
+    }
+
+    private Color getDarkColor() {
+        return ITalendThemeService.getColor("org.talend.designer.core.darkColor").orElse(GRID_DARK_COLOR);
+    }
+
+    private int getColorAlpha() {
+        final int defaultAlpha = 30;
+        try {
+            return Integer.valueOf(
+                    ITalendThemeService.getProperty("org.talend.designer.core.alpha").orElse(String.valueOf(defaultAlpha)));
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
+        return defaultAlpha;
     }
 
     @Override
@@ -71,13 +94,18 @@ public class TalendGridLayer extends GridLayer {
                     origin.y += distanceY;
                 }
             }
+            g.setAlpha(getColorAlpha());
             for (int i = origin.x - distanceX; i < clip.x + clip.width; i += distanceX) {
                 for (int j = origin.y - distanceY; j < clip.y + clip.height; j += distanceY) {
-                    // g.drawPoint(i, j);
+//                    g.drawPoint(i, j);
                     int re = Math.abs(i - j);
                     if (re / distanceY % 2 == 0) {
-                        g.drawImage(ImageProvider.getImage(EImage.CHESS_GRAY), i, j);
+                        g.setBackgroundColor(getDarkColor());
+//                        g.drawImage(ImageProvider.getImage(EImage.CHESS_GRAY), i, j);
+                    } else {
+                        g.setBackgroundColor(getLightColor());
                     }
+                    g.fillRectangle(i, j, 32, 32);
                 }
             }
         }

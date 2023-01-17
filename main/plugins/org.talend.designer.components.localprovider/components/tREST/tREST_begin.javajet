@@ -36,6 +36,19 @@ imports="
 	String keyStorePWD_<%=cid%> = System.getProperty("javax.net.ssl.keyStorePassword");
 	
 	com.sun.jersey.api.client.config.ClientConfig config_<%=cid%> = new com.sun.jersey.api.client.config.DefaultClientConfig();
+	
+	// APPINT-33909: add entitiy providers (for OSGi deployment)
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.StringProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.ByteArrayProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.FileProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.InputStreamProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.DataSourceProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.MimeMultipartProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.FormProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.ReaderProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.DocumentProvider.class);
+	config_<%=cid%>.getClasses().add(com.sun.jersey.core.impl.provider.entity.StreamingOutputProvider.class);
+	
 	javax.net.ssl.SSLContext ctx_<%=cid%> = javax.net.ssl.SSLContext.getInstance("SSL");
 	
 	javax.net.ssl.TrustManager[] tms_<%=cid%> = null;

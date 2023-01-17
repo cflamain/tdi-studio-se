@@ -15,7 +15,7 @@ public class CLASS {
     public static final String INFORMIX = "INFORMIX";
     public static final String VERTICA = "VERTICA";
     public static final String TERADATA = "TERADATA";
-	private static Map<String, SCDManager> managerMap = new HashMap<String, SCDManager>();
+	private Map<String, SCDManager> managerMap = new HashMap<String, SCDManager>();
     public class Column {
         private String labelName;
         private String columnName;

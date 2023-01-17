@@ -3,12 +3,13 @@ Automatic-Module-Name: org.talend.repository
 Bundle-ManifestVersion: 2
 Bundle-Name: Repository Plug-in
 Bundle-SymbolicName: org.talend.repository;singleton:=true
-Bundle-Version: 8.0.1.qualifier
+Bundle-Version: 8.8.8.qualifier
 Bundle-Localization: plugin
 Eclipse-LazyStart: true
 Bundle-Vendor: .Talend SA.
 Require-Bundle: javax.xml.rpc,
  org.apache.commons.collections,
+ org.apache.commons.io,
  org.apache.commons.logging,
  org.apache.commons.lang,
  org.talend.model,
@@ -53,7 +54,8 @@ Require-Bundle: javax.xml.rpc,
  org.eclipse.swt,
  org.eclipse.core.net,
  org.eclipse.jface,
- org.talend.libraries.apache.axis2
+ org.talend.libraries.apache.axis2,
+ org.talend.signon.util
 Export-Package: org.talend.repository,
  org.talend.repository.constants,
  org.talend.repository.i18n,
@@ -102,4 +104,6 @@ Bundle-Activator: org.talend.repository.RepositoryPlugin
 Bundle-ClassPath: .,
  lib/velocity-1.7.jar
 Import-Package: com.fasterxml.jackson.core,
- com.fasterxml.jackson.databind
+ com.fasterxml.jackson.databind,
+ org.slf4j,
+ org.talend.utils.json;version="1.0.0"

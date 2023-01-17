@@ -38,7 +38,7 @@ public class BuildJobConstants {
         oldBuildTypeMap.put(JobExportType.MSESB_IMAGE, "REST_MS");
 
         esbComponents = Collections.unmodifiableList(Arrays.asList("tRESTClient", "tRESTRequest", "tRESTResponse", "tESBConsumer",
-                "tESBProviderFault", "tESBProviderRequest", "tESBProviderResponse", "tRouteInput", "tREST"));
+                "tESBProviderFault", "tESBProviderRequest", "tESBProviderResponse", "tRouteInput"));
 
         // components contain cxf-core-**.jar
         ESB_CXF_COMPONENTS = Collections

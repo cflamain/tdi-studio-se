@@ -30,6 +30,64 @@
     "
 %>
 
+<%
+final java.util.Map<String, String> configurationToChange = new java.util.HashMap<String, String>();
+final List<ElementParameter> params = List.class.cast(node.getElementParametersWithChildrens());
+if (params != null && !params.isEmpty()) {
+    for (final ElementParameter p : params) {
+        Object pluginValue = p.getTaggedValue("org.talend.sdk.component.source");
+        if(pluginValue == null || !String.class.cast(pluginValue).equalsIgnoreCase("tacokit")) {
+            continue;
+        }
+        try {
+            if (!(Boolean) org.talend.core.runtime.IAdditionalInfo.class.cast(p).func("isPersisted")) {
+                continue;
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        
+        if (p.getFieldType() == EParameterFieldType.TABLE || p.getFieldType() == EParameterFieldType.TACOKIT_SUGGESTABLE_TABLE) {
+            java.util.List<java.util.Map<String, String>> tableValues = ElementParameterParser.createTableValues((java.util.List<java.util.Map<String, Object>>) p.getValue(), p);
+            String[] items = p.getListItemsDisplayCodeName();
+            String tableName = p.getName().replace('$', '.');
+            boolean primitiveTable = items.length == 1 && items[0].equals(tableName + "[]");
+            String tableNamePrefix = tableName + "[]";
+            
+            java.util.List<String> changable = java.util.List.class.cast(p.getTaggedValue("org.talend.sdk.component.field.changable"));
+                
+            for (int i = 0; i < tableValues.size(); i++) {
+                java.util.Map<String, String> lineValues = tableValues.get(i);
+                for (int j = 0; j < items.length; j++) {
+                    boolean canChange = false;
+                    
+                    String key = tableName + "[" + i + "]";
+                    if (!primitiveTable) {
+                        final String columnName = items[j].substring(tableNamePrefix.length(), items[j].length());
+                        key = key + columnName;
+                        
+                        if(changable!=null && changable.contains(items[j])) {
+                            canChange = true;
+                        }
+                    }
+                    String value = lineValues.get(items[j]);
+                    
+                    if(canChange) {
+                        configurationToChange.put(key, value);
+                    }
+                }
+            }
+        }
+    }
+}
+
+for(java.util.Map.Entry<String, String> entry : configurationToChange.entrySet()) {
+%>
+    changer_<%=cid%>.change("<%=entry.getKey()%>", (<%=entry.getValue()%>));
+<%
+}
+%>
+
 processor_<%=cid%>.onElement(inputs_<%=cid%>, outputs_<%=cid%>);
 nbLineInput_<%=cid%>++;
 globalMap.put("<%=cid %>_NB_LINE", nbLineInput_<%=cid%>);

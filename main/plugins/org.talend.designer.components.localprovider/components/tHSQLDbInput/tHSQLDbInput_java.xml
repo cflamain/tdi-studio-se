@@ -212,7 +212,12 @@
    </ADVANCED_PARAMETERS>
    <CODEGENERATION>
      <IMPORTS>
-		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb.jar" MVN="mvn:org.talend.libraries/hsqldb/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.jdbc.hsql/lib/hsqldb.jar" REQUIRED="true"/>
+		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb-2.7.1.jar" MVN="mvn:org.hsqldb/hsqldb/2.7.1" REQUIRED="true"/>
+
+		<!-- java 11 dependencies for jdbc driver -->
+		<IMPORT NAME="jaxb-api-2.3.1" MODULE="jaxb-api-2.3.1.jar" MVN="mvn:javax.xml.bind/jaxb-api/2.3.1" REQUIRED="true"/>
+		<IMPORT NAME="activation-1.1.1" MODULE="activation-1.1.1.jar" MVN="mvn:javax.activation/activation/1.1.1" REQUIRED="true"/>
+		<IMPORT NAME="jaxb-impl-2.1.13" MODULE="jaxb-impl-2.1.13.jar" MVN="mvn:com.sun.xml.bind/jaxb-impl/2.1.13" REQUIRED="true"/>
      </IMPORTS>
    </CODEGENERATION>
 

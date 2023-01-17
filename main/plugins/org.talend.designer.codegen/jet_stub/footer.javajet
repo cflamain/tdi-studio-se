@@ -56,8 +56,9 @@
 	String jobClassPackageFolder = codeGenArgument.getCurrentProjectName().toLowerCase() + '/' + jobFolderName;
 
     boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(process, "__LOG4J_ACTIVATE__"));//log4j enable
-	boolean isLog4j2Enabled = ("true").equals(ElementParameterParser.getValue(process, "__LOG4J2_ACTIVATE__"));//log4j2 enable
-	boolean isLog4j1Enabled = !isLog4j2Enabled;//log4j1 enable
+    boolean isLog4j2Enabled = ("true").equals(ElementParameterParser.getValue(process, "__LOG4J2_ACTIVATE__"));//log4j2 enable
+    boolean isLog4j1Enabled = !isLog4j2Enabled;//log4j1 enable
+    String MDC_CLASS = "org.slf4j.MDC";
 
     boolean exist_tParallelize = false;
     List<? extends INode> tParallelizeList = process.getNodesOfType("tParallelize");
@@ -223,7 +224,7 @@
         public boolean useDatastax(INode node){
             String dbVersion = ElementParameterParser.getValue(node, "__DB_VERSION__");
             String apiType = ElementParameterParser.getValue(node, "__API_TYPE__");
-            return "CASSANDRA_2_2".equals(dbVersion) || "CASSANDRA_3_0".equals(dbVersion) || ("CASSANDRA_2_0_0".equals(dbVersion) && "DATASTAX".equals(apiType));
+            return "CASSANDRA_2_2".equals(dbVersion) || "CASSANDRA_3_0".equals(dbVersion) || "CASSANDRA_4_0".equals(dbVersion) || ("CASSANDRA_2_0_0".equals(dbVersion) && "DATASTAX".equals(apiType));
         }
     }
 %>
@@ -321,6 +322,8 @@
     	globalMap.put(GLOBAL_CONNECTION_POOL_KEY, connectionPool);
     }
     <%}%>
+    
+    private final static java.util.Properties jobInfo = new java.util.Properties();
 
     public static void main(String[] args){
         final <%=className %> <%=className %>Class = new <%=className %>();
@@ -333,6 +336,42 @@
         <%}%>
 
         System.exit(exitCode);
+    }
+	
+
+	
+	
+	private void getjobInfo() {
+		final String TEMPLATE_PATH = "src/main/templates/jobInfo_template.properties";
+		final String BUILD_PATH = "../jobInfo.properties";
+		final String path = this.getClass().getResource("").getPath();
+		if(path.lastIndexOf("target") > 0) {
+			final java.io.File templateFile = new java.io.File(
+					path.substring(0, path.lastIndexOf("target")).concat(TEMPLATE_PATH));
+			if (templateFile.exists()) {
+				readJobInfo(templateFile);
+				return;
+			}
+		}
+			readJobInfo(new java.io.File(BUILD_PATH));
+	}
+
+    private void readJobInfo(java.io.File jobInfoFile){
+	
+        if(jobInfoFile.exists()) {
+            try {
+            	jobInfo.load(new java.io.FileInputStream(jobInfoFile));
+            } catch (IOException e) {
+            	 <%if(isLog4jEnabled){%>
+                log.debug("Read jobInfo.properties file fail: " + e.getMessage());
+                <%}%>
+                
+            }
+        }
+            <%if(isLog4jEnabled){%>
+		log.info(String.format("Project name: %s\tJob name: %s\tGIT Commit ID: %s\tTalend Version: %s",
+				projectName,jobName,jobInfo.getProperty("gitCommitId"), "<%=System.getProperties().getProperty("talend.studio.version")%>"));
+		<%}%>
     }
 
    <%
@@ -514,17 +553,61 @@
 				}
 				org.apache.logging.log4j.core.config.Configurator.setLevel(org.apache.logging.log4j.LogManager.getRootLogger().getName(), log.getLevel());
 				<%}%>
-    	    }
-        	log.info("TalendJob: '<%=codeGenArgument.getJobName()%>' - Start.");
-    	<%}%>
-    	
-    	<%
-    	INode jobCatcherNode = null;
+			}
+
+	        getjobInfo();
+			log.info("TalendJob: '<%=codeGenArgument.getJobName()%>' - Start.");
+		<%}%>
+
+            <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+                java.util.Set<Object> jobInfoKeys = jobInfo.keySet();
+                for(Object jobInfoKey: jobInfoKeys) {
+                    <%=MDC_CLASS%>.put("_" + jobInfoKey.toString(), jobInfo.get(jobInfoKey).toString());
+                }
+                <%=MDC_CLASS%>.put("_pid", pid);
+                <%=MDC_CLASS%>.put("_rootPid", rootPid);
+                <%=MDC_CLASS%>.put("_fatherPid", fatherPid);
+                <%=MDC_CLASS%>.put("_projectName", projectName);
+                <%=MDC_CLASS%>.put("_startTimestamp",java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC ).format( java.time.format.DateTimeFormatter.ISO_INSTANT ));
+                <%=MDC_CLASS%>.put("_jobRepositoryId","<%=process.getId() %>");
+                <%=MDC_CLASS%>.put("_compiledAtTimestamp","<%=java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC ).format( java.time.format.DateTimeFormatter.ISO_INSTANT )%>");
+
+                java.lang.management.RuntimeMXBean mx = java.lang.management.ManagementFactory.getRuntimeMXBean();
+                String[] mxNameTable = mx.getName().split("@"); //$NON-NLS-1$
+                if (mxNameTable.length == 2) {
+                    <%=MDC_CLASS%>.put("_systemPid", mxNameTable[0]);
+                } else {
+                    <%=MDC_CLASS%>.put("_systemPid", String.valueOf(java.lang.Thread.currentThread().getId()));
+                }
+
+                <%
+            }%>
+		
+		<%
+		INode jobCatcherNode = null;
+		
+		int threadPoolSize = 0;
+		boolean tRESTRequestLoopExists = false;
 		for (INode nodeInProcess : process.getGeneratingNodes()) {
 			String componentName = nodeInProcess.getComponent().getName();
-			if("tJobStructureCatcher".equals(componentName)) {
+
+			if(jobCatcherNode==null && "tJobStructureCatcher".equals(componentName)) {
 				jobCatcherNode = nodeInProcess;
-				break;
+				continue;
+			}
+
+			if(!nodeInProcess.isActivate()) continue;
+
+			if("tRESTRequestLoop".equals(componentName)) {
+				tRESTRequestLoopExists = true;
+				continue;
+			}
+			
+			if("tWriteXMLFieldOut".equals(componentName)) {
+				IConnection nextMergeConn = NodeUtil.getNextMergeConnection(nodeInProcess);
+				if(nextMergeConn == null || nextMergeConn.getInputId()==1){
+					threadPoolSize++;
+				}
 			}
 		}
 		
@@ -624,14 +707,26 @@
             pid = TalendString.getAsciiRandomString(6);
         }
 
+        <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+            <%=MDC_CLASS%>.put("_pid", pid);
+        <%}%>
+
         if (rootPid==null) {
             rootPid = pid;
         }
+
+        <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+            <%=MDC_CLASS%>.put("_rootPid", rootPid);
+        <%}%>
+
         if (fatherPid==null) {
             fatherPid = pid;
         }else{
             isChildJob = true;
         }
+        <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+            <%=MDC_CLASS%>.put("_fatherPid", fatherPid);
+        <%}%>
 
 <%
         if (stats) {
@@ -651,15 +746,15 @@
 %>
         boolean inOSGi = routines.system.BundleUtils.inOSGi();
 
-        if (inOSGi) {
-            java.util.Dictionary<String, Object> jobProperties = routines.system.BundleUtils.getJobProperties(jobName);
-
-            if (jobProperties != null && jobProperties.get("context") != null) {
-                contextStr = (String)jobProperties.get("context");
-            }
-        }
-
         try {
+            java.util.Dictionary<String, Object> jobProperties = null;
+            if (inOSGi) {
+                jobProperties = routines.system.BundleUtils.getJobProperties(jobName);
+    
+                if (jobProperties != null && jobProperties.get("context") != null) {
+                    contextStr = (String)jobProperties.get("context");
+                }
+            }
             //call job/subjob with an existing context, like: --context=production. if without this parameter, there will use the default context instead.
             java.io.InputStream inContext = <%=className%>.class.getClassLoader().getResourceAsStream("<%=jobClassPackageFolder%>/contexts/" + contextStr + ".properties");
             if (inContext == null) {
@@ -669,8 +764,17 @@
                 try {
                     //defaultProps is in order to keep the original context value
                     if(context != null && context.isEmpty()) {
-	                defaultProps.load(inContext);
-	                context = new ContextProperties(defaultProps);
+    	                defaultProps.load(inContext);
+    	                if (inOSGi && jobProperties != null) {
+                             java.util.Enumeration<String> keys = jobProperties.keys();
+                             while (keys.hasMoreElements()) {
+                                 String propKey = keys.nextElement();
+                                 if (defaultProps.containsKey(propKey)) {
+                                     defaultProps.put(propKey, (String) jobProperties.get(propKey));
+                                 }
+                             }
+    	                }
+    	                context = new ContextProperties(defaultProps);
                     }
                 } finally {
                     inContext.close();
@@ -735,9 +839,6 @@
                                     } catch (java.lang.RuntimeException e) {
                                         //do nothing
                                     }
-                                } else {
-                                    context.<%=ctxParam.getName()%> = pwd_<%=ctxParam.getName()%>_value;
-                                    context.put("<%=ctxParam.getName()%>",context.<%=ctxParam.getName()%>);
                                 }
                             }
 <%
@@ -859,7 +960,12 @@
         }
 %>
         //Resume: jobStart
-        resumeUtil.addLog("JOB_STARTED", "JOB:" + jobName, parent_part_launcher, Thread.currentThread().getId() + "", "","","","",resumeUtil.convertToJsonText(context,parametersToEncrypt));
+        resumeUtil.addLog("JOB_STARTED", "JOB:" + jobName, parent_part_launcher, Thread.currentThread().getId() + "", "","","","",resumeUtil.convertToJsonText(context,ContextProperties.class,parametersToEncrypt));
+
+        <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+            <%=MDC_CLASS%>.put("_context", contextStr);
+            log.info("TalendJob: '<%=codeGenArgument.getJobName()%>' - Started.");
+        <%}%>
 
 <%
         if (stats) {
@@ -1132,9 +1238,15 @@ this.globalResumeTicket = false;//to run others jobs
             if (!componentName.equals("tJobStructureCatcher") && !componentName.equals("tLogCatcher") && !componentName.equals("tFlowMeterCatcher") && !componentName.equals("tAssertCatcher") && !componentName.equals("tStatCatcher") && !componentName.equals("tAsyncIn")) {
 %>
 <%=createCallProcess(rootNode, className, false) %>
-<%    }
-    }
-}// end if(isRunInMultiThread)
+<%
+                if (process.getNodesOfType("tStatCatcher").size() > 0) {
+%>
+<%=statsErrorHandlingAfterMainCall(rootNode, process.getNodesOfType("tStatCatcher"))%>
+<%
+                }
+            }
+        }
+    }// end if(isRunInMultiThread)
 %>
 
 this.globalResumeTicket = true;//to run tPostJob
@@ -1194,6 +1306,26 @@ this.globalResumeTicket = true;//to run tPostJob
         }
 <%
     }
+
+    //tRESTRequest may appear in microservice, the code may be called before call submit(task) method, so can't shutdown it here
+    if(!tRESTRequestLoopExists && threadPoolSize>0) {
+%>
+        es.shutdown();
+        <%//shutdownNow should never be executed, only for safe%>
+        try {
+            if(!es.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+                es.shutdownNow();
+                if(!es.awaitTermination(60, java.util.concurrent.TimeUnit.SECONDS)) {
+
+                }
+            }
+        } catch (java.lang.InterruptedException ie) {
+            es.shutdownNow();
+        } catch (java.lang.Exception e) {
+
+        }
+<%
+    }
 %>
 
 <% if (exist_tMOM) { %>
@@ -1248,6 +1380,15 @@ if (execStat) {
          returnCode = errorCode.intValue();
     }
     resumeUtil.addLog("JOB_ENDED", "JOB:" + jobName, parent_part_launcher, Thread.currentThread().getId() + "", "","" + returnCode,"","","");
+    resumeUtil.flush();
+
+    <%if(isLog4jEnabled && isLog4j2Enabled) {%>
+
+        <%=MDC_CLASS%>.remove("_subJobName");
+        <%=MDC_CLASS%>.remove("_subJobPid");
+        <%=MDC_CLASS%>.remove("_systemPid");
+        log.info("TalendJob: '<%=codeGenArgument.getJobName()%>' - Finished - status: " + status + " returnCode: " + returnCode );
+    <%}%>
 
     return returnCode;
 
@@ -1363,16 +1504,27 @@ if (execStat) {
             Object obj_cluster;
             Object obj_conn;
 <%  for (INode cassandraDbNode : cassandraComponentsList) {
-        if((new API_selector()).useDatastax(cassandraDbNode)) { %>
-            obj_cluster = globalMap.remove("cluster_<%=cassandraDbNode.getUniqueName()%>");
-            obj_conn = globalMap.remove("connection_<%=cassandraDbNode.getUniqueName()%>");
-            if(obj_conn != null) {
-                ((com.datastax.driver.core.Session) obj_conn).close();
-            }
-            if(obj_cluster != null) {
-                ((com.datastax.driver.core.Cluster) obj_cluster).close();
-            }
-<%      } else { %>
+		String dbVersionCassandra = ElementParameterParser.getValue(cassandraDbNode, "__DB_VERSION__");
+        if((new API_selector()).useDatastax(cassandraDbNode)) { 
+			if("CASSANDRA_4_0".equals(dbVersionCassandra)) {
+			%>
+				obj_conn = globalMap.remove("connection_<%=cassandraDbNode.getUniqueName()%>");if(obj_conn != null) {
+					((com.datastax.oss.driver.api.core.CqlSession) obj_conn).close();
+				}
+			<%
+			} else {
+			%>
+				obj_cluster = globalMap.remove("cluster_<%=cassandraDbNode.getUniqueName()%>");
+				obj_conn = globalMap.remove("connection_<%=cassandraDbNode.getUniqueName()%>");
+				if(obj_conn != null) {
+					((com.datastax.driver.core.Session) obj_conn).close();
+				}
+				if(obj_cluster != null) {
+					((com.datastax.driver.core.Cluster) obj_cluster).close();
+				}
+			<%
+			}
+		} else { %>
             obj_conn = globalMap.remove("cluster_<%=cassandraDbNode.getUniqueName()%>");
             if(obj_conn!=null) {
                 ((me.prettyprint.hector.api.Cluster) obj_conn).getConnectionManager().shutdown();
@@ -1404,24 +1556,28 @@ if (execStat) {
 
         boolean isCustom = hbaseDistrib instanceof org.talend.hadoop.distribution.custom.CustomDistribution;
 
-	    boolean isHadoop2 = "HADOOP_2".equals(ElementParameterParser.getValue(hbaseComponent, "__HADOOP_CUSTOM_VERSION__"));%>
-   			org.apache.hadoop.conf.Configuration conn_<%=hbaseComponent.getUniqueName()%> =(org.apache.hadoop.conf.Configuration)globalMap.get("conn_<%=hbaseComponent.getUniqueName()%>");
-			if(conn_<%=hbaseComponent.getUniqueName()%> != null )
-	        {
-			<%
-		        if((isCustom && isHadoop2) || (!isCustom && hbaseDistrib.doSupportNewHBaseAPI())) {
-		            if (!hbaseDistrib.doSupportHBase2x()) {%>
-                                org.apache.hadoop.hbase.client.HConnection hConnection_<%=hbaseComponent.getUniqueName() %> = org.apache.hadoop.hbase.client.HConnectionManager.getConnection(conn_<%=hbaseComponent.getUniqueName() %>);
-                         <% } else {%>
-                                org.apache.hadoop.hbase.client.Connection hConnection_<%=hbaseComponent.getUniqueName() %> = org.apache.hadoop.hbase.client.ConnectionFactory.createConnection(conn_<%=hbaseComponent.getUniqueName() %>);
-                         <% }%>
-		        if ((hConnection_<%=hbaseComponent.getUniqueName() %> != null) && (!hConnection_<%=hbaseComponent.getUniqueName() %>.isClosed())) {
-				    hConnection_<%=hbaseComponent.getUniqueName() %>.close();
-			}
-			<%} else {%>
-				org.apache.hadoop.hbase.client.HConnectionManager.deleteConnection(conn_<%=hbaseComponent.getUniqueName() %>,true);
-			<%}%>
-			}
+	    boolean isHadoop2 = "HADOOP_2".equals(ElementParameterParser.getValue(hbaseComponent, "__HADOOP_CUSTOM_VERSION__"));
+        boolean isSparkDistrib = "SPARK".equals(hbaseDistribution);
+        boolean isHBase2x = isSparkDistrib ? "HBASE_2".equals(ElementParameterParser.getValue(hbaseComponent, "__HBASE_API_VERSION__")) : hbaseDistrib.doSupportHBase2x();
+        %>
+        org.apache.hadoop.conf.Configuration conn_<%=hbaseComponent.getUniqueName()%> =(org.apache.hadoop.conf.Configuration)globalMap.get("conn_<%=hbaseComponent.getUniqueName()%>");
+
+        if(conn_<%=hbaseComponent.getUniqueName()%> != null )
+        {
+        <%
+            if((isCustom && isHadoop2) || (!isCustom && hbaseDistrib.doSupportNewHBaseAPI())) {
+                if (!isHBase2x) {%>
+                            org.apache.hadoop.hbase.client.HConnection hConnection_<%=hbaseComponent.getUniqueName() %> = org.apache.hadoop.hbase.client.HConnectionManager.getConnection(conn_<%=hbaseComponent.getUniqueName() %>);
+                        <% } else {%>
+                            org.apache.hadoop.hbase.client.Connection hConnection_<%=hbaseComponent.getUniqueName() %> = org.apache.hadoop.hbase.client.ConnectionFactory.createConnection(conn_<%=hbaseComponent.getUniqueName() %>);
+                        <% }%>
+            if ((hConnection_<%=hbaseComponent.getUniqueName() %> != null) && (!hConnection_<%=hbaseComponent.getUniqueName() %>.isClosed())) {
+                hConnection_<%=hbaseComponent.getUniqueName() %>.close();
+        }
+        <%} else {%>
+            org.apache.hadoop.hbase.client.HConnectionManager.deleteConnection(conn_<%=hbaseComponent.getUniqueName() %>,true);
+        <%}%>
+        }
       globalMap.remove("conn_<%=hbaseComponent.getUniqueName() %>");
 	<%}%>
         } catch (java.lang.Exception e) {

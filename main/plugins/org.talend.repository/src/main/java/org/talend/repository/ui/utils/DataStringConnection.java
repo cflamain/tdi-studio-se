@@ -128,12 +128,6 @@ public class DataStringConnection {
 
         dataConnection[DBTYPE_SQLITE] = new DataConnection("SQLite", "jdbc:sqlite:/<filename>", "jdbc:sqlite:/" + file); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
-        dataConnection[9] = new DataConnection("Ingres", "jdbc:ingres://<host>:<port>/<sid>", //$NON-NLS-1$ //$NON-NLS-2$
-                "jdbc:ingres://" + host + ":" + port + "/" + sid, "II7"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
-
-        dataConnection[DBTYPE_INTERBASE] = new DataConnection("Interbase", "jdbc:interbase://<host>/<sid>", //$NON-NLS-1$ //$NON-NLS-2$
-                "jdbc:interbase://" + host + "/" + sid); //$NON-NLS-1$ //$NON-NLS-2$
-
         // dataConnection[11] = new DataConnection("Microsoft SQL Server", "jdbc:jtds:sqlserver://<host>:<port>/<sid>",
         // "jdbc:jtds:sqlserver://" + host + ":" + port + "/" + sid, "1433"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         dataConnection[11] = new DataConnection("Microsoft SQL Server", "jdbc:jtds:sqlserver://<host>:<port>/<sid>;<property>", //$NON-NLS-1$ //$NON-NLS-2$
@@ -192,8 +186,6 @@ public class DataStringConnection {
 
         dataConnection[27] = new DataConnection("Greenplum", "jdbc:postgresql://<host>:<port>/<sid>", "jdbc:postgresql://" + host //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + ":" + port + "/" + sid, "5432"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-        dataConnection[28] = new DataConnection("ParAccel", "jdbc:paraccel://<host>:<port>/<sid>", "jdbc:paraccel://" + host //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-                + ":" + port + "/" + sid, "5439"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
         dataConnection[29] = new DataConnection("Netezza", "jdbc:netezza://<host>:<port>/<sid>", "jdbc:netezza://" + host //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
                 + ":" + port + "/" + sid, "5480"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
@@ -242,8 +234,6 @@ public class DataStringConnection {
         List<String> databaseType = new ArrayList<String>(Arrays.asList(getItem()));
         if (LanguageManager.getCurrentLanguage() == ECodeLanguage.PERL) {
             databaseType.remove("Microsoft SQL Server"); //$NON-NLS-1$
-            databaseType.remove("Ingres"); //$NON-NLS-1$
-            databaseType.remove("Interbase"); //$NON-NLS-1$
             databaseType.remove("FireBird"); //$NON-NLS-1$
             databaseType.remove("Informix"); //$NON-NLS-1$
             databaseType.remove("Access"); //$NON-NLS-1$
@@ -472,7 +462,6 @@ public class DataStringConnection {
         }
         return getStringConnectionTemplate().substring(0, 12).equals("jdbc:oracle:") //$NON-NLS-1$
                 || getStringConnectionTemplate().substring(0, 15).equals("jdbc:postgresql") //$NON-NLS-1$
-                || getStringConnectionTemplate().startsWith("jdbc:paraccel") //$NON-NLS-1$
                 || getStringConnectionTemplate().substring(0, 8).equals("jdbc:db2") //$NON-NLS-1$
                 || getStringConnectionTemplate().substring(0, 11).equals("jdbc:sybase");//$NON-NLS-1$
     }
@@ -493,7 +482,7 @@ public class DataStringConnection {
 
     }
 
-    private static String[] dataBaseNeededList = { "jdbc:mysql", "jdbc:sybase", "jdbc:db2", "jdbc:ingres", "jdbc:interbase", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
+    private static String[] dataBaseNeededList = { "jdbc:mysql", "jdbc:sybase", "jdbc:db2", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             "jdbc:jtds:sqlserver", "jdbc:informix-sqli", "jdbc:teradata", "jdbc:as400", "jdbc:derby", "jdbc:derby:net", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
             "jdbc:hsqldb:hsql", "jdbc:hsqldb:http", "jdbc:hsqldb:file", "jdbc:sapdb", "jdbc:postgresql", "jdbc:db2", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
             "jdbc:netezza" }; //$NON-NLS-1$

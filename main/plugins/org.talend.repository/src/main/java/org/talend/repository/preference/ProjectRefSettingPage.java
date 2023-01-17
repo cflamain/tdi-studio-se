@@ -61,6 +61,7 @@ import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 import org.talend.commons.exception.BusinessException;
 import org.talend.commons.exception.ExceptionHandler;
+import org.talend.commons.exception.LoginException;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.runtime.image.EImage;
 import org.talend.commons.ui.runtime.image.ImageProvider;
@@ -72,7 +73,7 @@ import org.talend.core.context.RepositoryContext;
 import org.talend.core.model.general.Project;
 import org.talend.core.model.properties.ProjectReference;
 import org.talend.core.model.properties.PropertiesFactory;
-import org.talend.core.model.repository.SVNConstant;
+import org.talend.core.model.repository.GITConstant;
 import org.talend.core.model.utils.RepositoryManagerHelper;
 import org.talend.core.repository.model.ProjectRepositoryNode;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
@@ -80,7 +81,6 @@ import org.talend.core.runtime.CoreRuntimePlugin;
 import org.talend.core.runtime.projectsetting.IProjectSettingPreferenceConstants;
 import org.talend.core.runtime.projectsetting.ProjectPreferenceManager;
 import org.talend.core.services.IGITProviderService;
-import org.talend.core.services.ISVNProviderService;
 import org.talend.repository.ProjectManager;
 import org.talend.repository.ReferenceProjectProblemManager;
 import org.talend.repository.ReferenceProjectProvider;
@@ -103,8 +103,6 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
 
     private static final int REPOSITORY_GIT = 1;
 
-    private static final int REPOSITORY_SVN = 2;
-
     private ListViewer viewer;
 
     private Combo projectCombo;
@@ -121,8 +119,6 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
 
     private Project lastSelectedProject;
 
-    private ISVNProviderService svnProviderService;
-
     private IGITProviderService gitProviderService;
 
     private List<ProjectReferenceBean> originInput = new ArrayList<ProjectReferenceBean>();
@@ -132,20 +128,14 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
     private boolean isReadOnly = false;
 
     private Exception errorException;
+    
+    private boolean dataSaved = false;
 
     @Override
     protected Control createContents(Composite parent) {
         noDefaultAndApplyButton();
         if (PluginChecker.isRemoteProviderPluginLoaded()) {
             GlobalServiceRegister gsr = GlobalServiceRegister.getDefault();
-            try {
-                if (gsr.isServiceRegistered(ISVNProviderService.class)) {
-                    svnProviderService = (ISVNProviderService) GlobalServiceRegister.getDefault()
-                            .getService(ISVNProviderService.class);
-                }
-            } catch (Exception e) {
-                ExceptionHandler.process(e);
-            }
             try {
                 if (gsr.isServiceRegistered(IGITProviderService.class)) {
                     gitProviderService = (IGITProviderService) GlobalServiceRegister.getDefault()
@@ -329,6 +319,20 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
         viewer.refresh();
     }
 
+    private static boolean sameGitRepo(org.talend.core.model.properties.Project refProject) {
+        IGITProviderService gitSvc = IGITProviderService.get();
+        try {
+            if (gitSvc != null && gitSvc.isGITProject(ProjectManager.getInstance().getCurrentProject()) && gitSvc.isStandardMode()) {
+                String mainProjectGitUrl = gitSvc.getCleanGitRepositoryUrl(ProjectManager.getInstance().getCurrentProject().getEmfProject());
+                String refProjectGitUrl = gitSvc.getCleanGitRepositoryUrl(refProject);
+                return StringUtils.equals(refProjectGitUrl, mainProjectGitUrl);
+            }
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
+        return false;
+    }
+    
     private List<ProjectReferenceBean> getReferenceProjectData(Project project) {
         List<ProjectReferenceBean> result = new ArrayList<ProjectReferenceBean>();
         List<ProjectReference> list = project.getProjectReferenceList();
@@ -407,9 +411,6 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
                     return REPOSITORY_GIT;
                 }
             }
-            if (svnProviderService != null && svnProviderService.isSVNProject(project)) {
-                return REPOSITORY_SVN;
-            }
         } catch (PersistenceException ex) {
             ExceptionHandler.process(ex);
         }
@@ -457,10 +458,6 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
         if (REPOSITORY_LOCAL == projectRepositoryType) {
             return;
         }
-        if (projectRepositoryType == REPOSITORY_SVN && this.getRepositoryContext().isOffline()) {
-            this.setErrorMessage(Messages.getString("ReferenceProjectSetupPage.ErrorCanNotGetSVNBranchData")); //$NON-NLS-1$
-            return;
-        }
         OverTimePopupDialogTask<List<String>> overTimePopupDialogTask = new OverTimePopupDialogTask<List<String>>() {
 
             @Override
@@ -468,6 +465,13 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
                 IRepositoryService repositoryService = (IRepositoryService) GlobalServiceRegister.getDefault()
                         .getService(IRepositoryService.class);
                 if (repositoryService != null) {
+                    // for standard mode, same git repository, must be on same branch
+                    if (sameGitRepo(lastSelectedProject.getEmfProject())) {
+                        List<String> arr = new ArrayList<String>();
+                        String branchSelection = ProjectManager.getInstance().getMainProjectBranch(ProjectManager.getInstance().getCurrentProject());
+                        arr.add(branchSelection);
+                        return arr;
+                    }
                     return repositoryService.getProjectBranch(lastSelectedProject, false);
                 }
                 return null;
@@ -479,19 +483,13 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
             if (allBranch != null) {
                 branchCombo.setItems(allBranch.toArray(new String[0]));
             }
-            if (projectRepositoryType == REPOSITORY_SVN) {
-                if (!allBranch.contains(SVNConstant.NAME_TRUNK)) {
-                    allBranch.add(SVNConstant.NAME_TRUNK);
-                }
-                branchCombo.setItems(allBranch.toArray(new String[0]));
-                branchCombo.setText(SVNConstant.NAME_TRUNK);
-            } else if (projectRepositoryType == REPOSITORY_GIT) {
+            if (projectRepositoryType == REPOSITORY_GIT) {
                 branchCombo.setItems(allBranch.toArray(new String[0]));
                 String branch = null;
-                if (allBranch.contains(SVNConstant.NAME_MAIN)) {
-                    branch = SVNConstant.NAME_MAIN;
-                } else if (allBranch.contains(SVNConstant.NAME_MASTER)) {
-                    branch = SVNConstant.NAME_MASTER;
+                if (allBranch.contains(GITConstant.NAME_MAIN)) {
+                    branch = GITConstant.NAME_MAIN;
+                } else if (allBranch.contains(GITConstant.NAME_MASTER)) {
+                    branch = GITConstant.NAME_MASTER;
                 } else if (0 < allBranch.size()) {
                     branch = allBranch.get(0);
                 }
@@ -621,7 +619,7 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
             if (checkOtherEditorsOpened()) {
                 return false;
             }
-
+            dataSaved = false;
             MessageDialog.openInformation(Display.getCurrent().getActiveShell(),
                     Messages.getString("RepoReferenceProjectSetupAction.TitleReferenceChanged"), //$NON-NLS-1$
                     Messages.getString("RepoReferenceProjectSetupAction.MsgReferenceChanged")); //$NON-NLS-1$
@@ -630,6 +628,7 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
             RepositoryWorkUnit repositoryWorkUnit = new RepositoryWorkUnit(
                     Messages.getString("ReferenceProjectSetupPage.TaskApplyReferenceSetting")) { //$NON-NLS-1$
 
+                @Override
                 public void run() throws PersistenceException {
                     IWorkspaceRunnable workspaceRunnable = new IWorkspaceRunnable() {
 
@@ -639,7 +638,9 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
                         public void run(IProgressMonitor monitor) throws CoreException {
                             try {
                                 relogin(mainProjectLabel, false, monitor);
-                                saveData();
+                                if (!dataSaved) {
+                                    saveData();
+                                }
                             } catch (Exception ex) {
                                 errorException = ex;
                                 synSetErrorMessage(errorException);
@@ -745,6 +746,7 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
         AProgressMonitorDialogWithCancel<Boolean> dialog = new AProgressMonitorDialogWithCancel<Boolean>(
                 Display.getCurrent().getActiveShell()) {
 
+            @Override
             protected Boolean runWithCancel(IProgressMonitor monitor) throws Throwable {
                 return checkCycleReference(projectRefMap);
             }
@@ -841,7 +843,18 @@ public class ProjectRefSettingPage extends ProjectSettingPage {
                     newReferenceSetting);
         }
         monitor.subTask(Messages.getString("RepoReferenceProjectSetupAction.TaskLogon", switchProject.getLabel())); //$NON-NLS-1$
-        ProxyRepositoryFactory.getInstance().logOnProject(switchProject, monitor);
+        try {
+            ProxyRepositoryFactory.getInstance().logOnProject(switchProject, monitor);
+        } catch (LoginException e) {
+            if (LoginException.RESTART.equals(e.getKey())) {
+                saveData();
+                dataSaved = true;
+                Display.getDefault().asyncExec(() -> PlatformUI.getWorkbench().restart());
+                return;
+            } else {
+                throw e;
+            }
+        }
         monitor.worked(7);
         refreshNavigatorView();
         monitor.worked(1);

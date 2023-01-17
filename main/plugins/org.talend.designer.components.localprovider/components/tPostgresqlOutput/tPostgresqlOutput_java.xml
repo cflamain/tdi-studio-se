@@ -188,6 +188,7 @@
 				<ITEM NAME="UPDATE" VALUE="UPDATE"/>
 				<ITEM NAME="INSERT_OR_UPDATE" VALUE="INSERT_OR_UPDATE"/>
 				<ITEM NAME="UPDATE_OR_INSERT" VALUE="UPDATE_OR_INSERT"/>
+				<ITEM NAME="UPSERT" VALUE="UPSERT" SHOW_IF="(((USE_EXISTING_CONNECTION == 'false') AND (DB_VERSION == 'V9_X')) OR ((USE_EXISTING_CONNECTION == 'true') AND (#LINK@NODE.CONNECTION.DB_VERSION == 'V9_X')))"/>
 				<ITEM NAME="DELETE" VALUE="DELETE"/>
 			</ITEMS>
 		</PARAMETER>
@@ -423,7 +424,7 @@
 			NAME="USE_BATCH_SIZE"
 			FIELD="CHECK"
 			NUM_ROW="30"
-			SHOW_IF="((DATA_ACTION == 'INSERT') OR (DATA_ACTION == 'UPDATE') OR (DATA_ACTION == 'DELETE')) "
+			SHOW_IF="((DATA_ACTION == 'INSERT') OR (DATA_ACTION == 'UPSERT') OR (DATA_ACTION == 'UPDATE') OR (DATA_ACTION == 'DELETE')) "
 			>
 			<DEFAULT>true</DEFAULT>
 		</PARAMETER>
@@ -431,7 +432,7 @@
 			NAME="BATCH_SIZE"
 			FIELD="TEXT"
 			NUM_ROW="30"
-			SHOW_IF="(USE_BATCH_SIZE == 'true')AND ((DATA_ACTION == 'INSERT') OR (DATA_ACTION == 'UPDATE') OR (DATA_ACTION == 'DELETE'))"
+			SHOW_IF="(USE_BATCH_SIZE == 'true')AND ((DATA_ACTION == 'INSERT') OR (DATA_ACTION == 'UPSERT') OR (DATA_ACTION == 'UPDATE') OR (DATA_ACTION == 'DELETE'))"
 			>
 			<DEFAULT>10000</DEFAULT>
 		</PARAMETER>
@@ -440,7 +441,7 @@
 
 	<CODEGENERATION>
 		<IMPORTS>
-			<IMPORT NAME="Driver-Postgres9" MODULE="postgresql-42.2.14.jar" MVN="mvn:org.postgresql/postgresql/42.2.14" REQUIRED_IF="(DB_VERSION =='V9_X') AND (USE_EXISTING_CONNECTION == 'false')" />
+			<IMPORT NAME="Driver-Postgres9" MODULE="postgresql-42.2.26.jar" MVN="mvn:org.postgresql/postgresql/42.2.26" REQUIRED_IF="(DB_VERSION =='V9_X') AND (USE_EXISTING_CONNECTION == 'false')" />
 			<IMPORT NAME="Driver-Postgres" MODULE="postgresql-8.4-703.jdbc4.jar" MVN="mvn:postgresql/postgresql/8.4-703.jdbc4" REQUIRED_IF="(DB_VERSION =='PRIOR_TO_V9') AND (USE_EXISTING_CONNECTION == 'false')" />
 			<IMPORT NAME="Driver-Postgis" MODULE="postgis_1.4.0.jar" MVN="mvn:org.talend.libraries/postgis_1.4.0/6.0.0"  REQUIRED="false" />
 		 	<IMPORT NAME="org.talend.sdi" MODULE="org.talend.sdi.jar" MVN="mvn:org.talend.libraries/org.talend.sdi/6.0.0"  REQUIRED="false" />

@@ -19,23 +19,23 @@ if (!isParallelize) {
     }
 
     boolean useCascade = "true".equals(ElementParameterParser.getValue(node,"__USE_CASCADE__"));
-    
+
     //bugfix: TDI-31650
-    boolean setQueryTimeOut = false;
-    String queryTimeOutInSeconds = null;
-    if(SYBASE.equalsIgnoreCase(dbmsId)){
-        setQueryTimeOut = "true".equals(ElementParameterParser.getValue(node,"__SET_QUERY_TIMEOUT__"));
-        queryTimeOutInSeconds = ElementParameterParser.getValue(node,"__QUERY_TIMEOUT_IN_SECONDS__");
+    boolean setQueryTimeOut_tableAction = false;
+    String queryTimeOutInSeconds_tableAction = null;
+    if(AS400.equalsIgnoreCase(dbmsId) || MSSQL.equalsIgnoreCase(dbmsId) || SYBASE.equalsIgnoreCase(dbmsId)){
+        setQueryTimeOut_tableAction = "true".equals(ElementParameterParser.getValue(node,"__SET_QUERY_TIMEOUT__"));
+        queryTimeOutInSeconds_tableAction = ElementParameterParser.getValue(node,"__QUERY_TIMEOUT_IN_SECONDS__");
     }
-	
+    
     if(!("NONE").equals(tableAction)) {
         if(("DROP_CREATE").equals(tableAction)) {
         %>
             try (java.sql.Statement stmtDrop_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtDrop_<%=cid%>.setQueryTimeout(Integer.valueOf(Integer.valueOf(<%= queryTimeOutInSeconds %>)));
+                              stmtDrop_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>
@@ -52,9 +52,9 @@ if (!isParallelize) {
             %>
             try (java.sql.Statement stmtCreate_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtCreate_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                              stmtCreate_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>
@@ -88,9 +88,9 @@ if (!isParallelize) {
         %>
             try (java.sql.Statement stmtCreate_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtCreate_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                              stmtCreate_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>
@@ -163,6 +163,13 @@ if (!isParallelize) {
                                 boolean whetherExist_<%=cid%> = false;
                                 try (java.sql.Statement isExistStmt_<%=cid%> = conn_<%=cid%>.createStatement()) {
                                     try {
+                                    	<%
+                                        if(setQueryTimeOut_tableAction){
+                                        %>
+                                             isExistStmt_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
+                                        <%
+                                        }
+                                    	%>
                                         isExistStmt_<%=cid%>.execute("SELECT TOP 1 1 FROM [" + tableName_<%=cid%> + "]" );
                                         whetherExist_<%=cid%> = true;
                                     } catch (java.lang.Exception e){
@@ -333,9 +340,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                                 if(!whetherExist_<%=cid%>) {
                                     try (java.sql.Statement stmtCreate_<%=cid%> = conn_<%=cid%>.createStatement()) {
                                     <%
-                                       if(setQueryTimeOut){
+                                       if(setQueryTimeOut_tableAction){
                                             %>
-                                                      stmtCreate_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                                                      stmtCreate_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                                             <%
                                        }
                                      %>
@@ -371,9 +378,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                                 if(whetherExist_<%=cid%>) {
                                     try (java.sql.Statement stmtDrop_<%=cid%> = conn_<%=cid%>.createStatement()) {
                                         <%
-                                           if(setQueryTimeOut){
+                                           if(setQueryTimeOut_tableAction){
                                                 %>
-                                                      stmtDrop_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                                                      stmtDrop_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                                                 <%
                                            }
                                      %>
@@ -391,9 +398,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
                                 }
                                 try(java.sql.Statement stmtCreate_<%=cid%> = conn_<%=cid%>.createStatement()) {
                                 <%
-                                       if(setQueryTimeOut){
+                                       if(setQueryTimeOut_tableAction){
                                         %>
-                                                  stmtCreate_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                                                  stmtCreate_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                                         <%
                                    }
                                  %>
@@ -442,9 +449,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
         %>
             try (java.sql.Statement stmtClear_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtClear_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                              stmtClear_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>
@@ -458,9 +465,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
             int rsTruncCountNumber_<%=cid%> = 0;
             try(java.sql.Statement stmtTruncCount_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtTruncCount_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                              stmtTruncCount_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>
@@ -472,9 +479,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
             }
             try (java.sql.Statement stmtTrunc_<%=cid%> = conn_<%=cid%>.createStatement()) {
             <%
-               if(setQueryTimeOut){
+               if(setQueryTimeOut_tableAction){
                     %>
-                              stmtTrunc_<%=cid%>.setQueryTimeout(Integer.valueOf(<%= queryTimeOutInSeconds %>));
+                              stmtTrunc_<%=cid%>.setQueryTimeout(<%= queryTimeOutInSeconds_tableAction %>);
                     <%
                }
              %>

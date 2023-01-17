@@ -4,11 +4,19 @@
 
   <groupId>org.talend.components</groupId>
   <artifactId>simpleexcel</artifactId>
-  <version>2.5-20201119</version>
+  <version>2.6-20220912</version>
   <packaging>jar</packaging>
 
   <name>simpleexcel</name>
   <url>http://maven.apache.org</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+      <distribution>may be downloaded from the Maven repository</distribution>
+    </license>
+  </licenses>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -46,11 +54,6 @@
 			<artifactId>poi</artifactId>
 			<version>4.1.2</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.poi</groupId>
-			<artifactId>poi-scratchpad</artifactId>
-			<version>4.1.2</version>
-		</dependency>
 		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
 		<dependency>
 			<groupId>org.apache.poi</groupId>
@@ -64,9 +67,9 @@
 			<version>4.1.2</version>
 		</dependency>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<version>1.2.17</version>
+			<groupId>ch.qos.reload4j</groupId>
+			<artifactId>reload4j</artifactId>
+			<version>1.2.22</version>
 		</dependency>
 
 		<!--test-->

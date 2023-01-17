@@ -120,8 +120,9 @@ imports="
 List<IMetadataColumn> columnList = null;
 
 List<IMetadataTable> metadatas = node.getMetadataList();
+IMetadataTable metadata = null;
 if(metadatas !=null && metadatas.size()>0){
-	IMetadataTable metadata = metadatas.get(0);
+	metadata = metadatas.get(0);
 	if(metadata != null){
 		columnList = metadata.getListColumns();
 	}
@@ -196,6 +197,7 @@ java.sql.PreparedStatement pstmt_<%=cid %> =null;
 
 class Column{
 
+	IMetadataColumn column;
 
 	String name;
 
@@ -206,6 +208,7 @@ class Column{
 	boolean addCol;
 
 	public Column(IMetadataColumn column){
+		this.column = column;
 		String columname = column.getOriginalDbColumnName();
 		if(columname!=null && columname.trim().length()>0){
 			this.name = columname;
@@ -215,6 +218,9 @@ class Column{
 		this.sqlStmt = "=?";
 		this.value = "?";
 		this.addCol =false;
+    	}
+	public IMetadataColumn getColumn(){
+		return this.column;
 	}
 
 	public String getName(){
@@ -232,6 +238,9 @@ class Column{
 	public String getValue(){
 		return this.value;
 	}
+	public boolean isKey(){
+	    return this.column.isKey();
+	}
 }
 
 if(columnList != null && columnList.size()>0){
@@ -242,6 +251,8 @@ StringBuilder insertColName = new StringBuilder();
 StringBuilder insertValueStmt = new StringBuilder();
 
 List<Column> stmtStructure =  new LinkedList<Column>();
+
+StringBuilder mergeCondition = new StringBuilder ();
 
 for(IMetadataColumn column:columnList){
 
@@ -254,10 +265,22 @@ List<Map<String, String>> setColumns = (List<Map<String,String>>)ElementParamete
 boolean isUpdate = "UPDATE".equals(dataAction);
 String suffix = ",";
 StringJoiner updateSetStmt = new StringJoiner(suffix);
+boolean isfirstKey = true;
 for(Column colStmt:stmtStructure){
-		if(counterOuter==(stmtStructure.size()-1)){
-			suffix = "";
-		}
+    String colName=colStmt.getName();
+	if(counterOuter==(stmtStructure.size()-1)){
+		suffix = "";
+	}
+	
+    if (colStmt.getColumn().isKey()){
+        if (isfirstKey) {
+            isfirstKey = false;
+        }else {
+            mergeCondition.append(" AND ");
+        }
+        mergeCondition.append("target." + colName + "=source." + colName);
+    }
+		
     boolean isUpdateColumn = "true".equals(setColumns.get(counterOuter).get("UPDATE_COLUMN"));
 		if(colStmt.isAddCol()){
 			insertColName.append(colStmt.getName()+suffix);
@@ -366,16 +389,101 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 
 
 	<%
+    }else if ("MERGE".equals(dataAction)) {
+        // get parameter
+        boolean useMergeUpdate = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_MERGE_UPDATE__"));
+        boolean useMergeInsert = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_MERGE_INSERT__"));
+        boolean useMergeDelete = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_MERGE_DELETE__"));
+        if(!useMergeUpdate && !useMergeInsert && !useMergeDelete){
+        %>
+            if(true){
+                throw new RuntimeException("Need to choose at least one of \"Merge insert/update/delete\".");
+            }
+        <%
+        }
+        List<Map<String, String>> updateColumns = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__SCHEMA_UPDATE__");
+        List<Map<String, String>> insertColumns = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__SCHEMA_INSERT__");
+    
+        StringBuilder mergeUpdate = new StringBuilder() ;
+        StringBuilder mergeInsertName = new StringBuilder() ;
+        StringBuilder mergeInsertValue = new StringBuilder() ;
+        if(mergeCondition==null || mergeCondition.length()==0){
+        %>
+            if(true){
+                throw new RuntimeException("Need at least one key column in the schema setting.");
+            }
+        <%
+        }
+        %>
+        String mergeQuery_<%=cid %> = "MERGE INTO "+ tableName_<%=cid%> +" target"  + " USING (" + select_query_<%=cid %> + ") source ON (" +
+    
+            "<%=mergeCondition%>" + ")" ;
+
+        <%
+        if (useMergeUpdate) {
+            boolean isfirstUpdateSet = true;
+            String keyColumnName=null;
+            for(Map<String, String> keyColumn:updateColumns){
+                if (keyColumn.get("UPDATE").equals("true")) {
+                    keyColumnName=keyColumn.get("SCHEMA_COLUMN");
+                    Column col = new Column(metadata.getColumn(keyColumnName));
+                    if(col.isKey()){
+                        //Ignore key column here
+                        continue;
+                    }
+                    if (isfirstUpdateSet) {
+                        isfirstUpdateSet = false;
+                    }else {
+                        mergeUpdate.append(",");
+                    }
+                    keyColumnName = col.getName();
+                    mergeUpdate.append(keyColumnName + "=source." + keyColumnName);
+                }
+            }
+        %>
+            mergeQuery_<%=cid %> += " WHEN MATCHED THEN UPDATE SET <%=mergeUpdate%> " ;
+        <%
+        }
+        if(useMergeDelete){
+        %>
+            mergeQuery_<%=cid %> += " WHEN MATCHED THEN DELETE " ;
+        <%
+        }
+        if (useMergeInsert) {
+            boolean isfirstInsertWhere = true;
+            String keyColumnName=null;
+            for(Map<String, String> keyColumn:insertColumns){
+                if (keyColumn.get("INSERT").equals("true")) {
+                    if (isfirstInsertWhere) {
+                        isfirstInsertWhere = false;
+                    }else {
+                        mergeInsertName.append(",");
+                        mergeInsertValue.append(",");
+                    }
+                    keyColumnName=keyColumn.get("SCHEMA_COLUMN");
+                    keyColumnName = new Column(metadata.getColumn(keyColumnName)).getName();
+                    mergeInsertName.append(keyColumnName);
+                    mergeInsertValue.append("source." + keyColumnName);
+                }
+            }
+            %>
+            mergeQuery_<%=cid %> += " WHEN NOT MATCHED THEN INSERT ( <%=mergeInsertName%>) VALUES ( <%=mergeInsertValue%>) ";
+        <%
+        }
+        %>
+        pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(mergeQuery_<%=cid %>);
+    <%
 	}
 	%>
 int nb_line_<%=cid%> = 0;
 int nb_line_updated_<%=cid%> = 0;
 int nb_line_inserted_<%=cid%> = 0;
 int nb_line_deleted_<%=cid%> = 0;
+int nb_line_merged_<%=cid%> = 0;
+
 	<%
 
 }
-
 if(dbtable != null && columnList != null){
 	if(("INSERT").equals(dataAction)){
 	%>
@@ -421,7 +529,22 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			throw e;
 		}
 		System.out.println("--> " + nb_line_deleted_<%=cid%> + " rows deleted. \n");
-		<%
+    <%
+    }else if (("MERGE").equals(dataAction)){
+    %>
+        System.out.println("Merge with : \n" + mergeQuery_<%=cid %> +"\n");
+        try{
+            <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executing SQL:\"+mergeQuery_"+ cid +"+\"");%>
+            nb_line_merged_<%=cid%> = pstmt_<%=cid %>.executeUpdate();
+            <%log4jCodeGenerateUtil.logInfo(node,"info",cid+" - Executed successfully.");%>
+        } catch (Exception e){
+            globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
+            <%log4jCodeGenerateUtil.logInfo(node,"error",cid+" - Fail to execute SQL: \"+mergeQuery_"+ cid +"+\"");%>
+            throw e;
+        }
+        System.out.println("--> " + nb_line_merged_<%=cid%> + " rows merged. \n");
+    <%
+
 	}
 }
 %>
@@ -464,6 +587,7 @@ globalMap.put("<%=cid %>_NB_LINE",nb_line_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_UPDATED",nb_line_updated_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_INSERTED",nb_line_inserted_<%=cid%>);
 globalMap.put("<%=cid %>_NB_LINE_DELETED",nb_line_deleted_<%=cid%>);
+globalMap.put("<%=cid %>_NB_LINE_MERGED",nb_line_merged_<%=cid%>);
 
 <%
 if(isLog4jEnabled){
@@ -471,6 +595,8 @@ if(isLog4jEnabled){
 	actionMap.put("INSERT","inserted");
 	actionMap.put("UPDATE","updated");
 	actionMap.put("DELETE","deleted");
+    actionMap.put("MERGE","merged");
+
 	%>
 	log.info("<%=cid%> - Has <%=actionMap.get(dataAction)%> records count: " + nb_line_<%=actionMap.get(dataAction)%>_<%=cid%> + ".");
 <%

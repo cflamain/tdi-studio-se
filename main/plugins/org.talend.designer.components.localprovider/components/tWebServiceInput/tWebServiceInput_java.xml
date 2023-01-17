@@ -238,13 +238,7 @@ for(int i = 0; i &lt; result.length; i++){
 				UrlPath="platform:/plugin/org.talend.libraries.apache.axis2/lib/activation.jar"
 				REQUIRED="true"
 			/>
-			<IMPORT
-				NAME="SOAP-JavaMail"
-				MODULE="mail.jar"
-				MVN="mvn:org.talend.libraries/mail/6.0.0"
-				UrlPath="platform:/plugin/org.talend.libraries.apache.axis2/lib/mail.jar"
-				REQUIRED="true"
-			/>
+            <IMPORT NAME="jakartaMail" MODULE="jakarta.mail-1.6.7.jar" MVN="mvn:com.sun.mail/jakarta.mail/1.6.7" REQUIRED="true"/>
 			<IMPORT
 				NAME="WSDL4J-1_6_3"
 				MODULE="wsdl4j-1.6.3.jar"
@@ -255,15 +249,15 @@ for(int i = 0; i &lt; result.length; i++){
 		
 			<!-- cxf api support -->
 			<IMPORT
-				NAME="cxf-core-3.3.10"
-				MODULE="cxf-core-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-core/3.3.10"
+				NAME="cxf-core-3.4.10"
+				MODULE="cxf-core-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-core/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-frontend-simple-3.3.10"
-				MODULE="cxf-rt-frontend-simple-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-frontend-simple/3.3.10"
+				NAME="cxf-rt-frontend-simple-3.4.10"
+				MODULE="cxf-rt-frontend-simple-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-frontend-simple/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
@@ -273,21 +267,21 @@ for(int i = 0; i &lt; result.length; i++){
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-tools-common-3.3.10"
-				MODULE="cxf-tools-common-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-tools-common/3.3.10"
+				NAME="cxf-tools-common-3.4.10"
+				MODULE="cxf-tools-common-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-tools-common/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-wsdl-3.3.10"
-				MODULE="cxf-rt-wsdl-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-wsdl/3.3.10"
+				NAME="cxf-rt-wsdl-3.4.10"
+				MODULE="cxf-rt-wsdl-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-wsdl/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
 				NAME="WOODSTOX-CORE"
-				MODULE="woodstox-core-5.2.0.jar"
-				MVN="mvn:com.fasterxml.woodstox/woodstox-core/5.2.0"
+				MODULE="woodstox-core-6.4.0.jar"
+				MVN="mvn:com.fasterxml.woodstox/woodstox-core/6.4.0"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
@@ -297,27 +291,27 @@ for(int i = 0; i &lt; result.length; i++){
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-bindings-soap-3.3.10"
-				MODULE="cxf-rt-bindings-soap-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-bindings-soap/3.3.10"
+				NAME="cxf-rt-bindings-soap-3.4.10"
+				MODULE="cxf-rt-bindings-soap-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-bindings-soap/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-databinding-jaxb-3.3.10"
-				MODULE="cxf-rt-databinding-jaxb-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-databinding-jaxb/3.3.10"
+				NAME="cxf-rt-databinding-jaxb-3.4.10"
+				MODULE="cxf-rt-databinding-jaxb-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-databinding-jaxb/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-transports-http-jetty-3.3.10"
-				MODULE="cxf-rt-transports-http-jetty-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-transports-http-jetty/3.3.10"
+				NAME="cxf-rt-transports-http-jetty-3.4.10"
+				MODULE="cxf-rt-transports-http-jetty-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-transports-http-jetty/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
-				NAME="cxf-rt-transports-http-3.3.10"
-				MODULE="cxf-rt-transports-http-3.3.10.jar"
-				MVN="mvn:org.apache.cxf/cxf-rt-transports-http/3.3.10"
+				NAME="cxf-rt-transports-http-3.4.10"
+				MODULE="cxf-rt-transports-http-3.4.10.jar"
+				MVN="mvn:org.apache.cxf/cxf-rt-transports-http/3.4.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 			<IMPORT
@@ -360,20 +354,8 @@ for(int i = 0; i &lt; result.length; i++){
 			/>
 			<IMPORT
 				NAME="talend-ws"
-				MODULE="talend-ws-1.0.5-20210629.jar"
-				MVN="mvn:org.talend.components/talend-ws/1.0.5-20210629"
-				REQUIRED_IF="(API=='CXF')"
-			/>
-			<IMPORT
-				NAME="xalan"
-				MODULE="xalan-2.7.2.jar"
-				MVN="mvn:xalan/xalan/2.7.2"
-				REQUIRED_IF="(API=='CXF')"
-			/>
-			<IMPORT
-				NAME="serializer"
-				MODULE="serializer-2.7.2.jar"
-				MVN="mvn:xalan/serializer/2.7.2"
+				MODULE="talend-ws-2.0-20221219.jar"
+				MVN="mvn:org.talend.components/talend-ws/2.0-20221219"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 	

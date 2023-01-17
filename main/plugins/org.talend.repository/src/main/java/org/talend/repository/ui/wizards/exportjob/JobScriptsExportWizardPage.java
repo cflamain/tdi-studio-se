@@ -1554,7 +1554,7 @@ public abstract class JobScriptsExportWizardPage extends WizardFileSystemResourc
 
                 @Override
                 public void run() {
-                    MessageBoxExceptionHandler.process(e, getShell());
+                    MessageBoxExceptionHandler.process(e, getShell(), false);
                 }
 
             });

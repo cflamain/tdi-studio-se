@@ -52,6 +52,10 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 %>
 								<%=conn.getName() %>.<%=column.getLabel() %>.toPlainString()
 <%
+					} else if(javaType == JavaTypesManager.BOOLEAN){
+%>
+						<%=conn.getName() %>.<%=column.getLabel() %> ? '1' : '0'
+<%
 					} else {
 %>
 								String.valueOf(<%=conn.getName() %>.<%=column.getLabel() %>)

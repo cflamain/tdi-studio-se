@@ -103,11 +103,11 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 					<%
 						} else {
 %>
-							java.io.Writer outWriter_<%=cid %> = (java.io.Writer) resourceMap.get("outWriter_for_" + <%=filename %>);
+							java.io.Writer outWriter_<%=cid %> = (java.io.Writer) resourceMap.get("outWriter_for_" + (<%=filename %>));
 							if(outWriter_<%=cid %> != null) {
 								outWriter_<%=cid %>.flush();
 								outWriter_<%=cid %>.close();
-								resourceMap.remove("outWriter_for_" + <%=filename %>);
+								resourceMap.remove("outWriter_for_" + (<%=filename %>));
 							}
 <%
 						}

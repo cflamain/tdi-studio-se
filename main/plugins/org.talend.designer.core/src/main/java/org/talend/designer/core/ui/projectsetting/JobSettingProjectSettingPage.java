@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
+import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.properties.ImplicitContextSettings;
 import org.talend.core.model.properties.StatAndLogsSettings;
@@ -131,19 +132,29 @@ public class JobSettingProjectSettingPage extends ProjectSettingPage {
                 ElementParameter2ParameterType.setParameterValue(implicit.getParameters(),
                         EParameterName.IMPLICT_DEFAULT_PROJECTSETTING.getName(), Boolean.valueOf(implicitBtn.getSelection()));
                 // save to the memory
-                IElementParameter elementParameter = pro.getInitialContextLoad().getElementParameter(
-                        EParameterName.IMPLICT_DEFAULT_PROJECTSETTING.getName());
+                IElement initialContextLoad = pro.getInitialContextLoad();
+                if (initialContextLoad == null) {
+                    ProjectSettingManager.createImplicitContextLoadElement(pro);
+                }
+                IElementParameter elementParameter = pro
+                        .getInitialContextLoad()
+                        .getElementParameter(EParameterName.IMPLICT_DEFAULT_PROJECTSETTING.getName());
                 if (elementParameter != null) {
                     elementParameter.setValue(Boolean.valueOf(implicitBtn.getSelection()));
                 }
+
 
             }
             StatAndLogsSettings stat = pro.getEmfProject().getStatAndLogsSettings();
             if (stat != null) {
                 ElementParameter2ParameterType.setParameterValue(stat.getParameters(),
                         EParameterName.STATS_DEFAULT_PROJECTSETTING.getName(), Boolean.valueOf(statBtn.getSelection()));
-                IElementParameter elementParameter = pro.getStatsAndLog().getElementParameter(
-                        EParameterName.STATS_DEFAULT_PROJECTSETTING.getName());
+                IElement statsAndLog = pro.getStatsAndLog();
+                if (statsAndLog == null) {
+                    ProjectSettingManager.createStatsAndLogsElement(pro);
+                }
+                IElementParameter elementParameter =
+                        pro.getStatsAndLog().getElementParameter(EParameterName.STATS_DEFAULT_PROJECTSETTING.getName());
                 if (elementParameter != null) {
                     elementParameter.setValue(Boolean.valueOf(statBtn.getSelection()));
                 }

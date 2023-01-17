@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.talend.core.model.metadata.IMetadataTable;
+import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IElement;
@@ -40,6 +41,7 @@ public class InputSchemaParameter extends SchemaElementParameter {
         super(element);
         setName(name);
         setDisplayName(DISPLAY_NAME);
+        setCategory(EComponentCategory.TECHNICAL);
         setFieldType(EParameterFieldType.TACOKIT_INPUT_SCHEMA);
         setShow(false);
         setReadOnly(false);

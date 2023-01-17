@@ -32,6 +32,7 @@ import org.talend.core.ui.properties.tab.IDynamicProperty;
 import org.talend.daikon.NamedThing;
 import org.talend.designer.core.generic.model.GenericElementParameter;
 import org.talend.designer.core.generic.utils.ComponentsUtils;
+import org.talend.designer.core.generic.utils.SchemaUtils;
 import org.talend.designer.core.ui.editor.properties.controllers.AbstractElementPropertySectionController;
 
 /**
@@ -56,6 +57,7 @@ public class NameAndLabelsTreeController extends AbstractElementPropertySectionC
         Composite parentComp = new Composite(subComposite, SWT.NONE);
         parentComp.setLayoutData(data);
         parentComp.setLayout(new GridLayout());
+        SchemaUtils.getUpdatingSchemas().clear();
         ElementsSelectionComposite<NamedThing> selectionComposite = new ElementsSelectionComposite<NamedThing>(parentComp) {
 
             @Override
@@ -77,7 +79,17 @@ public class NameAndLabelsTreeController extends AbstractElementPropertySectionC
 
             @Override
             protected void doSelectionChanged() {
-                param.setValue(getSelectedElements());
+                List<String> selectedElementLabels = getSelectedElementLabels();
+                List<NamedThing> selectedElements = getSelectedElements();
+                if (isInWizard()) {
+                    for (NamedThing namedThing : selectedElements) {
+                        String name = namedThing.getName();
+                        if (!selectedElementLabels.contains(name)) {
+                            SchemaUtils.getUpdatingSchemas().add(name);
+                        }
+                    }
+                }
+                param.setValue(selectedElements);
             }
 
             @Override

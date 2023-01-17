@@ -6,6 +6,9 @@ imports="
 " 
 %>
 	<%@ include file="../templates/DB/HelpClass/HelpClass.javajet"%>
+	
+	System.setProperty("hsqldb.method_class_names", "net.ucanaccess.converters.*");
+
 <%
 	class ConnectionUtil extends DefaultConnectionUtil{
 	
@@ -21,6 +24,7 @@ imports="
 		}
 		
 		public void createConnection(INode node) {
+
 			if(dbproperties == null || ("\"\"").equals(dbproperties) || ("").equals(dbproperties)) {
 %>
 			conn_<%=cid%> = java.sql.DriverManager.getConnection(url_<%=cid%>,dbUser_<%=cid%>,dbPwd_<%=cid%>);

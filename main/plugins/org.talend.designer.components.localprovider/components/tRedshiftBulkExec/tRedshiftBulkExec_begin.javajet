@@ -19,7 +19,8 @@ skeleton="../templates/db_output_bulk.skeleton"
 	CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
 	INode node = (INode)codeGenArgument.getArgument();
 	String cid = node.getUniqueName();
-	
+
+	boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.getProcess(), "__LOG4J_ACTIVATE__"));
 	String host = ElementParameterParser.getValue(node, "__HOST__");
 	String port = ElementParameterParser.getValue(node, "__PORT__");
 	String dbName = ElementParameterParser.getValue(node, "__DBNAME__");
@@ -33,13 +34,25 @@ skeleton="../templates/db_output_bulk.skeleton"
 	
 	boolean useExistingS3Connection = "true".equalsIgnoreCase(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION_S3__"));
 	String s3ConnectionCid = ElementParameterParser.getValue(node,"__CONNECTION_S3__");
+	int driveVersion = ("DRIVER_V2".equals(ElementParameterParser.getValue(node, "__DRIVER_VERSION__")) || "DRIVER_VERSION".equals(ElementParameterParser.getValue(node, "__DRIVER_VERSION__")))
+     ? 2 : 1;
+    boolean useStringProperties = "true".equals(ElementParameterParser.getValue(node, "__USE_STRING_PROPERTIES__"));
+
 	INode current_node = node;
 	if(useExistingS3Connection){
 		current_node = NodeUtil.getNodeByUniqueName(node.getProcess(),s3ConnectionCid,true);
 	}
-	boolean inheritRole = "INHERIT_CREDENTIALS".equalsIgnoreCase(ElementParameterParser.getValue(current_node, "__CREDENTIAL_PROVIDER__"));
+	String credentialProvider = ElementParameterParser.getValue(current_node, "__CREDENTIAL_PROVIDER__");
 	List<IMetadataColumn> columnList = getColumnList(node);
+	
+	if(!"STATIC_CREDENTIALS".equalsIgnoreCase(credentialProvider)) {
 %>
+    if(true) {
+        throw new IllegalArgumentException("Not supported S3 connection credential type: <%=credentialProvider%>. Please use \"Static Credentials.\"");
+    }
+<%}%>
+
+
 	String dbschema_<%=cid%> = null;
 	<%
 	if(useExistingConnection) {
@@ -80,6 +93,7 @@ skeleton="../templates/db_output_bulk.skeleton"
         sbuilder_<%=cid%>.append("jdbc:redshift:");
 <%
         if ("SSO".equals(jdbcUrl)){
+
 %>
             sbuilder_<%=cid%>.append("iam:");
 <%
@@ -92,7 +106,7 @@ skeleton="../templates/db_output_bulk.skeleton"
                          .append("/")
                          .append(<%=dbName%>);
 <%
-        if(dbproperties != null && !"\"\"".equals(dbproperties) && !"".equals(dbproperties)) {
+        if(( useStringProperties || driveVersion == 1) && dbproperties != null && !"\"\"".equals(dbproperties) && !"".equals(dbproperties)) {
 %>
         sbuilder_<%=cid%>.append("?").append(<%=dbproperties%>);
 <%
@@ -109,11 +123,16 @@ skeleton="../templates/db_output_bulk.skeleton"
 		<%}%>
 		String dbUser_<%=cid %> = <%=userName%>;
 		String dbPwd_<%=cid %> = decryptedPass_<%=cid%>;
-<%      
 
-		log4jCodeGenerateUtil.connect(node);
+<%
+        if(driveVersion == 2 && !useStringProperties){
+
+		        log4jCodeGenerateUtil.connectWithProperties(node);
+		    } else {
+		        log4jCodeGenerateUtil.connect(node);
+		}
 	}
-	
+
 	String tableAction = ElementParameterParser.getValue(node,"__TABLE_ACTION__");
 	String dbmsId = ElementParameterParser.getValue(node,"__MAPPING__");
 	List<Column> stmtStructure = null;
@@ -226,13 +245,13 @@ skeleton="../templates/db_output_bulk.skeleton"
     	passwordFieldKey = "__SECRET_KEY_SSH__";
     }
     
-    if(useExistingS3Connection && !assumeRole){
-    	if(inheritRole){
-    		access_key = "\"\"";
+
+    
+    if(!assumeRole){
 %>
-			final String decryptedPwd_<%=cid%> = ""; 
+
 <%
-    	}else{
+
     		access_key = ElementParameterParser.getValue(current_node, "__ACCESS_KEY__");
     		if (ElementParameterParser.canEncrypt(current_node, passwordFieldKey)) {
 %> 
@@ -243,26 +262,12 @@ skeleton="../templates/db_output_bulk.skeleton"
 				final String decryptedPwd_<%=cid%> = <%= ElementParameterParser.getValue(current_node, passwordFieldKey)%>; 
 <%
 			}
-    	}
-    }else if(!useExistingS3Connection && !assumeRole){
-    	if(inheritRole){
-    		access_key = "\"\"";
+    } else {
+    	access_key = "\"\"";
 %>
-			final String decryptedPwd_<%=cid%> = ""; 
+		final String decryptedPwd_<%=cid%> = "";
 <%
-    	}else{
-    		access_key = ElementParameterParser.getValue(current_node, "__ACCESS_KEY__");
-    		if (ElementParameterParser.canEncrypt(current_node, passwordFieldKey)) {
-%> 
-				final String decryptedPwd_<%=cid%> = routines.system.PasswordEncryptUtil.decryptPassword(<%=ElementParameterParser.getEncryptedValue(current_node, passwordFieldKey)%>);
-<%
-			} else {
-%>
-				final String decryptedPwd_<%=cid%> = <%= ElementParameterParser.getValue(current_node, passwordFieldKey)%>; 
-<%
-			}
-    	}
-    }
+	}
 	if(avroMode) {
 		String avro_mapping = ElementParameterParser.getValue(node, "__JSON_MAPPING__");
 %>
@@ -326,7 +331,7 @@ skeleton="../templates/db_output_bulk.skeleton"
 <%		
 			}
 		}
-	} else if(!assumeRole && !inheritRole) {
+	} else if(!assumeRole) {
 %>
 	    .append("aws_access_key_id=").append(<%=access_key%>).append(";aws_secret_access_key=").append(decryptedPwd_<%=cid%>)
 <%
@@ -538,6 +543,16 @@ skeleton="../templates/db_output_bulk.skeleton"
 	}//!parquetMode
 %>
 	java.sql.Statement stmt_<%=cid %>=conn_<%=cid %>.createStatement();
+<%
+	if (isLog4jEnabled) {
+%>
+		String log_command_<%=cid%> = decryptedPwd_<%=cid %>.isEmpty()
+			? command_<%=cid%>.toString()
+			: command_<%=cid%>.toString().replace(decryptedPwd_<%=cid %>, "****");
+		log.debug("Executing COPY command: " + log_command_<%=cid%>);
+<%
+	}
+%>
 	stmt_<%=cid %>.execute(command_<%=cid%>.toString());
 <%
 	if(isSetMaxError) {

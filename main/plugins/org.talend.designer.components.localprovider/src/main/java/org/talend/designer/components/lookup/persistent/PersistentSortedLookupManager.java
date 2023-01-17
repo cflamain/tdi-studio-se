@@ -33,7 +33,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.jboss.serial.io.JBossObjectOutputStream;
+import org.jboss.marshalling.ByteOutput;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
 import org.talend.designer.components.lookup.common.ICommonLookup.MATCHING_MODE;
 import org.talend.designer.components.lookup.common.ILookupManagerUnit;
 import org.talend.designer.components.persistent.IRowCreator;
@@ -140,7 +144,9 @@ public class PersistentSortedLookupManager<B extends IPersistableComparableLooku
 
     private boolean skipBytesEnabled = true;
 
-    public static final boolean USE_JBOSS_IMPLEMENTATION = true;
+    public static boolean USE_JBOSS_IMPLEMENTATION = true;
+    
+    private boolean init = false;
 
     // private List<Field> propNameToCheckAtEachLine = new ArrayList<Field>();
     //
@@ -174,6 +180,11 @@ public class PersistentSortedLookupManager<B extends IPersistableComparableLooku
     }
 
     public void put(B bean) throws IOException {
+    	if(!init) {
+    		USE_JBOSS_IMPLEMENTATION = bean.supportMarshaller();
+    		skipBytesEnabled = ! USE_JBOSS_IMPLEMENTATION;
+    		init = true;
+    	}
 
         // if (bufferBeanIndex == 0 && fileIndex == 0) {
         // checkClassOfBeanPropertiesInit(bean);
@@ -350,61 +361,79 @@ public class PersistentSortedLookupManager<B extends IPersistableComparableLooku
 
     }
 
-    private void writeBuffer() throws IOException {
-        if (this.sortEnabled) {
-            Arrays.sort(buffer, 0, bufferBeanIndex);
-        }
-        File keysDataFile = new File(buildKeysFilePath(fileIndex));
-        keysDataFile.deleteOnExit();
+	private void writeBuffer() throws IOException {
+		if (this.sortEnabled) {
+			Arrays.sort(buffer, 0, bufferBeanIndex);
+		}
+		File keysDataFile = new File(buildKeysFilePath(fileIndex));
+		keysDataFile.deleteOnExit();
 
-        File valuesDataFile = new File(buildValuesFilePath(fileIndex));
-        valuesDataFile.deleteOnExit();
+		File valuesDataFile = new File(buildValuesFilePath(fileIndex));
+		valuesDataFile.deleteOnExit();
+		final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
+		final MarshallingConfiguration configuration = new MarshallingConfiguration();
 
-        BufferedOutputStream keysBufferedOutputStream = new BufferedOutputStream(new FileOutputStream(keysDataFile));
-        ObjectOutputStream keysDataOutputStream = null;
-        if (USE_JBOSS_IMPLEMENTATION) {
-            keysDataOutputStream = new JBossObjectOutputStream(keysBufferedOutputStream);
-        } else {
-            keysDataOutputStream = new ObjectOutputStream(keysBufferedOutputStream);
-        }
+		BufferedOutputStream keysBufferedOutputStream = new BufferedOutputStream(new FileOutputStream(keysDataFile));
+		ObjectOutputStream keysDataOutputStream = null;
+		Marshaller keysDataMarshaller = null;
+		if (USE_JBOSS_IMPLEMENTATION) {
+			keysDataMarshaller = marshallerFactory.createMarshaller(configuration);
+			keysDataMarshaller.start(new LongLengthByteOutput(Marshalling.createByteOutput(keysBufferedOutputStream)));
+		} else {
+			keysDataOutputStream = new ObjectOutputStream(keysBufferedOutputStream);
+		}
 
-        BufferedOutputStream valuesBufferedOutputStream = new BufferedOutputStream(new FileOutputStream(valuesDataFile));
-        final LongLengthOutputStream valuesLongOutputStream = new LongLengthOutputStream(valuesBufferedOutputStream);
-        DataOutputStream valuesDataOutputStream = new DataOutputStream(valuesLongOutputStream);
-        ObjectOutputStream valuesObjectOutputStream = null;
-        if (USE_JBOSS_IMPLEMENTATION) {
-            valuesObjectOutputStream = new JBossObjectOutputStream(valuesDataOutputStream);
-        } else {
-            valuesObjectOutputStream = new ObjectOutputStream(valuesDataOutputStream);
-        }
+		BufferedOutputStream valuesBufferedOutputStream = new BufferedOutputStream(
+				new FileOutputStream(valuesDataFile));
+		final LongLengthOutputStream valuesLongOutputStream = new LongLengthOutputStream(valuesBufferedOutputStream);
+		DataOutputStream valuesDataOutputStream = new DataOutputStream(valuesLongOutputStream);
+		ObjectOutputStream valuesObjectOutputStream = null;
+		int writtenValuesDataSize = 0;
+		long newSize = 0;
+		if (USE_JBOSS_IMPLEMENTATION) {
+			Marshaller valuesObjectMarshaller = marshallerFactory.createMarshaller(configuration);
+			final LongLengthByteOutput byteOutput = new LongLengthByteOutput(Marshalling.createByteOutput(valuesBufferedOutputStream));
+			valuesObjectMarshaller.start(byteOutput);
+			valuesObjectMarshaller.flush();
+			long previousSize = byteOutput.size();
+			previousSize = byteOutput.size();
 
-        // System.out.println("Writing LOOKUP buffer " + fileIndex + "... ");
+			for (int i = 0; i < bufferBeanIndex; i++) {
+				IPersistableLookupRow<B> curBean = buffer[i];
+				curBean.writeValuesData(valuesDataOutputStream, valuesObjectMarshaller);
+				valuesObjectMarshaller.flush();
+				newSize = byteOutput.size();
+				writtenValuesDataSize = (int) (newSize - previousSize);
+				curBean.writeKeysData(keysDataMarshaller);
+				keysDataMarshaller.writeInt(writtenValuesDataSize);
+				previousSize = newSize;
+			}
+			keysDataMarshaller.close();
+			valuesObjectMarshaller.close();
+		} else {
+			valuesObjectOutputStream = new ObjectOutputStream(valuesDataOutputStream);
+			long previousSize = valuesLongOutputStream.size();
+			previousSize = valuesLongOutputStream.size();
 
-        long previousSize = valuesLongOutputStream.size();
-        int writtenValuesDataSize = 0;
-        long newSize = 0;
+			for (int i = 0; i < bufferBeanIndex; i++) {
 
-        // writeDescriptors(valuesDataOutputStream, valuesObjectOutputStream);
+				IPersistableLookupRow<B> curBean = buffer[i];
+				curBean.writeValuesData(valuesDataOutputStream, valuesObjectOutputStream);
+				newSize = valuesLongOutputStream.size();
+				writtenValuesDataSize = (int) (newSize - previousSize);
+				curBean.writeKeysData(keysDataOutputStream);
+				keysDataOutputStream.writeInt(writtenValuesDataSize);
+				previousSize = newSize;
+				// System.out.println(curBean);
+			}
+			keysDataOutputStream.close();
+			valuesObjectOutputStream.close();
+		}
 
-        previousSize = valuesLongOutputStream.size();
+		// System.out.println("Write ended LOOKUP buffer " + fileIndex);
 
-        for (int i = 0; i < bufferBeanIndex; i++) {
-
-            IPersistableLookupRow<B> curBean = buffer[i];
-
-            curBean.writeValuesData(valuesDataOutputStream, valuesObjectOutputStream);
-            newSize = valuesLongOutputStream.size();
-            writtenValuesDataSize = (int) (newSize - previousSize);
-            curBean.writeKeysData(keysDataOutputStream);
-            keysDataOutputStream.writeInt(writtenValuesDataSize);
-            previousSize = newSize;
-            // System.out.println(curBean);
-        }
-        // System.out.println("Write ended LOOKUP buffer " + fileIndex);
-        keysDataOutputStream.close();
-        valuesObjectOutputStream.close();
-        fileIndex++;
-    }
+		fileIndex++;
+	}
 
     private String buildValuesFilePath(int i) {
         return container + "ValuesData_" + i + ".bin"; //$NON-NLS-1$ //$NON-NLS-2$
@@ -665,6 +694,60 @@ public class PersistentSortedLookupManager<B extends IPersistableComparableLooku
             size = 0;
         }
 
+		@Override
+		public void flush() throws IOException {
+			super.flush();
+		}
     }
+    
+    private class LongLengthByteOutput implements ByteOutput {
+
+        private long size = 0;
+
+        private final ByteOutput out;
+
+        public LongLengthByteOutput(ByteOutput out) {
+            this.out = out;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            out.write(b);
+            incLength(1);
+        }
+
+        @Override public void write(byte[] b) throws IOException {
+            out.write(b);
+            incLength(b.length);
+
+        }
+
+        @Override public void write(byte[] b, int off, int len) throws IOException {
+            out.write(b,off,len);
+            incLength(len);
+        }
+
+        private void incLength(int length) {
+            long tempLength = this.size + length;
+            if (tempLength < 0) {
+                tempLength = Long.MAX_VALUE;
+            }
+            this.size = tempLength;
+        }
+
+        public long size() {
+            return size;
+        }
+
+        public void close() throws IOException {
+            out.close();
+            size = 0;
+        }
+
+        @Override public void flush() throws IOException {
+            out.flush();
+        }
+
+        }
 
 }

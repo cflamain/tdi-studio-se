@@ -36,6 +36,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.gmf.util.DisplayUtils;
@@ -51,6 +52,7 @@ import org.talend.repository.ProjectManager;
 import org.talend.repository.RepositoryWorkUnit;
 import org.talend.repository.i18n.Messages;
 import org.talend.repository.model.IProxyRepositoryFactory;
+import org.talend.repository.preference.ProjectSettingPage;
 import org.talend.repository.ui.actions.ExportProjectSettings;
 import org.talend.repository.ui.actions.ImportProjectSettings;
 
@@ -140,6 +142,10 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog implements
         super.okPressed();
         rollBack(false);
         setInReopen(false);
+        if (ProjectSettingPage.isRestart()) {
+            ProjectSettingPage.setRestart(false);
+            PlatformUI.getWorkbench().restart();
+        }
     }
 
     /**
@@ -167,6 +173,10 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog implements
         super.cancelPressed();
         rollBack(true);
         setInReopen(false);
+    }
+
+    public void exeCancelPressed() {
+        cancelPressed();
     }
 
     private void importPressed() {
@@ -257,7 +267,7 @@ public class ProjectSettingsPreferenceDialog extends PreferenceDialog implements
 
                         handleSave();
                     }
-                    setReturnCode(OK);
+                    setReturnCode(OK);                   
                 }
             }
 

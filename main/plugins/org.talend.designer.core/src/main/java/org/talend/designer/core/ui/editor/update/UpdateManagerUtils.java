@@ -58,6 +58,7 @@ import org.talend.core.model.properties.JobletProcessItem;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.update.EUpdateItemType;
+import org.talend.core.model.update.EUpdateResult;
 import org.talend.core.model.update.IUpdateItemType;
 import org.talend.core.model.update.RepositoryUpdateManager;
 import org.talend.core.model.update.UpdateManagerHelper;
@@ -290,6 +291,28 @@ public final class UpdateManagerUtils {
     private static boolean doExecuteUpdates(final List<UpdateResult> results, final boolean updateAllJobs) {
         return doExecuteUpdates(results, updateAllJobs, false);
     }
+    
+    private static boolean isJobletUpdate(List<UpdateResult> results, String jobId) {
+        ProxyRepositoryFactory factory = ProxyRepositoryFactory.getInstance();
+        for (UpdateResult result : results) {
+            String id = result.getObjectId();
+            if (StringUtils.isEmpty(id)) {
+                if (result.getJob() != null && result.getJob() instanceof IProcess) {
+                    IProcess process = (IProcess) result.getJob();
+                    if (!(process instanceof IProcess2 && ERepositoryStatus.LOCK_BY_OTHER.equals(factory.getStatus(((IProcess2) process).getProperty().getItem())))) {
+                        id = process.getId();
+                    }
+                }
+            }
+
+            if (StringUtils.equals(id, jobId)) {
+                if (result.getResultType() == EUpdateResult.JOBLET_UPDATE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     private static boolean doExecuteUpdates(final List<UpdateResult> results, final boolean updateAllJobs,
             final boolean executeWithoutShow) {
@@ -365,6 +388,14 @@ public final class UpdateManagerUtils {
                                 try {
                                     if (checkOnlyLastVersion || version == null) {
                                         currentObj = factory.getLastVersion(currentId);
+                                        // if it is joblet update, need to check whether lastest version is inside update requests.
+                                        // when version is null, it is latest version.
+                                        if (version != null && isJobletUpdate(results, currentId)) {
+                                            if (!jobIdToVersion.get(currentId).contains(currentObj.getVersion())) {
+                                                currentObj = null;
+                                            }
+                                        }
+                                        
                                     } else {
                                         List<IRepositoryViewObject> allVersion = factory.getAllVersion(currentId);
                                         for (IRepositoryViewObject obj : allVersion) {

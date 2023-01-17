@@ -133,15 +133,17 @@
       </ITEMS>
     </PARAMETER>
 
-
-
     <PARAMETER
-      NAME="NEED_AUTH"
-      FIELD="CHECK"
-      REQUIRED="true"
+      NAME="AUTH_MODE"
+      FIELD="CLOSED_LIST"
       NUM_ROW="140"
+      GROUP="AUTHENTICATION"
     >
-      <DEFAULT>true</DEFAULT>
+      <ITEMS DEFAULT="BASIC">
+        <ITEM NAME="NO_AUTH"   VALUE="NO_AUTH" />
+        <ITEM NAME="BASIC"   VALUE="BASIC" />
+        <ITEM NAME="OAUTH2" VALUE="OAUTH2" />
+      </ITEMS>
     </PARAMETER>
 
     <PARAMETER
@@ -149,7 +151,8 @@
       FIELD="TEXT"
       REQUIRED="true"
       NUM_ROW="150"
-      SHOW_IF="NEED_AUTH == 'true'"
+      GROUP="AUTHENTICATION"
+      SHOW_IF="(AUTH_MODE == 'BASIC') OR (AUTH_MODE == 'OAUTH2')"
     >
       <DEFAULT>"username"</DEFAULT>
     </PARAMETER>
@@ -158,7 +161,19 @@
       FIELD="PASSWORD"
       REQUIRED="true"
       NUM_ROW="150"
-      SHOW_IF="NEED_AUTH == 'true'"
+      GROUP="AUTHENTICATION"
+      SHOW_IF="AUTH_MODE == 'BASIC'"
+    >
+      <DEFAULT>"password"</DEFAULT>
+    </PARAMETER>
+    
+        <PARAMETER
+      NAME="TOKEN"
+      FIELD="PASSWORD"
+      REQUIRED="true"
+      NUM_ROW="150"
+      GROUP="AUTHENTICATION"
+      SHOW_IF="AUTH_MODE == 'OAUTH2'"
     >
       <DEFAULT>"password"</DEFAULT>
     </PARAMETER>
@@ -201,12 +216,29 @@
       SHOW_IF="SET_LOCALHOST == 'true'"
     >
       <DEFAULT>"localhost"</DEFAULT>
+      
     </PARAMETER>
+
+        <PARAMETER
+      NAME="USE_TWO_LINE_TOKEN"
+      FIELD="CHECK"
+      REQUIRED="true"
+      SHOW_IF="AUTH_MODE == 'OAUTH2'"
+      NUM_ROW="14">
+        <DEFAULT>false</DEFAULT>
+    </PARAMETER>
+
+    	 <PARAMETER NAME="CONFIGS" FIELD="TABLE" REQUIRED="false" NUM_ROW="15" NB_LINES="3">
+          <ITEMS>
+            <ITEM NAME="KEY" />
+            <ITEM NAME="VALUE" />
+          </ITEMS>
+        </PARAMETER>
   </ADVANCED_PARAMETERS>
 
   <CODEGENERATION>
     <IMPORTS>
-      <IMPORT NAME="JavaMail" MODULE="mail-1.4.7.jar" MVN="mvn:javax.mail/mail/1.4.7" REQUIRED="true" BundleID="" />
+            <IMPORT NAME="jakartaMail" MODULE="jakarta.mail-1.6.7.jar" MVN="mvn:com.sun.mail/jakarta.mail/1.6.7" REQUIRED="true" />
       <IMPORT NAME="JAF" MODULE="activation.jar" MVN="mvn:org.talend.libraries/activation/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.apache.axis2/lib/activation.jar" REQUIRED="true" BundleID="" />
   </IMPORTS>
   </CODEGENERATION>

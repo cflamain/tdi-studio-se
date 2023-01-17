@@ -14,8 +14,15 @@ package org.talend.sdk.component.studio.update;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -24,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -33,9 +41,12 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.URIUtil;
 import org.eclipse.equinox.p2.metadata.Version;
 import org.eclipse.m2e.core.MavenPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.runtime.service.ITaCoKitService;
 import org.talend.commons.utils.resource.FileExtensions;
+import org.talend.commons.utils.system.EclipseCommandLine;
 import org.talend.core.runtime.maven.MavenUrlHelper;
 import org.talend.core.runtime.projectsetting.IProjectSettingTemplateConstants;
 import org.talend.sdk.component.studio.i18n.Messages;
@@ -55,10 +66,19 @@ import org.talend.updates.runtime.storage.IFeatureStorage;
 import org.talend.updates.runtime.utils.PathUtils;
 import org.talend.utils.io.FilesUtils;
 
+
 /**
  * DOC cmeng  class global comment. Detailled comment
  */
 public class TaCoKitCarFeature extends AbstractExtraFeature implements ITaCoKitCarFeature {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(TaCoKitCarFeature.class);
+    
+    private static final String JAVAW_CMD_EXE = "javaw.exe";
+
+    private static final String JAVA_CMD_EXE = "java.exe";
+
+    private static final String JAVA_CMD = "java";
 
     private boolean autoReloadAfterInstalled = true;
 
@@ -141,7 +161,7 @@ public class TaCoKitCarFeature extends AbstractExtraFeature implements ITaCoKitC
                 if (!needRestart() && isAutoReloadAfterInstalled()) {
                     // if studio need to restart, then no need to reload here
                     String log = ITaCoKitService.getInstance().reload(progress);
-                    ExceptionHandler.log(log);
+                    ExceptionHandler.logDebug(log);
                 }
             } else {
                 status = new Status(IStatus.ERROR, TaCoKitConst.BUNDLE_ID,
@@ -155,74 +175,188 @@ public class TaCoKitCarFeature extends AbstractExtraFeature implements ITaCoKitC
         }
         return status;
     }
+    
+    public static String getJavaCMD() {
+        String vm = System.getProperty(EclipseCommandLine.PROP_VM);
+        if (!Platform.getOS().equals(Platform.OS_MACOSX) && !StringUtils.isBlank(vm)) {
+            if (!vm.endsWith(JAVA_CMD) || !vm.endsWith(JAVA_CMD_EXE)) {
+                LOGGER.info("vm: " + vm);
+                String javaCMD = Platform.getOS().equals(Platform.OS_WIN32) ? JAVA_CMD_EXE : JAVA_CMD;
+                Finder f = new Finder(javaCMD);
+                Path p = Paths.get(vm);
+                if (Files.isSymbolicLink(p)) {
+                    try {
+                        p = p.toRealPath();
+                    } catch (IOException e) {
+                        LOGGER.error("toRealPath error", e);
+                    }
+                }
+                findJava(Paths.get(vm), f);
+                if (f.getJavaFile() != null) {
+                    return f.getJavaFile().getAbsolutePath();
+                }
+            }
+        }
+        return JAVA_CMD;
+    }
+    
+    public static File findJava(Path p, Finder f) {
+
+        if (p == null) {
+            return null;
+        }
+
+        try {
+            Files.walkFileTree(p, f);
+        } catch (IOException e) {
+            LOGGER.error("findJava error", e);
+        }
+        if (f.getJavaFile() == null && f.getLevel() < 4) {
+            f.setLevel(f.getLevel() + 1);
+            findJava(p.getParent(), f);
+        }
+
+        return f.getJavaFile();
+    }
+
+    public static class Finder extends SimpleFileVisitor<Path> {
+
+        private final String javaCMD;
+
+        private File javaFile;
+
+        private int level = 0;
+
+        Finder(String javaCMD) {
+            this.javaCMD = javaCMD;
+        }
+
+        /**
+         * @return the level
+         */
+        public int getLevel() {
+            return level;
+        }
+
+        /**
+         * @param level the level to set
+         */
+        public void setLevel(int level) {
+            this.level = level;
+        }
+
+        public File getJavaFile() {
+            return javaFile;
+        }
+
+        // Invoke the pattern matching
+        // method on each file.
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            if (StringUtils.equals(javaCMD, FilenameUtils.getName(file.toFile().getName()))) {
+                javaFile = file.toFile();
+                return FileVisitResult.TERMINATE;
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        // Invoke the pattern matching
+        // method on each directory.
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) {
+            LOGGER.error("vist " + file, exc);
+            return FileVisitResult.CONTINUE;
+        }
+    }
 
     @SuppressWarnings("nls")
     public boolean install(IProgressMonitor progress) throws Exception {
-        String tckCarPath = getCar(progress).getCarFile().getAbsolutePath();
-        String installationPath = URIUtil.toFile(URIUtil.toURI(Platform.getInstallLocation().getURL())).getAbsolutePath();
-        String commandType = " studio-deploy ";
-        StringBuilder commandBuilder = new StringBuilder();
-        commandBuilder.append("java -jar "); //$NON-NLS-1$
-        commandBuilder.append(StringUtils.wrap(tckCarPath, "\"")); //$NON-NLS-1$
-        if (isDeployCommand) {
-            File m2Folder =this.getM2RepositoryPath();
-            installationPath = m2Folder.getAbsolutePath();
-            commandType = " maven-deploy ";
-        }
-        commandBuilder.append(commandType); //$NON-NLS-1$
-        commandBuilder.append(StringUtils.wrap(installationPath, "\"")); //$NON-NLS-1$
-        String command = commandBuilder.toString();
-
-        String osName = System.getProperty("os.name"); //$NON-NLS-1$
-        String[] cmd = new String[3];
-        if (osName.startsWith("Windows")) { //$NON-NLS-1$
-            cmd[0] = "cmd.exe"; //$NON-NLS-1$
-            cmd[1] = "/C"; //$NON-NLS-1$
-            cmd[2] = command;
-        } else if (osName.startsWith("Mac")) { //$NON-NLS-1$
-            cmd[0] = "/bin/bash"; //$NON-NLS-1$
-            cmd[1] = "-c"; //$NON-NLS-1$
-            cmd[2] = command;
-        } else {
-            // linux
-            cmd[0] = "/bin/bash"; //$NON-NLS-1$
-            cmd[1] = "-c"; //$NON-NLS-1$
-            cmd[2] = command;
-        }
-        Process exec = Runtime.getRuntime().exec(cmd);
-        while (exec.isAlive()) {
+        TaCoKitCar tckCar = getCar(progress);
+        String carBundlerVersion = tckCar.getCarBundlerVersion();
+        boolean useBuiltinInstaller = false;
+        if (!isDeployCommand) {
             try {
-                TaCoKitUtil.checkMonitor(progress);
-            } catch (InterruptedException e) {
-                exec.destroy();
-                boolean alreadyInstalled = false;
+                useBuiltinInstaller = Boolean.getBoolean(TaCoKitConst.PARAM_CAR_INSTALLER_USE_BUILTIN) || (StringUtils
+                        .isBlank(carBundlerVersion)
+                        // we fixed the issue in tck 1.45.1, so newer version can continue to use CarMain
+                        || PathUtils.convert2Version(carBundlerVersion).compareTo(PathUtils.convert2Version("1.45.1")) < 0);
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+            }
+        }
+        String installationPath = URIUtil.toFile(URIUtil.toURI(Platform.getInstallLocation().getURL())).getAbsolutePath();
+        File m2RepoFolder = this.getM2RepositoryPath();
+        if (useBuiltinInstaller) {
+            CarMain.deployInStudio(tckCar.getCarFile(), installationPath, false, m2RepoFolder);
+            return true;
+        } else {
+            String m2RepoPath = URIUtil.toFile(m2RepoFolder.toURI()).getAbsolutePath();
+            String tckCarPath = URIUtil.toFile(tckCar.getCarFile().toURI()).getAbsolutePath();
+            String commandType = "studio-deploy";
+            List<String> cmds = new ArrayList<String>();
+            String javaCMD = getJavaCMD();
+            cmds.add(javaCMD);
+            cmds.add("-D" + TaCoKitConst.PARAM_CAR_INSTALLER_M2_REPO_PATH + "=" + m2RepoPath);
+            cmds.add("-jar");
+            cmds.add(tckCarPath);
+
+            if (isDeployCommand) {
+                installationPath = m2RepoPath;
+                commandType = "maven-deploy";
+            }
+            cmds.add(commandType);
+            cmds.add(installationPath);
+
+            ExceptionHandler.logDebug("tck install command line: " + cmds);
+
+            Process exec = null;
+            try {
+                exec = Runtime.getRuntime().exec(cmds.toArray(new String[0]));
+            } catch (Exception e) {
+                ExceptionHandler.process(e);
+                throw e;
+            }
+            while (exec.isAlive()) {
                 try {
-                    InstallationStatus installationStatus = getInstallationStatus(new NullProgressMonitor());
-                    if (installationStatus != null) {
-                        org.talend.updates.runtime.model.InstallationStatus.Status status = installationStatus.getStatus();
-                        if (status != null) {
-                            if (status.isInstalled()) {
-                                String installedVersion = installationStatus.getInstalledVersion();
-                                alreadyInstalled = StringUtils.equals(getVersion(), installedVersion);
+                    TaCoKitUtil.checkMonitor(progress);
+                } catch (InterruptedException e) {
+                    exec.destroy();
+                    boolean alreadyInstalled = false;
+                    try {
+                        InstallationStatus installationStatus = getInstallationStatus(new NullProgressMonitor());
+                        if (installationStatus != null) {
+                            org.talend.updates.runtime.model.InstallationStatus.Status status = installationStatus.getStatus();
+                            if (status != null) {
+                                if (status.isInstalled()) {
+                                    String installedVersion = installationStatus.getInstalledVersion();
+                                    alreadyInstalled = StringUtils.equals(getVersion(), installedVersion);
+                                }
                             }
                         }
+                    } catch (Exception e1) {
+                        ExceptionHandler.process(e1);
                     }
-                } catch (Exception e1) {
-                    ExceptionHandler.process(e);
+                    if (alreadyInstalled) {
+                        return true;
+                    } else {
+                        throw e;
+                    }
                 }
-                if (alreadyInstalled) {
-                    return true;
-                } else {
-                    throw e;
-                }
+                Thread.sleep(100);
             }
-            Thread.sleep(100);
+            int exitValue = exec.exitValue();
+            if (exitValue != 0) {
+                Exception e = new Exception(getErrorMessage(exec));
+                ExceptionHandler.process(e);
+                throw e;
+            }
+            return true;
         }
-        int exitValue = exec.exitValue();
-        if (exitValue != 0) {
-            throw new Exception(getErrorMessage(exec));
-        }
-        return true;
     }
     
     private File getM2RepositoryPath() {

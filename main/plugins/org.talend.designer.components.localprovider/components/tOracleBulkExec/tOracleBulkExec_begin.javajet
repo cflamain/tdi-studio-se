@@ -65,7 +65,7 @@ boolean isLog4jEnabled = ("true").equals(ElementParameterParser.getValue(node.ge
 %>
 
 <%
-if(("UPDATE").equals(data_action)) {
+if(("false").equals(use_existing_ctl_file) && ("false").equals(inputIntoTableClause) && ("UPDATE").equals(data_action)) {
     if(columnList != null && columnList.size() > 0) {
         int keyCount = 0;
         for(IMetadataColumn column : columnList) {
@@ -212,7 +212,7 @@ if("ORACLE_RAC".equals("<%=connectionType%>")||dbschema_<%=cid%> == null || dbsc
     tableName_<%=cid%> = dbschema_<%=cid%> + "." + <%=table%><%=convertToUppercase ? ".toUpperCase()" : ""%>;
 }
 <%
-if(("UPDATE").equals(data_action)) {
+if(("false").equals(use_existing_ctl_file) && ("false").equals(inputIntoTableClause) && ("UPDATE").equals(data_action)) {
     %>
     String tmpTableName_<%=cid%> = tableName_<%=cid%>;
 
@@ -474,7 +474,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",ioe.getMessage());
     <%
     //record format begin
     String recordFormat = ElementParameterParser.getValue(node, "__RECORD_FORMAT__");
-    if(("STREAM").equals(recordFormat)){
+    if(!flagHasLob && ("STREAM").equals(recordFormat)){
         String streamTerminator = ElementParameterParser.getValue(node, "__TERMINATOR_STRING__");
         %>
         bw_<%=cid %>.write(" \"str '" + <%=streamTerminator %> + "'\"");
@@ -600,78 +600,84 @@ String command_<%=cid %> = "sqlldr '" + dbUser_<%=cid %> + "/" + dbPwd_<%=cid %>
 String printableCommand_<%=cid%> = "sqlldr '" + dbUser_<%=cid %> + "/" + "...." + "@" + serviceUrl_<%=cid %> + "' CONTROL='" + ctlf_<%=cid %> + "' LOG='" + logf_<%=cid %> + "'";
 
 <%
-if(("UPDATE").equals(data_action)) {
-    if(columnList != null && columnList.size() > 0) {
-    %>
-    try{
-    java.sql.Statement stmtCreateTmp_<%=cid%> = conn_<%=cid%>.createStatement();
-    <%if(isLog4jEnabled){%>
-        log.info("<%=cid%> - Creating temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
-    <%}%>
-    stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)");
-    stmtCreateTmp_<%=cid%>.close();
-        <%if(isLog4jEnabled){%>
-        log.info("<%=cid%> - Create temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
-        log.info("<%=cid%> - Executing command:'" + printableCommand_<%=cid%> + "'.");
-    <%}%>
-    <%
-    }
-    %>
-    final Process process_<%=cid %> = Runtime.getRuntime().exec(command_<%=cid %>);
-    <%
-} else {
-    %>
-        java.util.ArrayList<String> envParam_<%=cid%>=new java.util.ArrayList<String>();
-        java.util.Map<String, String> systemEnvMap_<%=cid %> = System.getenv();
-        for (java.util.Map.Entry<String, String> entry : systemEnvMap_<%=cid %>.entrySet())
-        {
-           envParam_<%=cid%>.add(entry.getKey() + "=" + entry.getValue());
-        }
-<%
-    String nlsLanguage = ElementParameterParser.getValue(node, "__NLS_LANGUAGE__");
-    String nlsDateLanguage = ElementParameterParser.getValue(node, "__NLS_DATE_LANGUAGE__");
-    boolean setNLSTerritory = ("true").equals(ElementParameterParser.getValue(node, "__SET_NLS_TERRITORY__"));
-    String NLSTerritory = ElementParameterParser.getValue(node, "__NLS_TERRITORY__");
-    List<Map<String, String>> nlsoptions = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__NLSOPTIONS__");
-    if(!("DEFAULT").equals(nlsLanguage)){
-%>
-        envParam_<%=cid%>.add("NLS_LANGUAGE=<%=nlsLanguage%>");
-<%
-    }
-    if(!("DEFAULT").equals(nlsDateLanguage)){
-%>
-        envParam_<%=cid%>.add("NLS_DATE_LANGUAGE=<%=nlsDateLanguage%>");
-<%
-    }
-    if(setNLSTerritory){
-        if(!("DEFAULT").equals(NLSTerritory)){
-%>
-            envParam_<%=cid%>.add("NLS_TERRITORY=<%=NLSTerritory%>");
-<%
-        }
-    }else{
-        for(java.util.Map<String, String> option : nlsoptions) {
-            String key = option.get("KEY");
-            String value = option.get("VALUE");
-            if(value != null && value.trim().length()>0){
-%>
-        envParam_<%=cid%>.add("<%=key%>=<%=value%>");
-<%
-            }
-        }
-    }
-    if(isLog4jEnabled){
-    %>
-        log.info("<%=cid%> - Executing command:'" + printableCommand_<%=cid%> + "'.");
-    <%
-    }
-%>
-    final Process process_<%=cid %> = Runtime.getRuntime().exec(command_<%=cid %>,envParam_<%=cid%>.toArray(new String[0]));
-    <%
+if (("false").equals(use_existing_ctl_file)) {
+	if(("false").equals(inputIntoTableClause) && ("UPDATE").equals(data_action)) {
+		if(columnList != null && columnList.size() > 0) {
+		%>
+		try{
+		java.sql.Statement stmtCreateTmp_<%=cid%> = conn_<%=cid%>.createStatement();
+		<%if(isLog4jEnabled){%>
+			log.info("<%=cid%> - Creating temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%>." );
+		<%}%>
+		stmtCreateTmp_<%=cid%>.execute("<%=manager.getCreateTableSQL(stmtStructure)%>)");
+		stmtCreateTmp_<%=cid%>.close();
+			<%if(isLog4jEnabled){%>
+			log.info("<%=cid%> - Create temp table <%=manager.getLProtectedChar()%>" + tableName_<%=cid%> + "<%=manager.getRProtectedChar()%> has succeeded.");
+			log.info("<%=cid%> - Executing command:'" + printableCommand_<%=cid%> + "'.");
+			<%}%>
+		<%
+		}
+		%>
+		final Process process_<%=cid %> = Runtime.getRuntime().exec(command_<%=cid %>);
+		<%
+	} else {
+		%>
+			java.util.ArrayList<String> envParam_<%=cid%>=new java.util.ArrayList<String>();
+			java.util.Map<String, String> systemEnvMap_<%=cid %> = System.getenv();
+			for (java.util.Map.Entry<String, String> entry : systemEnvMap_<%=cid %>.entrySet())
+			{
+			   envParam_<%=cid%>.add(entry.getKey() + "=" + entry.getValue());
+			}
+	<%
+		String nlsLanguage = ElementParameterParser.getValue(node, "__NLS_LANGUAGE__");
+		String nlsDateLanguage = ElementParameterParser.getValue(node, "__NLS_DATE_LANGUAGE__");
+		boolean setNLSTerritory = ("true").equals(ElementParameterParser.getValue(node, "__SET_NLS_TERRITORY__"));
+		String NLSTerritory = ElementParameterParser.getValue(node, "__NLS_TERRITORY__");
+		List<Map<String, String>> nlsoptions = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__NLSOPTIONS__");
+		if(!("DEFAULT").equals(nlsLanguage)){
+	%>
+			envParam_<%=cid%>.add("NLS_LANGUAGE=<%=nlsLanguage%>");
+	<%
+		}
+		if(!("DEFAULT").equals(nlsDateLanguage)){
+	%>
+			envParam_<%=cid%>.add("NLS_DATE_LANGUAGE=<%=nlsDateLanguage%>");
+	<%
+		}
+		if(setNLSTerritory){
+			if(!("DEFAULT").equals(NLSTerritory)){
+	%>
+				envParam_<%=cid%>.add("NLS_TERRITORY=<%=NLSTerritory%>");
+	<%
+			}
+		}else{
+			for(java.util.Map<String, String> option : nlsoptions) {
+				String key = option.get("KEY");
+				String value = option.get("VALUE");
+				if(value != null && value.trim().length()>0){
+	%>
+			envParam_<%=cid%>.add("<%=key%>=<%=value%>");
+	<%
+				}
+			}
+		}
+		if(isLog4jEnabled){
+		%>
+			log.info("<%=cid%> - Executing command:'" + printableCommand_<%=cid%> + "'.");
+		<%
+		}
+	%>
+		final Process process_<%=cid %> = Runtime.getRuntime().exec(command_<%=cid %>,envParam_<%=cid%>.toArray(new String[0]));
+		<%
+	}
 }
-%>
-
-//System.out.println(command_<%=cid %>);
+else {
+	if(isLog4jEnabled){%>
+		log.info("<%=cid%> - Executing command:'" + printableCommand_<%=cid%> + "'.");
+  <%}%>
+	
+	final Process process_<%=cid %> = Runtime.getRuntime().exec(command_<%=cid %>);
+<%}%>
 
 Thread normal_<%=cid %> = new Thread() {
     public void run() {

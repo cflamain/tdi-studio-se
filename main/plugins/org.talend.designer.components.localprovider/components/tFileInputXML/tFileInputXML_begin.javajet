@@ -82,7 +82,7 @@ class IgnoreDTDEntityResolver_<%=cid%> implements org.xml.sax.EntityResolver {
 // *** Xerces *** //
 if(("Xerces").equals(mode)){
 %>
-class TalendPrefixResolver_<%=cid%> implements org.apache.xml.utils.PrefixResolver {
+class TalendPrefixResolver_<%=cid%> {
 
     private java.util.Map<String, String> map = new java.util.HashMap<String, String>();
     
@@ -92,24 +92,12 @@ class TalendPrefixResolver_<%=cid%> implements org.apache.xml.utils.PrefixResolv
 		return defualtNSPath;
 	}
 	
-    public String getBaseIdentifier() {
-        return null;
-    }
-
-    public String getNamespaceForPrefix(String prefix) {
+    public String getNamespaceURI(String prefix) {
         if (("xml").equals(prefix)) {
-            return org.apache.xml.utils.Constants.S_XMLNAMESPACEURI;
+            return "http://www.w3.org/XML/1998/namespace";
         } else {
             return map.get(prefix);
         }
-    }
-
-    public String getNamespaceForPrefix(String prefix, org.w3c.dom.Node context) {
-        return getNamespaceForPrefix(prefix);
-    }
-
-    public boolean handlesNullPrefixes() {
-        return false;
     }
 
     public boolean countNSMap(org.w3c.dom.Node el) {
@@ -149,9 +137,10 @@ class TalendPrefixResolver_<%=cid%> implements org.apache.xml.utils.PrefixResolv
 
 class XML_API_<%=cid%>{
 
+	javax.xml.xpath.XPath xpathEvaluator = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+	
 	String loopPath = null;
 	boolean hasDefaultNS = false;
-	TalendPrefixResolver_<%=cid%> pr = null;
 	
 	public boolean isDefNull(org.w3c.dom.Node node) throws javax.xml.transform.TransformerException {
         if (node != null && node.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE) {
@@ -171,40 +160,48 @@ class XML_API_<%=cid%>{
         return false;
     }
 
-	private final org.talend.xpath.XPathUtil util = new  org.talend.xpath.XPathUtil();
+    private final org.talend.xpath.XPathUtil util = new  org.talend.xpath.XPathUtil();
 
-	public void initXPath(org.w3c.dom.Node root){
-		pr= new TalendPrefixResolver_<%=cid%>();
-    	hasDefaultNS = pr.countNSMap(root);
-    	util.setDefaultNSPath(pr.getDefualtNSPath());
-	}
+    public void initXPath(org.w3c.dom.Node root){
+        final TalendPrefixResolver_<%=cid%> pr = new TalendPrefixResolver_<%=cid%>();
+        hasDefaultNS = pr.countNSMap(root);
+        util.setDefaultNSPath(pr.getDefualtNSPath());
+        
+        xpathEvaluator.setNamespaceContext(new javax.xml.namespace.NamespaceContext() {
+            @Override
+            public String getNamespaceURI(String prefix) {
+                return pr.getNamespaceURI(prefix);
+            }
+
+            @Override
+            public String getPrefix(String namespaceURI) {
+                return null;
+            }
+
+            @Override
+            public java.util.Iterator getPrefixes(String namespaceURI) {
+                return null;
+            }
+        });
+    }
 
 //==============add for feature 10753 start================================
-	org.apache.xpath.objects.XObject obj = null;
-	
-	public int getNodeType(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException{
-		obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
-		return obj.getType();
-	}
-	
-	public String getNodeString(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException{
-		if(obj==null){
-			obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
-		}
-		return obj.str();
+	public String getNodeString(org.w3c.dom.Node node, String xpath) throws javax.xml.xpath.XPathExpressionException {
+		javax.xml.xpath.XPathExpression expression = xpathEvaluator.compile(util.addDefaultNSPrefix(xpath,loopPath));
+		return expression.evaluate(node);
 	}
 
-    public org.w3c.dom.Node getSingleNode(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException {
-    	if(obj==null){
-        	obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath,loopPath), pr);
-        }
-        return obj.nodelist().item(0);
+    public org.w3c.dom.Node getSingleNode(org.w3c.dom.Node node, String xpath) throws javax.xml.xpath.XPathExpressionException {
+        javax.xml.xpath.XPathExpression expression = xpathEvaluator.compile(util.addDefaultNSPrefix(xpath,loopPath));
+        Object result = expression.evaluate(node, javax.xml.xpath.XPathConstants.NODESET);
+        return org.w3c.dom.NodeList.class.cast(result).item(0);
     }
 //=====================end=================================================
 
-    public org.w3c.dom.NodeList getNodeList(org.w3c.dom.Node node, String xpath) throws javax.xml.transform.TransformerException {
-        org.apache.xpath.objects.XObject obj = org.apache.xpath.XPathAPI.eval(node, util.addDefaultNSPrefix(xpath), pr);
-        return obj.nodelist();
+    public org.w3c.dom.NodeList getNodeList(org.w3c.dom.Node node, String xpath) throws javax.xml.xpath.XPathExpressionException {
+        javax.xml.xpath.XPathExpression expression = xpathEvaluator.compile(util.addDefaultNSPrefix(xpath));
+        Object result = expression.evaluate(node, javax.xml.xpath.XPathConstants.NODESET);
+        return org.w3c.dom.NodeList.class.cast(result);
     }
     
 }
@@ -392,7 +389,7 @@ class XML_API_<%=cid%>{
 
     public boolean isEmpty(org.dom4j.Node node) throws javax.xml.transform.TransformerException {
         if (node != null) {
-            return node.getText().length() == 0;
+            return node.getStringValue().isEmpty();
         }
         return false;
     }
@@ -813,7 +810,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 						String nodeCheck = mapping.get(i).get("NODECHECK");
 						if(("Xerces").equals(mode)){
 %>
-	if(xml_api_<%=cid%>.getNodeType(tmp_<%=cid %>,<%=query%>)==org.apache.xpath.objects.XObject.CLASS_NODESET){
+	try {
 		node_<%=cid%> = xml_api_<%=cid%>.getSingleNode(tmp_<%=cid %>,<%=query%>);
 <%
 							if("true".equals(useSeparator)){
@@ -830,7 +827,7 @@ if ((metadatas!=null)&&(metadatas.size()>0)) {
 <%
 							}
 %>
-	}else{
+	} catch (javax.xml.xpath.XPathExpressionException xee) {
 		node_<%=cid %> = tmp_<%=cid %>;
 		str_<%=cid %> = xml_api_<%=cid%>.getNodeString(tmp_<%=cid %>,<%=query%>);
 	}

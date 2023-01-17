@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
@@ -39,6 +38,8 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.jobs.ISchedulingRule;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.utils.generation.JavaUtils;
 import org.talend.core.CorePlugin;
@@ -79,7 +80,6 @@ import org.talend.designer.runprocess.IProcessor;
 import org.talend.designer.runprocess.ProcessorUtilities;
 import org.talend.designer.runprocess.maven.MavenJavaProcessor;
 import org.talend.repository.ProjectManager;
-import org.talend.repository.RepositoryWorkUnit;
 import org.talend.utils.io.FilesUtils;
 
 /**
@@ -87,6 +87,9 @@ import org.talend.utils.io.FilesUtils;
  */
 public class TalendJavaProjectManager {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(TalendJavaProjectManager.class);
+
+    
     private static Map<String, ITalendProcessJavaProject> talendCodeJavaProjects = new HashMap<>();
 
     private static Map<String, ITalendProcessJavaProject> talendCodesJarJavaProjects = new HashMap<>();
@@ -96,90 +99,81 @@ public class TalendJavaProjectManager {
     private static ITalendProcessJavaProject tempJavaProject;
 
     public static void initJavaProjects(IProgressMonitor monitor, Project project) {
-
-        RepositoryWorkUnit<Object> workUnit = new RepositoryWorkUnit<Object>("create aggregator poms") { //$NON-NLS-1$
+        final IWorkspaceRunnable op = new IWorkspaceRunnable() {
 
             @Override
-            protected void run() {
-                final IWorkspaceRunnable op = new IWorkspaceRunnable() {
-
-                    @Override
-                    public void run(IProgressMonitor monitor) throws CoreException {
-                        try {
-                            // create aggregator poms
-                            AggregatorPomsHelper helper = new AggregatorPomsHelper(project.getTechnicalLabel());
-                            // create poms folder.
-                            IFolder poms = createFolderIfNotExist(helper.getProjectPomsFolder(), monitor);
-
-                            // codes
-                            IFolder code = createFolderIfNotExist(poms.getFolder(DIR_CODES), monitor);
-                            // routines
-                            createFolderIfNotExist(code.getFolder(DIR_ROUTINES), monitor);
-
-                            // beans
-                            if (ProcessUtils.isRequiredBeans(null)) {
-                                createFolderIfNotExist(code.getFolder(DIR_BEANS), monitor);
-                            }
-
-                            // jobs
-                            IFolder jobs = createFolderIfNotExist(poms.getFolder(DIR_JOBS), monitor);
-                            // process
-                            createFolderIfNotExist(jobs.getFolder(DIR_PROCESS), monitor);
-                            // process_mr
-                            if (PluginChecker.isMapReducePluginLoader()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_MR), monitor);
-                            }
-                            // process_storm
-                            if (PluginChecker.isStormPluginLoader()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_STORM), monitor);
-                            }
-                            // routes
-                            if (PluginChecker.isRouteLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_ROUTES), monitor);
-                            }
-                            // services
-                            if (PluginChecker.isServiceLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_SERVICES), monitor);
-                            }
-                            // joblets
-                            if (PluginChecker.isJobLetPluginLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS), monitor);
-                            }
-                            // joblets_spark
-                            if (PluginChecker.isSparkJobLetPluginLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS_SPARK), monitor);
-                            }
-                            // joblets_spark_streaming
-                            if (PluginChecker.isSparkStreamingJobLetPluginLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS_SPARK_STREAMING), monitor);
-                            }
-                            // routelets
-                            if (PluginChecker.isRouteletLoaded()) {
-                                createFolderIfNotExist(jobs.getFolder(DIR_ROUTELETS), monitor);
-                            }
-                            helper.createRootPom(monitor);
-                            List<ProjectReference> references = project.getProjectReferenceList(true);
-                            for (ProjectReference ref : references) {
-                                createRefRootPoms(monitor, new Project(ref.getReferencedProject()));
-                            }
-                        } catch (Exception e) {
-                            ExceptionHandler.process(e);
-                        }
-                    }
-                };
+            public void run(IProgressMonitor monitor) throws CoreException {
                 try {
-                    IWorkspace workspace = ResourcesPlugin.getWorkspace();
-                    ISchedulingRule schedulingRule = workspace.getRoot();
-                    // the update the project files need to be done in the workspace runnable to
-                    // avoid all notification of changes before the end of the modifications.
-                    workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, monitor);
-                } catch (CoreException e) {
+                    // create aggregator poms
+                    AggregatorPomsHelper helper = new AggregatorPomsHelper(project.getTechnicalLabel());
+                    // create poms folder.
+                    IFolder poms = createFolderIfNotExist(helper.getProjectPomsFolder(), monitor);
+
+                    // codes
+                    IFolder code = createFolderIfNotExist(poms.getFolder(DIR_CODES), monitor);
+                    // routines
+                    createFolderIfNotExist(code.getFolder(DIR_ROUTINES), monitor);
+
+                    // beans
+                    if (ProcessUtils.isRequiredBeans(null)) {
+                        createFolderIfNotExist(code.getFolder(DIR_BEANS), monitor);
+                    }
+
+                    // jobs
+                    IFolder jobs = createFolderIfNotExist(poms.getFolder(DIR_JOBS), monitor);
+                    // process
+                    createFolderIfNotExist(jobs.getFolder(DIR_PROCESS), monitor);
+                    // process_mr
+                    if (PluginChecker.isMapReducePluginLoader()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_MR), monitor);
+                    }
+                    // process_storm
+                    if (PluginChecker.isStormPluginLoader()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_STORM), monitor);
+                    }
+                    // routes
+                    if (PluginChecker.isRouteLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_ROUTES), monitor);
+                    }
+                    // services
+                    if (PluginChecker.isServiceLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_PROCESS_SERVICES), monitor);
+                    }
+                    // joblets
+                    if (PluginChecker.isJobLetPluginLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS), monitor);
+                    }
+                    // joblets_spark
+                    if (PluginChecker.isSparkJobLetPluginLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS_SPARK), monitor);
+                    }
+                    // joblets_spark_streaming
+                    if (PluginChecker.isSparkStreamingJobLetPluginLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_JOBLETS_SPARK_STREAMING), monitor);
+                    }
+                    // routelets
+                    if (PluginChecker.isRouteletLoaded()) {
+                        createFolderIfNotExist(jobs.getFolder(DIR_ROUTELETS), monitor);
+                    }
+                    helper.createRootPom(monitor);
+                    List<ProjectReference> references = project.getProjectReferenceList(true);
+                    for (ProjectReference ref : references) {
+                        createRefRootPoms(monitor, new Project(ref.getReferencedProject()));
+                    }
+                } catch (Exception e) {
                     ExceptionHandler.process(e);
                 }
             }
         };
-        workUnit.setAvoidUnloadResources(true);
-        ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(workUnit);
+        try {
+            IWorkspace workspace = ResourcesPlugin.getWorkspace();
+            ISchedulingRule schedulingRule = workspace.getRoot();
+            // the update the project files need to be done in the workspace runnable to
+            // avoid all notification of changes before the end of the modifications.
+            workspace.run(op, schedulingRule, IWorkspace.AVOID_UPDATE, monitor);
+        } catch (CoreException e) {
+            ExceptionHandler.process(e);
+        }
     }
 
     public static ITalendProcessJavaProject getTalendCodeJavaProject(ERepositoryObjectType type) {
@@ -206,16 +200,12 @@ public class TalendJavaProjectManager {
                 if (!javaProject.isOpen()) {
                     javaProject.open(monitor);
                 }
-                // only update code pom for main project.
-                if (ProjectManager.getInstance().getCurrentProject().getTechnicalLabel().equals(projectTechName)) {
-                    if (ERepositoryObjectType.ROUTINES == type) {
-                        PomUtil.checkExistingLog4j2Dependencies4RoutinePom(projectTechName,
-                                codeProject.getFile(TalendMavenConstants.POM_FILE_NAME));
-                    }
-                    helper.updateCodeProjectPom(monitor, type, codeProject.getFile(TalendMavenConstants.POM_FILE_NAME));
+                if (ERepositoryObjectType.ROUTINES == type) {
+                    PomUtil.checkExistingLog4j2Dependencies4RoutinePom(projectTechName,
+                            codeProject.getFile(TalendMavenConstants.POM_FILE_NAME));
                 }
+                helper.updateCodeProjectPom(monitor, type, codeProject.getFile(TalendMavenConstants.POM_FILE_NAME));
                 talendCodeJavaProject = new TalendProcessJavaProject(javaProject);
-                BuildCacheManager.getInstance().clearCodesCache(type);
                 talendCodeJavaProjects.put(codeProjectId, talendCodeJavaProject);
             } catch (Exception e) {
                 ExceptionHandler.process(e);
@@ -435,7 +425,6 @@ public class TalendJavaProjectManager {
             }
             if (deleteContent) {
                 IFolder folder = new AggregatorPomsHelper(projectTechName).getCodeFolder(type).getFolder(codesJarName);
-                AggregatorPomsHelper.removeFromParentModules(folder.getFile(TalendMavenConstants.POM_FILE_NAME));
                 if (folder.exists()) {
                     folder.delete(true, false, null);
                 }
@@ -476,11 +465,10 @@ public class TalendJavaProjectManager {
         }
     }
 
-    public static void doDeleteAllVersionTalendJobProject(String id, String oldName, boolean deleteContent, boolean avoidRefresh)
+    public static void deleteAllVersionTalendJobProject(String id, String oldName, boolean deleteContent, boolean avoidRefresh)
             throws Exception {
         List<IRepositoryViewObject> allVersionObjects = ProxyRepositoryFactory.getInstance().getAllVersion(id);
         for (IRepositoryViewObject object : allVersionObjects) {
-            String realVersion = object.getVersion();
             Property property = object.getProperty();
             String currentName = property.getLabel();
             try {
@@ -492,9 +480,6 @@ public class TalendJavaProjectManager {
                 } else {
                     BuildCacheManager.getInstance().preRemoveJobCache(property);
                 }
-                IFile pomFile = AggregatorPomsHelper.getItemPomFolder(property, realVersion)
-                        .getFile(TalendMavenConstants.POM_FILE_NAME);
-                AggregatorPomsHelper.removeFromParentModules(pomFile);
             } finally {
                 if (oldName != null) {
                     property.setLabel(currentName);
@@ -547,28 +532,10 @@ public class TalendJavaProjectManager {
 
     }
 
-    public static void deleteAllVersionTalendJobProject(String id, String oldName, boolean deleteContent) {
-
-        RepositoryWorkUnit workUnit = new RepositoryWorkUnit<Object>("Delete job projects") { //$NON-NLS-1$
-
-            @Override
-            protected void run() {
-                try {
-                    doDeleteAllVersionTalendJobProject(id, oldName, deleteContent, false);
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
-            }
-        };
-        workUnit.setAvoidUnloadResources(true);
-        ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(workUnit);
-
-    }
-
     public static void batchDeleteAllVersionTalendJobProject(List<String> idList) {
         try {
             for (String id : idList) {
-                doDeleteAllVersionTalendJobProject(id, null, true, true);
+                deleteAllVersionTalendJobProject(id, null, true, true);
             }
             AggregatorPomsHelper helper = new AggregatorPomsHelper();
             helper.getProjectPomsFolder().refreshLocal(IResource.DEPTH_INFINITE, null);
@@ -578,23 +545,15 @@ public class TalendJavaProjectManager {
     }
 
     public static void createAllVersionTalendJobProject(String id) {
-
-        RepositoryWorkUnit workUnit = new RepositoryWorkUnit<Object>("Create job projects") { //$NON-NLS-1$
-
-            @Override
-            protected void run() {
-                try {
-                    List<IRepositoryViewObject> allVersionObjects = ProxyRepositoryFactory.getInstance().getAllVersion(id);
-                    for (IRepositoryViewObject obj : allVersionObjects) {
-                        generatePom(obj.getProperty().getItem());
-                    }
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
+        try {
+            List<IRepositoryViewObject> allVersionObjects = ProxyRepositoryFactory.getInstance().getAllVersion(id);
+            for (IRepositoryViewObject obj : allVersionObjects) {
+                generatePom(obj.getProperty().getItem());
             }
-        };
-        workUnit.setAvoidUnloadResources(true);
-        ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(workUnit);
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
+
     }
 
     private static void createRefRootPoms(IProgressMonitor monitor, Project refProject) throws Exception {
@@ -641,6 +600,11 @@ public class TalendJavaProjectManager {
             public void run(IProgressMonitor monitor) throws CoreException {
                 IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
                 for (IProject project : projects) {
+                    // if already closed or not exist, do nothing.
+                    if (!project.exists() || !project.isOpen()) {
+                        LOGGER.info("project: " + project.getName() + " not exists or already closed");
+                        continue;
+                    }
                     if (project.hasNature("com.oaklandsw.transform.runtime.nature")) { //$NON-NLS-1$
                         // never delete TDM Builtin, Examples and Examples EDI project ref
                         // com.oaklandsw.data.transform.builtin
@@ -728,14 +692,12 @@ public class TalendJavaProjectManager {
 
     private static void generatePom(Item item, int option, IProcessor processor) throws Exception {
         if (processor instanceof MavenJavaProcessor) {
-            LastGenerationInfo.getInstance().clearCaches();
+			if (!BitwiseOptionUtils.containOption(option, TalendProcessOptionConstants.GENERATE_POM_NOT_CLEAR_CACHE)) {
+				LastGenerationInfo.getInstance().clearCaches();
+			}
             // Gen poms only
             ((MavenJavaProcessor) processor).generatePom(option);
         }
-        boolean checkFilter = !BitwiseOptionUtils.containOption(option, TalendProcessOptionConstants.GENERATE_POM_NO_FILTER);
-        AggregatorPomsHelper.addToParentModules(
-                AggregatorPomsHelper.getItemPomFolder(item.getProperty()).getFile(TalendMavenConstants.POM_FILE_NAME),
-                item.getProperty(), checkFilter);
     }
     
     public static void doDeleteSingleVersionTalendJobProject(IRepositoryViewObject object, boolean deleteContent, boolean avoidRefresh)
@@ -747,9 +709,7 @@ public class TalendJavaProjectManager {
         } else {
             BuildCacheManager.getInstance().preRemoveJobCache(property);
         }
-        IFile pomFile = AggregatorPomsHelper.getItemPomFolder(property, deleteVersion)
-                .getFile(TalendMavenConstants.POM_FILE_NAME);
-        AggregatorPomsHelper.removeFromParentModules(pomFile);
+
         Set<String> removedVersions = new HashSet<>();
         Iterator<String> iterator = talendJobJavaProjects.keySet().iterator();
         // delete exist project
@@ -786,21 +746,11 @@ public class TalendJavaProjectManager {
     }
     
     public static void deleteOldVersionTalendJobProject(IRepositoryViewObject object, boolean deleteContent) {
-
-        RepositoryWorkUnit workUnit = new RepositoryWorkUnit<Object>("Delete job projects") { //$NON-NLS-1$
-
-            @Override
-            protected void run() {
-                try {
-                    doDeleteSingleVersionTalendJobProject(object, deleteContent, false);
-                } catch (Exception e) {
-                    ExceptionHandler.process(e);
-                }
-            }
-        };
-        workUnit.setAvoidUnloadResources(true);
-        ProxyRepositoryFactory.getInstance().executeRepositoryWorkUnit(workUnit);
-
+        try {
+            doDeleteSingleVersionTalendJobProject(object, deleteContent, false);
+        } catch (Exception e) {
+            ExceptionHandler.process(e);
+        }
     }
 
 }

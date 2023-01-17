@@ -38,6 +38,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.Pattern;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
@@ -77,6 +78,7 @@ import org.talend.core.PluginChecker;
 import org.talend.core.language.ECodeLanguage;
 import org.talend.core.language.LanguageManager;
 import org.talend.core.model.components.ComponentCategory;
+import org.talend.core.model.components.ComponentUtilities;
 import org.talend.core.model.components.EComponentType;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.context.ContextUtils;
@@ -93,6 +95,7 @@ import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EConnectionType;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.Element;
+import org.talend.core.model.process.ElementParameterValueModel;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IConnectionCategory;
 import org.talend.core.model.process.IContext;
@@ -121,6 +124,7 @@ import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.routines.RoutinesUtil;
 import org.talend.core.model.update.IUpdateManager;
+import org.talend.core.model.utils.NodeUtil;
 import org.talend.core.model.utils.TalendTextUtils;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.repository.utils.ConvertJobsUtil;
@@ -151,6 +155,9 @@ import org.talend.designer.core.model.process.DataProcess;
 import org.talend.designer.core.model.process.IGeneratingProcess;
 import org.talend.designer.core.model.process.jobsettings.JobSettingsConstants;
 import org.talend.designer.core.model.process.jobsettings.JobSettingsManager;
+import org.talend.designer.core.model.utils.emf.component.COMPONENTType;
+import org.talend.designer.core.model.utils.emf.component.ITEMType;
+import org.talend.designer.core.model.utils.emf.component.PARAMETERType;
 import org.talend.designer.core.model.utils.emf.talendfile.ConnectionType;
 import org.talend.designer.core.model.utils.emf.talendfile.ElementParameterType;
 import org.talend.designer.core.model.utils.emf.talendfile.ElementValueType;
@@ -420,7 +427,15 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
             param.setDisplayName(EParameterName.TDQ_DEFAULT_PROJECT_DIR.getDisplayName());
             param.setNumRow(99);
             param.setShow(false);
-            if (ReponsitoryContextBridge.getRootProject().getLocation() != null) {
+            org.talend.core.model.properties.Project processPProject =
+                    ProjectManager.getInstance().getProject(this.getProperty());
+            if (processPProject != null) {
+                IProject processProject = ReponsitoryContextBridge.findProject(processPProject.getTechnicalLabel());
+                if (processProject.getLocation() != null) {
+                    param.setValue(processProject.getLocation().toPortableString());
+                }
+            }
+            if (param.getValue() == null && ReponsitoryContextBridge.getRootProject().getLocation() != null) {
                 param.setValue(ReponsitoryContextBridge.getRootProject().getLocation().toPortableString());
             }
             param.setReadOnly(true);
@@ -1222,7 +1237,7 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                         if (o instanceof String) {
                             strValue = o != null ? ((String)o).trim() : (String)o;
                             
-                            isHexValue = isNeedConvertToHex(strValue);
+                            isHexValue = Hex.isNeedConvertToHex(strValue);
                             if (isHexValue) {
                                 try {
                                     strValue = Hex.encodeHexString(strValue.getBytes(UTF8));
@@ -1230,10 +1245,12 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                                     ExceptionHandler.process(e);
                                 }
                             }
-                        } else {
-                            if (o instanceof Boolean) {
-                                strValue = ((Boolean) o).toString();
-                            }
+                        } else if (o instanceof Boolean) {
+                            strValue = ((Boolean) o).toString();
+                        } else if (o instanceof ElementParameterValueModel) {
+                            ElementParameterValueModel model = (ElementParameterValueModel) o;
+                            elementValue.setLabel(model.getLabel());
+                            strValue = model.getValue();
                         }
                     }
                     if (tmpParam != null && EParameterFieldType.isPassword(tmpParam.getFieldType())) {
@@ -1291,19 +1308,6 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
         return parameter.getFieldType().equals(EParameterFieldType.TABLE) ||
                 parameter.getFieldType().equals(EParameterFieldType.TACOKIT_SUGGESTABLE_TABLE)
                 || parameter.getFieldType().equals(EParameterFieldType.TACOKIT_TABLE);
-    }
-
-    protected boolean isNeedConvertToHex(String value) {
-        if (value == null || "".equals(value.trim())) {
-            return false;
-        }
-        for (int i = 0; i < value.length(); i++) {
-            int ch = value.charAt(i);
-            if (ch < 32) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void loadElementParameters(Element elemParam, EList listParamType) {
@@ -1419,7 +1423,10 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                         boolean isActiveDatabase = false;
                         String paramName = pType.getName();
                         if (EParameterName.ACTIVE_DATABASE_DELIMITED_IDENTIFIERS.getName().equals(paramName)
-                                || EParameterName.USE_ALIAS_IN_OUTPUT_TABLE.getName().equals(paramName)) {
+                                || EParameterName.USE_ALIAS_IN_OUTPUT_TABLE.getName().equals(paramName)
+                                || EParameterName.ACTIVE_ADD_QUOTES_IN_TABLE_NAME.getName().equals(paramName)
+                                || EParameterName.ACTIVE_DELIMITED_CHARACTER.getName().equals(paramName)
+                                || EParameterName.DELIMITED_CHARACTER_TEXT.getName().equals(paramName)) {
                             canAddElementParameter = true;
                             isActiveDatabase = true;
                         }
@@ -1430,7 +1437,11 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                             param.setCategory(EComponentCategory.TECHNICAL);
                             String fieldName = pType.getField();
                             if (isActiveDatabase && fieldName == null) {
-                            	fieldName = EParameterFieldType.TEXT.getName();
+                                if (EParameterName.DELIMITED_CHARACTER_TEXT.getName().equals(paramName)) {
+                                    fieldName = EParameterFieldType.TEXT.getName();
+                                } else {
+                                    fieldName = EParameterFieldType.CHECK.getName();
+                                }
                             }
                             EParameterFieldType fieldType = null;
                             if (StringUtils.isNotBlank(fieldName)) {
@@ -1512,6 +1523,7 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                 }
             } else if (isTable(param)) {
                 List<Map<String, Object>> tableValues = new ArrayList<Map<String, Object>>();
+                Map<String, EParameterFieldType> paramFieldTypes = getTableListEleParamFieldTypes(param);
                 String[] codeList = param.getListItemsDisplayCodeName();
                 Map<String, Object> lineValues = null;
                 for (ElementValueType elementValue : (List<ElementValueType>) pType.getElementValue()) {
@@ -1556,7 +1568,15 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
                         if (needRemoveQuotes) {
                             elemValue = TalendTextUtils.removeQuotes(elemValue);
                         }
-                        lineValues.put(elementValue.getElementRef(), elemValue);
+
+                        ElementParameterValueModel model = null;
+                        EParameterFieldType elementValueFieldType = paramFieldTypes.get(elementValue.getElementRef());
+                        if (EParameterFieldType.TACOKIT_VALUE_SELECTION.equals(elementValueFieldType)) {
+                            model = new ElementParameterValueModel();
+                            model.setLabel(elementValue.getLabel());
+                            model.setValue(elemValue);
+                        }
+                        lineValues.put(elementValue.getElementRef(), model != null ? model : elemValue);
                         if (elementValue.getType() != null) {
                             lineValues.put(elementValue.getElementRef() + IEbcdicConstant.REF_TYPE, elementValue.getType());
                         }
@@ -1643,6 +1663,18 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
             elemParam.setPropertyValue(Process.TABLE_ACTION, "CLEAR"); //$NON-NLS-1$
             UpdateTheJobsActionsOnTable.isClear = false;
         }
+    }
+
+    private Map<String, EParameterFieldType> getTableListEleParamFieldTypes(IElementParameter param) {
+        Map<String, EParameterFieldType> paramTypeMap = new HashMap<String, EParameterFieldType>();
+        Object[] listItemsValue = param.getListItemsValue();
+        for (Object listItem : listItemsValue) {
+            if (listItem instanceof IElementParameter) {
+                IElementParameter listItemParam = (IElementParameter) listItem;
+                paramTypeMap.put(listItemParam.getName(), listItemParam.getFieldType());
+            }
+        }
+        return paramTypeMap;
     }
 
     protected ProcessType createProcessType(TalendFileFactory fileFact) {
@@ -2449,6 +2481,34 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
         }
 
         if (!unloadedNode.isEmpty()) {
+            if (CommonsPlugin.isScriptCmdlineMode() && !CommonsPlugin.isDevMode() && !CommonsPlugin.isJunitWorking()) {
+                if (ERR_ON_COMPONENT_MISSING) {
+                    StringBuilder missingComps = new StringBuilder();
+                    try {
+                        for (NodeType element : unloadedNode) {
+                            if (0 < missingComps.length()) {
+                                missingComps.append(", ");
+                            }
+                            missingComps.append(element.getComponentName());
+                        }
+                    } catch (Exception e) {
+                        ExceptionHandler.process(e);
+                    }
+                    String processName = "";
+                    try {
+                        processName = this.getLabel() + " " + this.getVersion();
+                    } catch (Exception e) {
+                        ExceptionHandler.process(e);
+                    }
+                    PersistenceException ex = new PersistenceException(Messages.getString("Process.Components.NotFound",
+                            processName, missingComps.toString(), "studio." + PROP_ERR_ON_COMPONENT_MISSING));
+                    ExceptionHandler.process(ex);
+                    // used for CI to catch the message
+                    System.out.println("CI_MSG:EXIT");
+                    System.exit(1);
+                    throw ex;
+                }
+            }
             for (NodeType element : unloadedNode) {
                 createDummyNode(element, nodesHashtable);
             }
@@ -2472,6 +2532,7 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
 
     protected Node createDummyNode(NodeType nType, Hashtable<String, Node> nodesHashtable) {
         DummyComponent component = new DummyComponent(nType);
+        component.setMissingComponent(true);
         Node nc;
         nc = new Node(component, this);
         nc.setLocation(new Point(nType.getPosX(), nType.getPosY()));
@@ -4972,5 +5033,59 @@ public class Process extends Element implements IProcess2, IGEFProcess, ILastVer
     @Override
     public INode getNodeByUniqueName(String uniqueName) {
         return getGeneratingNodes().stream().filter(n -> n.getUniqueName().equals(uniqueName)).findAny().orElse(null);
+    }
+    
+    /**
+     * TUP-32758:Show the drag&drop mysql + Amazonmysql if property type + db version are compatible)
+     * The rules for the compatible node are:
+     * 1.The component name is compatible.
+     * 2.the root family is "Database"
+     * 3.the leaf family is same. For example: mysql
+     * 4.DB_VERSION is in the list of filter component. 
+     */
+    private boolean isCompatibleMatching(String filterComponentName, INode node) {
+        boolean isCompatible = false;
+        String componentName = node.getComponent().getName();
+        if (NodeUtil.isCompatibleByName(filterComponentName, componentName)) {
+            IComponent filterComponent = ComponentsFactoryProvider.getInstance().get(filterComponentName,
+                    ComponentCategory.CATEGORY_4_DI.getName());
+            if (filterComponent == null) return false;
+            if (NodeUtil.isDatabaseFamily(node.getComponent().getOriginalFamilyName()) && 
+                    NodeUtil.isDatabaseFamily(filterComponent.getOriginalFamilyName())) {
+                String[] familyNames = node.getComponent().getOriginalFamilyName()
+                        .split(ComponentUtilities.FAMILY_SEPARATOR_REGEX)[0].split("/");
+                String[] filterFamilyNames = filterComponent.getOriginalFamilyName()
+                        .split(ComponentUtilities.FAMILY_SEPARATOR_REGEX)[0].split("/");
+                if (filterFamilyNames.length > 0 && familyNames.length > 0 &&
+                        StringUtils.equals(filterFamilyNames[filterFamilyNames.length-1], familyNames[familyNames.length-1])) {
+                    if (filterComponent instanceof EmfComponent) {
+                        EmfComponent emfFilterComponent = (EmfComponent) filterComponent;
+                        //Need to check if the component has been loaded or not
+                        emfFilterComponent.getShortName();
+                        COMPONENTType compType = emfFilterComponent.getEmfComponentType();
+                        if (compType != null && compType.getPARAMETERS() != null && compType.getPARAMETERS().getPARAMETER() != null) {
+                            EList parametersList = compType.getPARAMETERS().getPARAMETER();
+                            for (int i = 0; i < parametersList.size(); i++) {
+                                PARAMETERType parameterType = (PARAMETERType) parametersList.get(i);
+                                if (parameterType != null && parameterType.getNAME() != null 
+                                        && parameterType.getNAME().equals("DB_VERSION") && parameterType.getITEMS() != null 
+                                        && parameterType.getITEMS().getITEM() != null) {
+                                    EList itemsList = parameterType.getITEMS().getITEM();
+                                    for (int j = 0; j < itemsList.size(); j++) {
+                                        ITEMType itemType = (ITEMType) itemsList.get(j);
+                                        if (itemType != null && node.getElementParameter("DB_VERSION") !=null 
+                                                && StringUtils.equals(itemType.getVALUE(), (String) node.getElementParameter("DB_VERSION").getValue())) {
+                                            isCompatible = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return isCompatible;
     }
 }

@@ -305,6 +305,15 @@
            name="EncryptTckMetadataMigrationTask"
            version="7.3.0">
      </projecttask>
+     <projecttask
+           beforeLogon="false"
+           breaks="8.0.0"
+           class="org.talend.sdk.component.studio.metadata.migration.UpdateEncryptTckMetadataMigrationTask"
+           description="Encrypt tck metadata password"
+           id="org.talend.sdk.component.studio.metadata.migration.UpdateEncryptTckMetadataMigrationTask"
+           name="UpdateEncryptTckMetadataMigrationTask"
+           version="8.0.1">
+     </projecttask>
   </extension>
  <extension
        point="org.eclipse.ui.startup">

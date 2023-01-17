@@ -518,7 +518,7 @@ public class StandAloneTalendJavaEditor extends CompilationUnitEditor implements
                     refreshJobAndSave(repFactory);
                 }
             };
-            repositoryWorkUnit.setAvoidSvnUpdate(true);
+            repositoryWorkUnit.setAvoidUpdate(true);
             repositoryWorkUnit.setAvoidUnloadResources(true);
             repFactory.executeRepositoryWorkUnit(repositoryWorkUnit);
             repositoryWorkUnit.throwPersistenceExceptionIfAny();

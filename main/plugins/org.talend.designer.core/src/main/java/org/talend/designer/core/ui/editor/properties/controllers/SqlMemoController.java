@@ -43,6 +43,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
@@ -61,6 +62,7 @@ import org.talend.core.model.metadata.builder.connection.Query;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IConnection;
+import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
 import org.talend.core.model.process.IProcess;
@@ -81,6 +83,7 @@ import org.talend.designer.core.ui.editor.cmd.PropertyChangeCommand;
 import org.talend.designer.core.ui.editor.cmd.RepositoryChangeQueryCommand;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.preferences.TalendDesignerPrefConstants;
+import org.talend.designer.runprocess.IRunProcessService;
 import org.talend.repository.model.IProxyRepositoryFactory;
 
 /**
@@ -175,10 +178,17 @@ public class SqlMemoController extends AbstractElementPropertySectionController 
         } else {
             query = TalendTextUtils.removeStrInQuery(query);
         }
-
-        initConnectionParametersWithContext(elem, part == null ? new EmptyContextManager().getDefaultContext() : part
-                .getProcess().getContextManager().getDefaultContext());
-        String sql = openSQLBuilder(repositoryType, propertyName, query);
+        IContext selectContext = new EmptyContextManager().getDefaultContext();
+        if (GlobalServiceRegister.getDefault().isServiceRegistered(IRunProcessService.class) && part != null) {
+            IRunProcessService service = GlobalServiceRegister.getDefault().getService(IRunProcessService.class);
+            Shell shell = PlatformUI.getWorkbench().getDisplay().getActiveShell();
+            selectContext = service.promptConfirmLauch(shell, part.getProcess());
+            if (selectContext == null) {
+                return null;
+            }
+        }
+        initConnectionParametersWithContext(elem, selectContext);
+        String sql = openSQLBuilder(repositoryType, propertyName, query, selectContext);
         if (sql != null) {
             queryText.setText(sql);
             return new PropertyChangeCommand(elem, propertyName, sql);

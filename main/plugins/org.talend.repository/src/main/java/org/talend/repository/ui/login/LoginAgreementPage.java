@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.browser.Browser;
@@ -33,6 +34,7 @@ import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.talend.commons.exception.BusinessException;
 import org.talend.commons.exception.CommonExceptionHandler;
@@ -89,7 +91,7 @@ public class LoginAgreementPage extends AbstractLoginActionPage {
         boolean haveHtmlDesc = false;
         FileInputStream licenseInputStream = null;
         String licenseFileBasePath = Platform.getInstallLocation().getURL().getPath();
-        if (Boolean.parseBoolean(System.getProperty("USE_BROWSER"))) { //$NON-NLS-1$
+        if (checkBrowserSupport()) {
             File htmlFile = new File(licenseFileBasePath + LICENSE_FILE_PATH_HTML);
             if (htmlFile.exists()) {
                 try {
@@ -131,6 +133,29 @@ public class LoginAgreementPage extends AbstractLoginActionPage {
         }
     }
 
+    /**
+     * @see org.talend.rcp.intro.Application#checkBrowserSupport DOC ggu Comment
+     *      method "checkForBrowser".
+     */
+    private boolean checkBrowserSupport() {
+        if (StringUtils.equals(Platform.OS_LINUX, Platform.getOS())
+                && StringUtils.equals(Platform.ARCH_AARCH64, Platform.getOSArch())) {
+            return false;
+        }
+        Shell shell = new Shell();
+        boolean isSupportBrowser = false;
+        try {
+            Browser browser = new Browser(shell, SWT.BORDER);
+            browser.dispose();
+            isSupportBrowser = true;
+        } catch (Throwable t) {
+            // nothing need to do
+        } finally {
+            shell.dispose();
+        }
+        return isSupportBrowser;
+    }
+    
     private String getLicense(InputStream inputStream) {
         String licenseNotFound = Messages.getString("LoginAgreementPage.agreementFileNotFound"); //$NON-NLS-1$
         if (inputStream == null) {
@@ -158,18 +183,19 @@ public class LoginAgreementPage extends AbstractLoginActionPage {
 
     @Override
     public AbstractActionPage getNextPage() {
-        AbstractActionPage iNextPage = super.getNextPage();
-
+        AbstractActionPage iNextPage = loginDialog.getFirstTimeStartupPageIfNeeded();
         if (iNextPage == null) {
-            iNextPage = loginDialog.getFirstTimeStartupPageIfNeeded();
-            if (iNextPage == null) {
+            if (loginDialog.isShowSSOPage()) {
+                iNextPage = new LoginWithCloudPage(getParent(), loginDialog, SWT.NONE);
+            }else {
                 iNextPage = new LoginProjectPage(getParent(), loginDialog, SWT.NONE);
             }
-            setNextPage(iNextPage);
         }
+        setNextPage(iNextPage);
 
         return iNextPage;
     }
+
 
     @Override
     public void addListeners() {

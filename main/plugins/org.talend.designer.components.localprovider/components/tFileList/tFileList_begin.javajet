@@ -292,6 +292,11 @@
 	  	}
 	  }
     <%}%>
+	
+	<%if(isLog4jEnabled) {%>
+		log.info("<%=cid%> - Starting to search for matching entries.");
+	<%}%>
+	
     final java.util.List<java.io.File> list_<%=cid%> = new java.util.ArrayList<java.io.File>();
     final java.util.Set<String> filePath_<%=cid%> = new java.util.HashSet<String>();
 	java.io.File file_<%=cid%> = new java.io.File(directory_<%=cid%>);
@@ -401,7 +406,7 @@
     %>
     
     <%if(isLog4jEnabled) {%>
-		log.info("<%=cid%> - Start to list files");
+		log.info("<%=cid%> - Start to list files.");
 	<%}%>
     for (int i_<%=cid%> = 0; i_<%=cid%> < list_<%=cid%>.size(); i_<%=cid%>++){
       java.io.File files_<%=cid%> = list_<%=cid%>.get(i_<%=cid%>);

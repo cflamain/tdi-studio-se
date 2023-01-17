@@ -59,6 +59,9 @@ public class ProblemsAnalyserTest {
 
         needAlias = analyser.needAlias("((String)globalMap.get(\"schema\"))+context.xx.my_table");
         Assert.assertTrue(needAlias);
+        
+        needAlias = analyser.needAlias("\"\\\"生徒\\\"\"");
+        Assert.assertFalse(needAlias);
 
     }
 

@@ -13,16 +13,21 @@
 package org.talend.repository.demo.imports;
 
 import java.io.File;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.emf.common.util.EList;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.talend.core.model.properties.ContextItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.repository.constants.FileConstants;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.designer.core.model.utils.emf.talendfile.ContextType;
 import org.talend.repository.items.importexport.handlers.ImportExportHandlersManager;
 import org.talend.repository.items.importexport.handlers.model.ImportItem;
 import org.talend.repository.items.importexport.manager.ResourcesManager;
@@ -75,6 +80,25 @@ public class DiDemoImportTest extends DemosImportTest {
 		List<File> demoContextItemsFiles = getDemoItemFileList(rootPath + File.separator + contextItemPath);
 		Assert.assertTrue(demoContextItemsFiles.size() > 0);
 
+        // TUP-35909:test the ContextType content for 'globalContext'
+        List<ContextItem> contextItemList = null;
+        contextItemList = ProxyRepositoryFactory.getInstance().getContextItem();
+        for (ContextItem contextItem : contextItemList) {
+            if (contextItem.getProperty().getDisplayName().equals("globalContext")) {
+                EList contexts = ((ContextItem) contextItem).getContext();
+                for (Object context : contexts) {
+                    if (context instanceof ContextType) {
+                        List<Object> contextParamList = ((ContextType) context).getContextParameter();
+                        // demo
+                        Assert.assertNotNull("Name of ContextType should not be null", ((ContextType) context).getName());
+                        // root,name,city...
+                        Assert.assertTrue("contextParameter items should be more than 0",
+                                contextParamList.size() > 0);
+                    }
+                }
+            }
+        }
+
 		Assert.assertTrue(currentContextItemsSize > 0);
 		Assert.assertEquals(demoContextItemsFiles.size(), currentContextItemsSize);
 
@@ -107,4 +131,13 @@ public class DiDemoImportTest extends DemosImportTest {
 		map.put(rootPath + File.separator + documentionPath, FileConstants.ITEM_EXTENSION);
 		return map;
 	}
+
+    protected String getRootPath(ResourcesManager resManager) {
+        Iterator path = resManager.getPaths().iterator();
+        String firstFilePath = ((Path) path.next()).toPortableString();
+        String tempFolderPath = firstFilePath.substring(0,
+                firstFilePath.indexOf(TEMP_FOLDER_SUFFIEX) + TEMP_FOLDER_SUFFIEX.length());
+        Assert.assertTrue(new File(tempFolderPath).exists());
+        return tempFolderPath + File.separator + demoName.toUpperCase();
+    }
 }

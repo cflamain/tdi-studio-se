@@ -63,6 +63,7 @@ import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EConnectionType;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.ElementParameterParser;
+import org.talend.core.model.process.ElementParameterValueModel;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IConnectionCategory;
 import org.talend.core.model.process.IElement;
@@ -230,6 +231,11 @@ public class DataProcess implements IGeneratingProcess {
                     // targetParam.setValue( sourceParam.getValue());
                     targetParam.setListItemsValue(ArrayUtils.clone(sourceParam.getListItemsValue()));
                     targetParam.setListItemsDisplayCodeName(sourceParam.getListItemsDisplayCodeName());
+                    try {
+                        setupTacokitSuggestionValueConfiguration(targetParam);
+                    } catch (Exception e) {
+                        ExceptionHandler.process(e);
+                    }
                 }
                 for (String name : targetParam.getChildParameters().keySet()) {
                     IElementParameter targetChildParam = targetParam.getChildParameters().get(name);
@@ -247,6 +253,46 @@ public class DataProcess implements IGeneratingProcess {
                 ElementParameter newParam = (ElementParameter) sourceParam.getClone();
                 List<IElementParameter> listParam = (List<IElementParameter>) targetElement.getElementParameters();
                 listParam.add(newParam);
+            }
+        }
+    }
+
+    public void setupTacokitSuggestionValueConfiguration(IElementParameter parameter) {
+        if (parameter instanceof ElementParameter) {
+            Object sourceName = ((ElementParameter) parameter).getTaggedValue("org.talend.sdk.component.source"); //$NON-NLS-1$
+            boolean isTacokit = "tacokit".equalsIgnoreCase(String.valueOf(sourceName)); //$NON-NLS-1$
+            if (!isTacokit) {
+                return;
+            }
+            Object value = parameter.getValue();
+            if (value == null || value instanceof List && ((List) value).isEmpty()) {
+                return;
+            }
+            Object[] listItemsValue = parameter.getListItemsValue();
+            Set<String> valueSelectionColNames = new HashSet<String>();
+            for (Object itemObj : listItemsValue) {
+                if (itemObj instanceof ElementParameter) {
+                    ElementParameter itemParam = (ElementParameter) itemObj;
+                    if (EParameterFieldType.TACOKIT_VALUE_SELECTION.equals(itemParam.getFieldType())) {
+                        valueSelectionColNames.add(itemParam.getName());
+                    }
+                }
+            }
+
+            if (value instanceof List) {
+                for (Object row : (List) value) {
+                    if (row instanceof Map) {
+                        Map rowColumn = (Map) row;
+                        for (Object columnName : rowColumn.keySet()) {
+                            Object columnValue = rowColumn.get(columnName);
+                            if (valueSelectionColNames.contains(String.valueOf(columnName))
+                                    && columnValue instanceof ElementParameterValueModel) {
+                                ElementParameterValueModel model = (ElementParameterValueModel) columnValue;
+                                rowColumn.put(columnName, model.getValue());
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -553,6 +599,8 @@ public class DataProcess implements IGeneratingProcess {
             uniqueName = prefix + uniqueName;
         }
         dataNode.setUniqueName(uniqueName);
+        //TUP-27184:Pass the label to DataNode from GraphicNode since it may be different from unique name.
+        dataNode.setLabel(graphicalNode.getLabel());
         dataNode.setSubProcessStart(graphicalNode.isSubProcessStart());
         dataNode.setThereLinkWithHash(graphicalNode.isThereLinkWithHash());
         dataNode.setHasConditionalOutputs(graphicalNode.hasConditionalOutputs());
@@ -889,6 +937,8 @@ public class DataProcess implements IGeneratingProcess {
 
         for (IMultipleComponentItem curItem : itemList) {
             String uniqueName = graphicalNode.getUniqueName() + "_" + curItem.getName(); //$NON-NLS-1$
+            //TUP-27184, Pass the label to multiple components since it may be different from unique name.
+            String label = graphicalNode.getLabel() + "_" + curItem.getName();
             IComponentsFactory componentsFactory = ComponentsFactoryProvider.getInstance();
             String currentComponent = curItem.getComponent();
             IComponent component = componentsFactory.get(currentComponent, process.getComponentsType());
@@ -902,6 +952,8 @@ public class DataProcess implements IGeneratingProcess {
             AbstractNode curNode;
             if (component.getPluginExtension() == null) {
                 curNode = new DataNode(component, uniqueName);
+                //TUP-27184, Pass the label to multiple components
+                curNode.setLabel(label);
             } else {
                 // mapper
                 curNode = (AbstractNode) ExternalNodesFactory.getInstance(component.getPluginExtension());
@@ -921,6 +973,8 @@ public class DataProcess implements IGeneratingProcess {
                 curNode.setListConnector(graphicalNode.getListConnector());
                 copyElementParametersValue(graphicalNode, curNode);
                 curNode.setUniqueName(uniqueName);
+                //TUP-27184, Pass the label to multiple components
+                curNode.setLabel(label);
                 curNode.setSubProcessStart(graphicalNode.isSubProcessStart());
                 curNode.setThereLinkWithHash(graphicalNode.isThereLinkWithHash());
                 curNode.setHasConditionalOutputs(graphicalNode.hasConditionalOutputs());
@@ -3336,36 +3390,63 @@ public class DataProcess implements IGeneratingProcess {
                 if (bdDataNode != null && addedConfDataNode != null && bdDataNode.isActivate()
                         && addedConfDataNode.isActivate()) {
                     INode startNode = bdDataNode.getSubProcessStartNode(true);
-                    if (Optional.ofNullable(startNode).map(n -> n.getComponent()).map(c -> c.getName())
-                            .map(n -> "tPrejob".equals(n)).orElse(false)) {
-                        IConnection conn = null;
-                        try {
-                            conn = findConnection2InsertHadoopConf(startNode, bdDataNode, new HashSet<>());
-                        } catch (Throwable e) {
-                            ExceptionHandler.process(e);
-                        }
-                        if (conn instanceof AbstractConnection) {
-                            INode relinkNode = conn.getTarget();
-                            if (relinkNode instanceof AbstractNode) {
-                                ((AbstractConnection) conn).setTarget(addedConfDataNode);
+                    List<? extends IConnection> inConns = bdDataNode.getIncomingConnections(EConnectionType.ON_SUBJOB_OK);
+                    if (inConns == null) {
+                        inConns = new ArrayList<Connection>();
+                    }
+                    boolean onSubjobOkbeforeBDNode = inConns.size() > 0;
+                    if (onSubjobOkbeforeBDNode) {
+                        ((AbstractConnection) inConns.get(0)).setTarget(addedConfDataNode);
+                        IConnection connection = (IConnection) inConns.get(0);
+                        bdDataNode.getIncomingConnections().remove(connection);
+                        ((List<IConnection>) addedConfDataNode.getIncomingConnections()).add(connection);
 
-                                addedConfDataNode.setStart(false);
-                                addedConfDataNode.setSubProcessStart(relinkNode.isSubProcessStart());
-                                addedConfDataNode.setDesignSubjobStartNode(null);
+                        addedConfDataNode.setStart(false);
+                        addedConfDataNode.setSubProcessStart(true);
+                        addedConfDataNode.setDesignSubjobStartNode(null);
 
-                                DataConnection onCompOkConn = new DataConnection();
-                                onCompOkConn.setActivate(true);
-                                onCompOkConn.setLineStyle(EConnectionType.ON_COMPONENT_OK);
-                                onCompOkConn.setTraceConnection(false);
-                                onCompOkConn
-                                        .setName("after_" + addedConfDataNode.getUniqueName() + "_" + relinkNode.getUniqueName()); //$NON-NLS-1$ //$NON-NLS-2$
-                                onCompOkConn.setSource(addedConfDataNode);
-                                onCompOkConn.setTarget(relinkNode);
-                                onCompOkConn.setConnectorName(EConnectionType.ON_COMPONENT_OK.getName());
+                        DataConnection onCompOkConn = new DataConnection();
+                        onCompOkConn.setActivate(true);
+                        onCompOkConn.setLineStyle(EConnectionType.ON_COMPONENT_OK);
+                        onCompOkConn.setTraceConnection(false);
+                        onCompOkConn.setName("after_" + addedConfDataNode.getUniqueName() + "_" + bdDataNode.getUniqueName()); //$NON-NLS-1$ //$NON-NLS-2$
+                        onCompOkConn.setSource(addedConfDataNode);
+                        onCompOkConn.setTarget(bdDataNode);
+                        onCompOkConn.setConnectorName(EConnectionType.ON_COMPONENT_OK.getName());
 
-                                ((AbstractNode) relinkNode).setSubProcessStart(true);
-                                ((AbstractNode) relinkNode).setDesignSubjobStartNode(null);
-                                createDataConnection(addedConfDataNode, (AbstractNode) relinkNode, onCompOkConn, null);
+                        createDataConnection(addedConfDataNode, (AbstractNode) bdDataNode, onCompOkConn, null);
+                    } else {
+                        if (Optional.ofNullable(startNode).map(n -> n.getComponent()).map(c -> c.getName())
+                                .map(n -> "tPrejob".equals(n)).orElse(false)) {
+                            IConnection conn = null;
+                            try {
+                                conn = findConnection2InsertHadoopConf(startNode, bdDataNode, new HashSet<>());
+                            } catch (Throwable e) {
+                                ExceptionHandler.process(e);
+                            }
+                            if (conn instanceof AbstractConnection) {
+                                INode relinkNode = conn.getTarget();
+                                if (relinkNode instanceof AbstractNode) {
+                                    ((AbstractConnection) conn).setTarget(addedConfDataNode);
+
+                                    addedConfDataNode.setStart(false);
+                                    addedConfDataNode.setSubProcessStart(relinkNode.isSubProcessStart());
+                                    addedConfDataNode.setDesignSubjobStartNode(null);
+
+                                    DataConnection onCompOkConn = new DataConnection();
+                                    onCompOkConn.setActivate(true);
+                                    onCompOkConn.setLineStyle(EConnectionType.ON_COMPONENT_OK);
+                                    onCompOkConn.setTraceConnection(false);
+                                    onCompOkConn.setName(
+                                            "after_" + addedConfDataNode.getUniqueName() + "_" + relinkNode.getUniqueName()); //$NON-NLS-1$ //$NON-NLS-2$
+                                    onCompOkConn.setSource(addedConfDataNode);
+                                    onCompOkConn.setTarget(relinkNode);
+                                    onCompOkConn.setConnectorName(EConnectionType.ON_COMPONENT_OK.getName());
+
+                                    ((AbstractNode) relinkNode).setSubProcessStart(true);
+                                    ((AbstractNode) relinkNode).setDesignSubjobStartNode(null);
+                                    createDataConnection(addedConfDataNode, (AbstractNode) relinkNode, onCompOkConn, null);
+                                }
                             }
                         }
                     }
@@ -3485,6 +3566,9 @@ public class DataProcess implements IGeneratingProcess {
 
         copyElementParametersValue(node, newGraphicalNode);
         newGraphicalNode.setDummy(node.isDummy());
+		// TUP-27184: Clone the label to new GraphicNode. Although it has been
+		// cloned in element parameter, it was not recalculated when creating DataNode.
+		newGraphicalNode.setLabel(node.getLabel());
 
         ValidationRulesUtil.createRejectConnector(newGraphicalNode);
         ValidationRulesUtil.updateRejectMetatable(newGraphicalNode, node);

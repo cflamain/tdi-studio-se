@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.jboss.serial.io.JBossObjectInputStream;
-import org.jboss.serial.io.JBossObjectOutputStream;
+import org.jboss.marshalling.Marshaller;
+import org.jboss.marshalling.MarshallerFactory;
+import org.jboss.marshalling.Marshalling;
+import org.jboss.marshalling.MarshallingConfiguration;
+import org.jboss.marshalling.Unmarshaller;
 import org.talend.designer.components.lookup.common.ICommonLookup.MATCHING_MODE;
 import org.talend.designer.components.persistent.IRowCreator;
 import org.talend.designer.components.persistent.utils.FileUtils;
@@ -82,6 +85,17 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
 
     private B dataInstance;
 
+    private boolean init = false;
+
+    private boolean USE_JBOSS_IMPLEMENTATION = false;
+
+    Marshaller marshaller;
+
+    Unmarshaller unmarshaller;
+
+    final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("river");
+    final MarshallingConfiguration configuration = new MarshallingConfiguration();
+
     /**
      * PersistentLookupManager constructor.
      *
@@ -99,11 +113,6 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
 
         // objectOutStream = new ObjectOutputStream(new BufferedOutputStream(new
         // FileOutputStream(buildDataFilePath())));
-
-        File file = new File(buildDataFilePath());
-        file.deleteOnExit();
-
-        objectOutStream = new JBossObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
         this.dataInstance = this.rowCreator.createRowInstance();
 
     }
@@ -113,13 +122,41 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
     }
 
     public void put(B bean) throws IOException {
-        bean.writeData(objectOutStream);
+        if(!init){
+            File file = new File(buildDataFilePath());
+
+            if(bean.supportJboss()){
+
+                BufferedOutputStream keysBufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file));
+                marshaller = marshallerFactory.createMarshaller(configuration);
+                marshaller.start(Marshalling.createByteOutput(keysBufferedOutputStream));
+                USE_JBOSS_IMPLEMENTATION = true;
+
+            }else {
+                objectOutStream = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
+            }
+            init = true;
+        }
+        if(USE_JBOSS_IMPLEMENTATION){
+            bean.writeData(marshaller);
+        }else {
+            bean.writeData(objectOutStream);
+            objectOutStream.reset();
+        }
+
     }
 
     public void endPut() throws IOException {
-
-        objectOutStream.close();
-
+        if(USE_JBOSS_IMPLEMENTATION){
+        	if(marshaller!=null) {
+        	    marshaller.flush();
+        		marshaller.close();
+        	}
+        }else {
+        	if(objectOutStream!=null) {
+        		objectOutStream.close();
+        	}
+        }
     }
 
     public void initGet() throws IOException {
@@ -143,9 +180,18 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
     }
 
     private void initDataIn() throws IOException {
+    	if(!init) {
+    		return;
+    	}
         this.bufferedInStream = new BufferedInputStream(new FileInputStream(buildDataFilePath()));
         // this.objectInStream = new ObjectInputStream(bufferedInStream);
-        this.objectInStream = new JBossObjectInputStream(bufferedInStream);
+        if(USE_JBOSS_IMPLEMENTATION){
+            unmarshaller = marshallerFactory.createUnmarshaller(configuration);
+            unmarshaller.start(Marshalling.createByteInput(bufferedInStream));
+        }else {
+            this.objectInStream = new ObjectInputStream(bufferedInStream);
+        }
+
     }
 
     public B getNextFreeRow() {
@@ -153,12 +199,24 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
     }
 
     public boolean hasNext() throws IOException {
+    	if(!init) {
+    		return false;
+    	}
         // return this.objectInStream.available() > 0 || this.bufferedInStream.available() > 0;
-        return this.objectInStream.available() > JBOSS_EOF || this.bufferedInStream.available() > 0;
+        if(USE_JBOSS_IMPLEMENTATION){
+            return unmarshaller.available() > 0;
+        }else {
+            return this.objectInStream.available() > JBOSS_EOF || this.bufferedInStream.available() > 0;
+        }
+
     }
 
     public B next() throws IOException {
-        dataInstance.readData(this.objectInStream);
+        if(USE_JBOSS_IMPLEMENTATION){
+            dataInstance.readData(unmarshaller);
+        }else{
+            dataInstance.readData(this.objectInStream);
+        }
         return dataInstance;
     }
 
@@ -169,6 +227,9 @@ public class PersistentLookupManager<B extends IPersistableRow<B>> implements IP
         }
         if (this.bufferedInStream != null) {
             this.bufferedInStream.close();
+        }
+        if(unmarshaller != null){
+            unmarshaller.close();
         }
 
         File file = new File(buildDataFilePath());

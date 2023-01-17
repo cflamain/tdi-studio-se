@@ -50,7 +50,7 @@ public class CheckLogManagerTest {
             BigDataNode sparkConfigurationNode = new BigDataNode(sparkConfigurationComponent, SPARK_CONFIGURATION + "_1");
             sparkConfigurationNode.setSubProcessStart(true);
             sparkConfigurationNode.setActivate(true);
-            sparkConfigurationNode.getElementParameter("SPARK_LOCAL_VERSION").setValue("SPARK_2_4_0");
+            // sparkConfigurationNode.getElementParameter("SPARK_LOCAL_VERSION").setValue("SPARK_2_4_0");
             nodes.add(sparkConfigurationNode);
 
             ElementParameter storageConfigurationParam = createElementParameter(node, "STORAGE_CONFIGURATION",
@@ -68,12 +68,12 @@ public class CheckLogManagerTest {
             }
             if (!selectLog4j2) {
                 // case1: if original job need commons-logging:commons-logging:ja for log4j1
-                assertTrue(modules4log4j.contains("jcl-over-slf4j-1.7.25.jar"));
+                assertTrue(modules4log4j.contains("jcl-over-slf4j-1.7.34.jar"));
             } else {
                 // case2: if original job need commons-logging:commons-logging:ja for log4j2
-                assertTrue(modules4log4j.contains("log4j-jcl-2.12.1.jar"));
+                assertTrue(modules4log4j.contains("log4j-jcl-2.17.1.jar"));
                 // case3:if original job need log4j1 jar, add back log4j-1.2-api for log4j2
-                assertTrue(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+                assertTrue(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
             }
         } finally {
             CommonsPlugin.setHeadless(headless);
@@ -90,7 +90,7 @@ public class CheckLogManagerTest {
         for (ModuleNeeded moule : modulesNeeded) {
             modules4log4j.add(moule.getModuleName());
         }
-        assertTrue(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+        assertTrue(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
 
         process.setComponentsType(ComponentCategory.CATEGORY_4_MAPREDUCE.getName());
         UpdateLog4jJarUtils.addLog4jToModuleList(modulesNeeded, true, process);
@@ -98,7 +98,7 @@ public class CheckLogManagerTest {
         for (ModuleNeeded moule : modulesNeeded) {
             modules4log4j.add(moule.getModuleName());
         }
-        assertTrue(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+        assertTrue(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
 
         process.setComponentsType(ComponentCategory.CATEGORY_4_STORM.getName());
         UpdateLog4jJarUtils.addLog4jToModuleList(modulesNeeded, true, process);
@@ -106,7 +106,7 @@ public class CheckLogManagerTest {
         for (ModuleNeeded moule : modulesNeeded) {
             modules4log4j.add(moule.getModuleName());
         }
-        assertTrue(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+        assertTrue(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
 
         process.setComponentsType(ComponentCategory.CATEGORY_4_STORM.getName());
         UpdateLog4jJarUtils.addLog4jToModuleList(modulesNeeded, true, process);
@@ -114,7 +114,7 @@ public class CheckLogManagerTest {
         for (ModuleNeeded moule : modulesNeeded) {
             modules4log4j.add(moule.getModuleName());
         }
-        assertTrue(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+        assertTrue(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
 
         process.setComponentsType(ComponentCategory.CATEGORY_4_DI.getName());
         UpdateLog4jJarUtils.addLog4jToModuleList(modulesNeeded, true, process);
@@ -122,7 +122,7 @@ public class CheckLogManagerTest {
         for (ModuleNeeded moule : modulesNeeded) {
             modules4log4j.add(moule.getModuleName());
         }
-        assertFalse(modules4log4j.contains("log4j-1.2-api-2.12.1.jar"));
+        assertFalse(modules4log4j.contains("log4j-1.2-api-2.17.1.jar"));
     }
 
     @Test
@@ -130,16 +130,16 @@ public class CheckLogManagerTest {
         List<ModuleNeeded> neededModules = new ArrayList<>();
 
         Set<ModuleNeeded> highPriorityModuleNeededs = new HashSet<>();
-        ModuleNeeded highPriorityModuleNeeded1 = new ModuleNeeded("", "high-priority-module1-2.12.1.jar", null, true);
+        ModuleNeeded highPriorityModuleNeeded1 = new ModuleNeeded("", "high-priority-module1-2.17.1.jar", null, true);
         highPriorityModuleNeededs.add(highPriorityModuleNeeded1);
         neededModules.addAll(highPriorityModuleNeededs);
 
-        ModuleNeeded log4jCore = new ModuleNeeded("org.apache.logging.log4j", "log4j-core-2.12.1.jar", null, true); //$NON-NLS-1$ //$NON-NLS-2$
-        log4jCore.setMavenUri("mvn:org.apache.logging.log4j/log4j-core/2.12.1");//$NON-NLS-1$
+        ModuleNeeded log4jCore = new ModuleNeeded("org.apache.logging.log4j", "log4j-core-2.17.1.jar", null, true); //$NON-NLS-1$ //$NON-NLS-2$
+        log4jCore.setMavenUri("mvn:org.apache.logging.log4j/log4j-core/2.17.1");//$NON-NLS-1$
         neededModules.add(log4jCore);
 
-        ModuleNeeded log4jApi = new ModuleNeeded("org.apache.logging.log4j", "log4j-api-2.12.1.jar", null, true); //$NON-NLS-1$ //$NON-NLS-2$
-        log4jApi.setMavenUri("mvn:org.apache.logging.log4j/log4j-api/2.12.1");//$NON-NLS-1$
+        ModuleNeeded log4jApi = new ModuleNeeded("org.apache.logging.log4j", "log4j-api-2.17.1.jar", null, true); //$NON-NLS-1$ //$NON-NLS-2$
+        log4jApi.setMavenUri("mvn:org.apache.logging.log4j/log4j-api/2.17.1");//$NON-NLS-1$
         neededModules.add(log4jApi);
         String[] modulesNeedUpdateOrder = UpdateLog4jJarUtils.MODULES_NEED_UPDATE_ORDER;
         ModuleNeeded sparkAssembly = new ModuleNeeded("", modulesNeedUpdateOrder[0], null, true); //$NON-NLS-1$

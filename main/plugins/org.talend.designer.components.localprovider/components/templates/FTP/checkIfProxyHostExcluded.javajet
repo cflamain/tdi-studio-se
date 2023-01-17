@@ -5,7 +5,7 @@
     String nonProxyHostsString_<%=cid %> = System.getProperty("http.nonProxyHosts");
     String[] nonProxyHosts_<%=cid %> = (nonProxyHostsString_<%=cid %> == null) ? new String[0] : nonProxyHostsString_<%=cid %>.split("\\|");
     for (String nonProxyHost : nonProxyHosts_<%=cid %>) {
-        if (<%=host %>.matches(nonProxyHost.trim())) {
+        if ((<%=host %>).matches(nonProxyHost.trim())) {
             isHostIgnored_<%=cid %> = true;
             break;
         }

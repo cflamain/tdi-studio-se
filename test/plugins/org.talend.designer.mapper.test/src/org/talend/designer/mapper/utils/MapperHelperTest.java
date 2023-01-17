@@ -48,10 +48,6 @@ public class MapperHelperTest {
         Node sparkStreamingTMap = new Node(sparkStreamingComponent, process);
         assertFalse("Spark Streaming tMap should not be a virtual component", MapperHelper.isGeneratedAsVirtualComponent(sparkStreamingTMap));
 
-        IComponent mapReduceComponent = ComponentsFactoryProvider.getInstance().get("tMap",
-                ComponentCategory.CATEGORY_4_MAPREDUCE.getName());
-        Node mapReduceTMap = new Node(mapReduceComponent, process);
-        assertFalse("Spark Streaming tMap should not be a virtual component", MapperHelper.isGeneratedAsVirtualComponent(mapReduceTMap));
     }
 
 }

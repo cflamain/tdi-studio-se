@@ -361,11 +361,12 @@ public class DeploymentComposite extends AbstractTabComposite {
                     }
                 }
                 if (foundType == null) {// set the first one by default
-                    foundType = validBuildTypes[0];                   
+                    foundType = validBuildTypes[0];  
+                    Command cmd = new MavenDeploymentValueChangeCommand(getObject(),
+                            TalendProcessArgumentConstant.ARG_BUILD_TYPE, foundType.getName());
+                    getCommandStack().execute(cmd);
                 }
-                Command cmd = new MavenDeploymentValueChangeCommand(getObject(),
-                        TalendProcessArgumentConstant.ARG_BUILD_TYPE, foundType.getName());
-                getCommandStack().execute(cmd);
+               
                 buildTypeCombo.setSelection(new StructuredSelection(foundType));
             }
         }

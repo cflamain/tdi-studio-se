@@ -40,6 +40,8 @@ import org.talend.commons.utils.system.EnvironmentUtils;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.general.Project;
+import org.talend.core.model.process.EParameterFieldType;
+import org.talend.core.model.process.ElementParameterValueModel;
 import org.talend.core.model.process.IElement;
 import org.talend.core.model.process.IElementParameter;
 import org.talend.core.model.process.INode;
@@ -71,6 +73,7 @@ import org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel;
 import org.talend.sdk.component.studio.model.action.SuggestionsAction;
 import org.talend.sdk.component.studio.model.parameter.PropertyDefinitionDecorator;
 import org.talend.sdk.component.studio.model.parameter.PropertyNode;
+import org.talend.sdk.component.studio.model.parameter.ValueConverter;
 import org.talend.sdk.component.studio.model.parameter.ValueSelectionParameter;
 import org.talend.updates.runtime.utils.PathUtils;
 
@@ -460,6 +463,8 @@ public class TaCoKitUtil {
      *            com.tutorial:tutorial-component:0.0.1
      *            or
      *            com.tutorial:tutorial-component:jar:0.0.1:compile
+     *            or
+     *            com.tutorial:tutorial-component:jar:[classifier]:0.0.1:compile
      *
      * @return a translated maven path
      */
@@ -474,6 +479,10 @@ public class TaCoKitUtil {
         String version = "";
         if (segments.length == 3) {
             version = segments[2];
+        } else if (segments.length == 6) { //dependency classifier present
+            final String classifier = segments[3].isEmpty() ? "" : "-" + segments[3];
+            version = segments[4];
+            return String.format(jarPathFmt, group, artifact, version, artifact, version + classifier);
         } else {
             version = segments[3];
         }
@@ -532,7 +541,7 @@ public class TaCoKitUtil {
      */
     public static boolean isSupportUseExistConnection(ComponentModel component) {
         boolean isSupport = false;
-        ActionList actionList = Lookups.taCoKitCache().getActionList(component.getIndex().getFamilyDisplayName());
+        ActionList actionList = Lookups.taCoKitCache().getActionList(component.getIndex().getId().getFamily());
         if (actionList != null) {
             for (ActionItem action : actionList.getItems()) {
                 if (TaCoKitConst.CREATE_CONNECTION_ATCION_NAME.equals(action.getType())
@@ -546,6 +555,9 @@ public class TaCoKitUtil {
             if (((VirtualComponentModel) component).getModelType() == VirtualComponentModelType.CONNECTION) {
                 isSupport = false;
             }
+        }
+        if(isSupport && component.getDetail().getId().getName().endsWith("OutputBulk")) {
+            isSupport = false;
         }
         return isSupport;
     }
@@ -604,7 +616,7 @@ public class TaCoKitUtil {
                 String datastoreName = TaCoKitUtil.getDataStorePath((ComponentModel) node.getComponent(), parameterName);
                 IElementParameter param = connectionNode.getElementParameter(datastoreName);
                 if (param != null) {
-                    return param.getValue();
+                    return convertParamValue(param, datastoreName, parameterName);
                 } else {
                     throw new IllegalArgumentException("Can't find parameter:" + parameterName);
                 }
@@ -615,6 +627,34 @@ public class TaCoKitUtil {
         return null;
     }
     
+    public static Object convertParamValue(IElementParameter param, String oldName, String newName) {
+        Object paramValue = param.getValue();
+        if (StringUtils.isBlank(oldName) || StringUtils.isBlank(newName) || oldName.equals(newName)) {
+            return paramValue;
+        }
+        if (EParameterFieldType.TABLE.equals(param.getFieldType())) {
+            List<Map<String, Object>> tableValue = new ArrayList<Map<String, Object>>();
+            if (paramValue == null || paramValue instanceof String) {
+                tableValue = ValueConverter.toTable((String) paramValue);
+            } else if (paramValue instanceof List) {
+                tableValue = (List<Map<String, Object>>) paramValue;
+            }
+            final List<Map<String, Object>> converted = new ArrayList<>(tableValue.size());
+            for (final Map<String, Object> row : tableValue) {
+                final Map<String, Object> convertedRow = new LinkedHashMap<>();
+                for (final Map.Entry<String, Object> cell : row.entrySet()) {
+                    final String newKey = cell.getKey().replace(oldName, newName);
+                    convertedRow.put(newKey, cell.getValue());
+                }
+                converted.add(convertedRow);
+            }
+            if (converted.size() > 0) {
+                return converted;
+            }
+        }
+        return paramValue;
+    }
+
     public static boolean isDataStoreParameter(INode node, String parameterName) {
         if (node.getComponent() instanceof ComponentModel) {
             ComponentModel model = (ComponentModel) node.getComponent();
@@ -698,7 +738,7 @@ public class TaCoKitUtil {
         return null;
     }
 
-    public static void updateElementParameter(final IElement element, final IElementParameter param, int rowNumber) {
+    public static void updateElementParameter(final IElement element, final IElementParameter param, int rowNumber, String newValue) {
         if (param instanceof ValueSelectionParameter) {
             ValueSelectionParameter vsParam = ((ValueSelectionParameter) param);
             Map<String, String> suggestedValues = new LinkedHashMap<>();
@@ -707,27 +747,47 @@ public class TaCoKitUtil {
             if (!action.isMissingRequired()) {
                 suggestedValues = vsParam.getSuggestionValues();
             }
-            param.setListItemsDisplayCodeName(suggestedValues.keySet().toArray(new String[suggestedValues.size()]));
-            param.setListItemsValue(suggestedValues.keySet().toArray(new String[suggestedValues.size()]));
-            param.setListItemsDisplayName(suggestedValues.keySet().toArray(new String[suggestedValues.size()]));
-            param.setListItemsNotShowIf(new String[suggestedValues.size()]);
-            param.setListItemsShowIf(new String[suggestedValues.size()]);
+            if (!StringUtils.isEmpty(newValue)) {
+                suggestedValues.put(newValue, newValue);
+            }
+            updateElementParameter(param, suggestedValues);
         }
     }
 
+    public static void updateElementParameter(final IElementParameter param, Map<String, String> suggestedValues) {
+        param.setListItemsDisplayCodeName(suggestedValues.keySet().toArray(new String[suggestedValues.size()]));
+        param.setListItemsValue(suggestedValues.values().toArray(new String[suggestedValues.size()]));
+        param.setListItemsDisplayName(suggestedValues.keySet().toArray(new String[suggestedValues.size()]));
+        param.setListItemsNotShowIf(new String[suggestedValues.size()]);
+        param.setListItemsShowIf(new String[suggestedValues.size()]);
+    }
+    
     public static void fillDefaultItemsList(final IElementParameter param, Object value) {
         if (param instanceof ValueSelectionParameter) {
             List<String> itemsList = new ArrayList<String>();
-            if (value != null && value instanceof String && StringUtils.isNotBlank((String) value)) {
-                itemsList.add((String) value);
+            List<String> itemsValueList = new ArrayList<String>();
+            if (value != null) {
+                if (value instanceof String && StringUtils.isNotBlank((String) value)) {
+                    itemsList.add((String) value);
+                    itemsValueList.add((String) value);
+                } else if (value instanceof ElementParameterValueModel) {
+                    ElementParameterValueModel model = (ElementParameterValueModel) value;
+                    itemsList.add(model.toString());
+                    itemsValueList.add(model.getValue());
+                }
             }
             param.setListItemsDisplayName(itemsList.toArray(new String[0]));
             param.setListItemsDisplayCodeName(itemsList.toArray(new String[0]));
-            param.setListItemsValue(itemsList.toArray(new String[0]));
+            param.setListItemsValue(itemsValueList.toArray(new String[0]));
             param.setListItemsNotShowIf(itemsList.toArray(new String[0]));
             param.setListItemsShowIf(itemsList.toArray(new String[0]));
             param.setDefaultClosedListValue(""); //$NON-NLS-1$
         }
+    }
+
+    public static String getVersionPropName(ConfigTypeNode configTypeNode) {
+        return configTypeNode.getProperties().stream().filter(p -> p.getName().equals(p.getPath())).findFirst()
+                .map(SimplePropertyDefinition::getPath).orElse("configuration") + ".__version";
     }
 
     public static class GAV {

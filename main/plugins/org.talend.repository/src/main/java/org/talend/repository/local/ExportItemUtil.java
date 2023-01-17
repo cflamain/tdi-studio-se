@@ -21,8 +21,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
@@ -52,6 +54,7 @@ import org.talend.core.model.properties.PropertiesPackage;
 import org.talend.core.model.properties.Property;
 import org.talend.core.model.properties.RoutineItem;
 import org.talend.core.model.properties.RoutinesJarItem;
+import org.talend.core.model.properties.TDQItem;
 import org.talend.core.model.repository.FakePropertyImpl;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.repository.ResourceModelUtils;
@@ -316,7 +319,7 @@ public class ExportItemUtil {
             if (GlobalServiceRegister.getDefault().isServiceRegistered(ITransformService.class)) {
                 tdmService = (ITransformService) GlobalServiceRegister.getDefault().getService(ITransformService.class);
             }
-            itemProjectMap.clear();
+
             Map<String,String> jarNameAndUrl = new HashMap<String,String>();
             Iterator<Item> iterator = allItems.iterator();
             Set<String> projectHasTdm = new HashSet<String>();
@@ -383,6 +386,20 @@ public class ExportItemUtil {
                     IPath outputRelativeItemPath = getProjectOutputPath().append(relativeItemPath.removeFirstSegments(1));
                     IPath targetPath = new Path(destinationDirectory.getAbsolutePath()).append(outputRelativeItemPath);
                     copyAndAddResource(toExport, sourcePath, targetPath, outputRelativeItemPath);
+                    // Replace project name from uppercase to lowercase if projectNameLowerCase=true for all the TDQ
+                    // items
+                    if (needReplaceProjectName(item, uri)) {
+                        Set<String> projectNameList = getStaticProNames(itemProjectMap);
+                        for (String proTechnicalLabel : projectNameList) {
+                            if (StringUtils.isEmpty(proTechnicalLabel)) {
+                                continue;
+                            }
+                            // TDQ-20638 msjian: here replacement consider a case: when referenceProjectName starts with
+                            // mainProjectName
+                            String uppercasePath = "../../" + proTechnicalLabel + "/"; //$NON-NLS-1$ //$NON-NLS-2$
+                            FilesUtils.replaceInFile(uppercasePath, targetPath.toPortableString(), uppercasePath.toLowerCase());
+                        }
+                    }
                     if (uri.lastSegment() != null && uri.lastSegment().endsWith(FileConstants.PROPERTIES_FILE_SUFFIX)) {
                         propertyPath = targetPath;
                     }
@@ -454,6 +471,7 @@ public class ExportItemUtil {
                 TimeMeasure.step(idTimer, "export item: " + label);
                 progressMonitor.worked(1);
             }
+            itemProjectMap.clear();
 
             ILibraryManagerService repositoryBundleService = CorePlugin.getDefault().getRepositoryBundleService();
 
@@ -481,6 +499,16 @@ public class ExportItemUtil {
         }
 
         return toExport;
+    }
+
+    private boolean needReplaceProjectName(Item item, URI uri) {
+        return projectNameLowerCase && item instanceof TDQItem && (uri.lastSegment()!=null && (uri.lastSegment().endsWith(FileConstants.ANA_EXTENSION) || uri.lastSegment().endsWith(FileConstants.REP_EXTENSION)));
+    }
+
+    private Set<String> getStaticProNames(Map<Item, Project> itemProjectMap) {
+        Set<String> projectLabeList = new HashSet<>();
+        itemProjectMap.values().stream().filter(project -> Objects.nonNull(project)).forEach(project -> projectLabeList.add(project.getTechnicalLabel()));
+        return projectLabeList;
     }
 
     private void addTalendProjectFile(Map<File, IPath> toExport, File destinationDirectory) throws IOException {

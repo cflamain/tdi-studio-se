@@ -232,8 +232,8 @@ public class ProblemsAnalyser {
             }
             if (isQuote) {
                 locations.add(indexOf);
-                indexOf = indexOf + 1;
             }
+            indexOf = indexOf + 1;
             if (indexOf < text.length()) {
                 locations.addAll(getQuoteLocations(text, indexOf));
             }

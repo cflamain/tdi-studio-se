@@ -1,7 +1,7 @@
 <%@ jet 
 %>
 <%
-	     if(("INSERT").equals(dataAction) || ("INSERT_IGNORE").equals(dataAction)) {
+	     if(("INSERT").equals(dataAction) || ("INSERT_IGNORE").equals(dataAction) || ("UPSERT").equals(dataAction)) {
 %>
 		 	String[] insertSQLSplits_<%=cid%> = null;
 <%

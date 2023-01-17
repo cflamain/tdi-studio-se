@@ -50,6 +50,7 @@ import org.talend.repository.viewer.content.listener.ResourceCollectorVisitor;
 import org.talend.sdk.component.server.front.model.ConfigTypeNode;
 import org.talend.sdk.component.studio.Lookups;
 import org.talend.sdk.component.studio.i18n.Messages;
+import org.talend.sdk.component.studio.metadata.TaCoKitCache;
 import org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationItemModel;
 import org.talend.sdk.component.studio.metadata.model.TaCoKitConfigurationModel;
 import org.talend.sdk.component.studio.metadata.node.ITaCoKitRepositoryNode;
@@ -353,6 +354,14 @@ public class TaCoKitMetadataContentProvider extends AbstractMetadataContentProvi
             } else {
                 ERepositoryObjectType objectType = TaCoKitUtil.getOrCreateERepositoryObjectType(configTypeNode);
                 parentObj = ProxyRepositoryFactory.getInstance().getLastVersion(requiredParentId, null, objectType);
+                if (parentObj == null) {
+                    TaCoKitCache taCoKitCache = Lookups.taCoKitCache();
+                    ConfigTypeNode parentTypeNode = taCoKitCache.getConfigTypeNodeMap()
+                            .get(configTypeNode.getParentId());
+                    ERepositoryObjectType parentObjectType = TaCoKitUtil
+                            .getOrCreateERepositoryObjectType(parentTypeNode);
+                    parentObj = ProxyRepositoryFactory.getInstance().getLastVersion(requiredParentId, parentObjectType);
+                }
                 if (parentObj != null) {
                     objectMap.put(requiredParentId, parentObj);
                 }

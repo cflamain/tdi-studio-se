@@ -18,6 +18,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.talend.commons.ui.utils.image.ColorUtils;
 import org.talend.core.CorePlugin;
 import org.talend.core.model.process.EConnectionType;
+import org.talend.designer.core.DesignerPlugin;
 
 /**
  * ggu class global comment. Detailled comment
@@ -109,7 +110,7 @@ public final class DesignerColorUtils {
         if (name == null || defaultColor == null || (!name.equals(SUBJOB_COLOR_NAME) && !name.equals(SUBJOB_TITLE_COLOR_NAME))) {
             return defaultColor;
         }
-        String colorStr = CorePlugin.getDefault().getDesignerCoreService().getPreferenceStore(name);
+        String colorStr = DesignerPlugin.getDefault().getPreferenceStore().getString(name);
         return ColorUtils.parseStringToRGB(colorStr, defaultColor);
     }
 
@@ -117,7 +118,7 @@ public final class DesignerColorUtils {
         if (name == null || defaultColor == null || !name.equals(MRGROUP_COLOR_NAME)) {
             return MR_COLOR;
         }
-        String colorStr = CorePlugin.getDefault().getDesignerCoreService().getPreferenceStore(name);
+        String colorStr = DesignerPlugin.getDefault().getPreferenceStore().getString(name);
         return ColorUtils.parseStringToRGB(colorStr, defaultColor);
     }
 
@@ -125,7 +126,7 @@ public final class DesignerColorUtils {
         if (name == null || defaultColor == null || !name.equals(JOBDESIGNER_EGITOR_BACKGROUND_COLOR_NAME)) {
             return DEFAULT_EDITOR_COLOR;
         }
-        String colorStr = CorePlugin.getDefault().getDesignerCoreService().getPreferenceStore(name);
+        String colorStr = DesignerPlugin.getDefault().getPreferenceStore().getString(name);
         return ColorUtils.parseStringToRGB(colorStr, defaultColor);
     }
 
@@ -133,7 +134,7 @@ public final class DesignerColorUtils {
         if (name == null || defaultColor == null || !name.equals(READONLY_BACKGROUND_COLOR_NAME)) {
             return DEFAULT_READONLY_COLOR;
         }
-        String colorStr = CorePlugin.getDefault().getDesignerCoreService().getPreferenceStore(name);
+        String colorStr = DesignerPlugin.getDefault().getPreferenceStore().getString(name);
         return ColorUtils.parseStringToRGB(colorStr, defaultColor);
     }
 

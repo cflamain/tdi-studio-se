@@ -172,7 +172,6 @@ public class DbMapComponent extends AbstractMapComponent {
             if (activeDelimitedIdentifiersEP == null) {
                 activeDelimitedIdentifiersEP = new ElementParameter(origNode);
                 activeDelimitedIdentifiersEP.setShow(false);
-                activeDelimitedIdentifiersEP.setFieldType(EParameterFieldType.TEXT);
                 activeDelimitedIdentifiersEP.setName(EParameterName.ACTIVE_DATABASE_DELIMITED_IDENTIFIERS.getName());
                 activeDelimitedIdentifiersEP.setCategory(EComponentCategory.TECHNICAL);
                 activeDelimitedIdentifiersEP.setNumRow(99);
@@ -180,8 +179,53 @@ public class DbMapComponent extends AbstractMapComponent {
                 List<IElementParameter> elemParams = (List<IElementParameter>) origNode.getElementParameters();
                 elemParams.add(activeDelimitedIdentifiersEP);
             }
-            activeDelimitedIdentifiersEP.setValue(getGenerationManager().isUseDelimitedIdentifiers());
+            activeDelimitedIdentifiersEP.setFieldType(EParameterFieldType.CHECK);
+            activeDelimitedIdentifiersEP.setValue(getGenerationManager().isAddQuotesInColumns());
 
+            IElementParameter activeAddQuotesInTableNameEP =
+                    origNode.getElementParameter(EParameterName.ACTIVE_ADD_QUOTES_IN_TABLE_NAME.getName());
+            if (activeAddQuotesInTableNameEP == null) {
+                activeAddQuotesInTableNameEP = new ElementParameter(origNode);
+                activeAddQuotesInTableNameEP.setShow(false);
+                activeAddQuotesInTableNameEP.setName(EParameterName.ACTIVE_ADD_QUOTES_IN_TABLE_NAME.getName());
+                activeAddQuotesInTableNameEP.setCategory(EComponentCategory.TECHNICAL);
+                activeAddQuotesInTableNameEP.setNumRow(99);
+                activeAddQuotesInTableNameEP.setReadOnly(false);
+                List<IElementParameter> elemParams = (List<IElementParameter>) origNode.getElementParameters();
+                elemParams.add(activeAddQuotesInTableNameEP);
+            }
+            activeAddQuotesInTableNameEP.setFieldType(EParameterFieldType.CHECK);
+            activeAddQuotesInTableNameEP.setValue(getGenerationManager().isAddQuotesInTableNames());
+
+            // IElementParameter activeDelimitedCharacterEP =
+            // origNode.getElementParameter(EParameterName.ACTIVE_DELIMITED_CHARACTER.getName());
+            // if (activeDelimitedCharacterEP == null) {
+            // activeDelimitedCharacterEP = new ElementParameter(origNode);
+            // activeDelimitedCharacterEP.setShow(false);
+            // activeDelimitedCharacterEP.setName(EParameterName.ACTIVE_DELIMITED_CHARACTER.getName());
+            // activeDelimitedCharacterEP.setCategory(EComponentCategory.TECHNICAL);
+            // activeDelimitedCharacterEP.setNumRow(99);
+            // activeDelimitedCharacterEP.setReadOnly(false);
+            // List<IElementParameter> elemParams = (List<IElementParameter>) origNode.getElementParameters();
+            // elemParams.add(activeDelimitedCharacterEP);
+            // }
+            // activeDelimitedCharacterEP.setFieldType(EParameterFieldType.CHECK);
+            // activeDelimitedCharacterEP.setValue(getGenerationManager().isDelimitedCharacter());
+            //
+            // IElementParameter delimitedCharacterTextEP =
+            // origNode.getElementParameter(EParameterName.DELIMITED_CHARACTER_TEXT.getName());
+            // if (delimitedCharacterTextEP == null) {
+            // delimitedCharacterTextEP = new ElementParameter(origNode);
+            // delimitedCharacterTextEP.setShow(false);
+            // delimitedCharacterTextEP.setName(EParameterName.DELIMITED_CHARACTER_TEXT.getName());
+            // delimitedCharacterTextEP.setCategory(EComponentCategory.TECHNICAL);
+            // delimitedCharacterTextEP.setNumRow(99);
+            // delimitedCharacterTextEP.setReadOnly(false);
+            // List<IElementParameter> elemParams = (List<IElementParameter>) origNode.getElementParameters();
+            // elemParams.add(delimitedCharacterTextEP);
+            // }
+            // delimitedCharacterTextEP.setFieldType(EParameterFieldType.TEXT);
+            // delimitedCharacterTextEP.setValue(getGenerationManager().getDelimitedCharacterText());
             //
             IElementParameter useAliasInOutputTableEP = origNode
                     .getElementParameter(EParameterName.USE_ALIAS_IN_OUTPUT_TABLE.getName());
@@ -635,6 +679,9 @@ public class DbMapComponent extends AbstractMapComponent {
                 throw new IllegalArgumentException(Messages.getString("DbMapComponent.unknowValue") + value); //$NON-NLS-1$
             }
             updateUseDelimitedIdentifiersStatus();
+            updateAddQuotesInTableNameStatus();
+            updateDelimitedCharacterStatus();
+            updateDelimitedCharacterText();
             updateUseAliasInOutputTableStatus();
         }
 
@@ -645,6 +692,9 @@ public class DbMapComponent extends AbstractMapComponent {
     public void setOriginalNode(INode originalNode) {
         super.setOriginalNode(originalNode);
         updateUseDelimitedIdentifiersStatus();
+        updateAddQuotesInTableNameStatus();
+        updateDelimitedCharacterStatus();
+        updateDelimitedCharacterText();
         updateUseAliasInOutputTableStatus();
     }
 
@@ -663,7 +713,64 @@ public class DbMapComponent extends AbstractMapComponent {
                     activeDelimitedIdentifiers = Boolean.valueOf(value.toString());
                 }
             }
-            generationManager.setUseDelimitedIdentifiers(activeDelimitedIdentifiers);
+            generationManager.setAddQuotesInColumns(activeDelimitedIdentifiers);
+        }
+    }
+    
+    private void updateAddQuotesInTableNameStatus() {
+        if (generationManager == null) {
+            return;
+        }
+        INode oriNode = getOriginalNode();
+        if (oriNode != null) {
+            IElementParameter activeDelimitedIdentifiersEP =
+                    oriNode.getElementParameter(EParameterName.ACTIVE_ADD_QUOTES_IN_TABLE_NAME.getName());
+            boolean activeAddQuotesInTableName = false;
+            if (activeDelimitedIdentifiersEP != null) {
+                Object value = activeDelimitedIdentifiersEP.getValue();
+                if (value != null) {
+                    activeAddQuotesInTableName = Boolean.valueOf(value.toString());
+                }
+            }
+            generationManager.setAddQuotesInTableNames(activeAddQuotesInTableName);
+        }
+    }
+
+    private void updateDelimitedCharacterStatus() {
+        if (generationManager == null) {
+            return;
+        }
+        INode oriNode = getOriginalNode();
+        if (oriNode != null) {
+            IElementParameter activeDelimitedCharacterEP =
+                    oriNode.getElementParameter(EParameterName.ACTIVE_DELIMITED_CHARACTER.getName());
+            boolean activeDelimitedCharacter = false;
+            if (activeDelimitedCharacterEP != null) {
+                Object value = activeDelimitedCharacterEP.getValue();
+                if (value != null) {
+                    activeDelimitedCharacter = Boolean.valueOf(value.toString());
+                }
+            }
+            generationManager.setDelimitedCharacter(activeDelimitedCharacter);
+        }
+    }
+
+    private void updateDelimitedCharacterText() {
+        if (generationManager == null) {
+            return;
+        }
+        INode oriNode = getOriginalNode();
+        if (oriNode != null) {
+            IElementParameter delimitedIdentifiersTextEP =
+                    oriNode.getElementParameter(EParameterName.DELIMITED_CHARACTER_TEXT.getName());
+            String delimitedIdentifiersText = "";
+            if (delimitedIdentifiersTextEP != null) {
+                Object value = delimitedIdentifiersTextEP.getValue();
+                if (value != null) {
+                    delimitedIdentifiersText = String.valueOf(value);
+                }
+            }
+            generationManager.setDelimitedCharacterText(delimitedIdentifiersText);
         }
     }
 

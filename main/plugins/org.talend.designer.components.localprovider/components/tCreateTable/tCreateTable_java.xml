@@ -43,7 +43,6 @@
     			or (DBTYPE=='DBORACLE' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='POSTGRE' and USE_EXISTING_CONNECTION=='TRUE')
     			or (DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE')
     			or (DBTYPE=='FIREBIRD' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION == 'true')
-    			or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='INTERBASE' and USE_EXISTING_CONNECTION == 'true')
     			or (DBTYPE=='SQLITE' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
     			or (DBTYPE=='TERADATA' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION == 'true')
     			or (DBTYPE=='POSTGREPLUS' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='ACCESS' and USE_EXISTING_CONNECTION == 'true')
@@ -66,8 +65,6 @@
 		<ITEM NAME="GREENPLUM"   VALUE="GREENPLUM"/>
         <ITEM NAME="HSQLDB"      VALUE="HSQLDB"/>
         <ITEM NAME="INFORMIX"      VALUE="INFORMIX"/>
-        <ITEM NAME="INGRES"      VALUE="INGRES"/>
-        <ITEM NAME="INTERBASE"      VALUE="INTERBASE"/>
         <ITEM NAME="JAVADB"      VALUE="JAVADB"/>
         <ITEM NAME="MAXDB" 		   VALUE="MAXDB"/>
         <ITEM NAME="MSSQL" 		   VALUE="MSSQL"/>
@@ -111,7 +108,7 @@
 	<PARAMETER NAME="USE_EXISTING_CONNECTION" FIELD="CHECK" NUM_ROW="30"
 		SHOW_IF="(DBTYPE=='MSSQL') or (DBTYPE=='MYSQL') or (DBTYPE=='DBORACLE') or (DBTYPE=='POSTGRE')
 				or (DBTYPE=='POSTGREPLUS') or (DBTYPE=='TERADATA') or (DBTYPE=='NETEZZA') or (DBTYPE=='AS400')
-				or (DBTYPE=='DB2') or (DBTYPE=='FIREBIRD') or (DBTYPE=='INFORMIX') or (DBTYPE=='INGRES') or (DBTYPE=='INTERBASE')
+				or (DBTYPE=='DB2') or (DBTYPE=='FIREBIRD') or (DBTYPE=='INFORMIX')
 				or (DBTYPE=='SQLITE') or (DBTYPE=='SYBASE') or (DBTYPE=='ACCESS') or (DBTYPE=='GREENPLUM') or (DBTYPE=='VERTICA') 
 				or (DBTYPE=='EXASOL') or (DBTYPE=='REDSHIFT') or (DBTYPE=='SNOWFLAKE')">
 		<DEFAULT>false</DEFAULT>
@@ -126,7 +123,6 @@
 					or (DBTYPE=='TERADATA' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='FIREBIRD' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE')
-					or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='INTERBASE' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true') or  (DBTYPE == 'DBORACLE' AND (CONNECTION_TYPE == 'ORACLE_OCI'
 				    or CONNECTION_TYPE == 'ORACLE_WALLET' or CONNECTION_TYPE == 'ORACLE_RAC')) or (DBTYPE=='GREENPLUM' and USE_EXISTING_CONNECTION == 'true')
 				    or (DBTYPE=='VERTICA' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='EXASOL' and USE_EXISTING_CONNECTION == 'true')
@@ -136,13 +132,13 @@
 	
 	<PARAMETER NAME="DBNAME" FIELD="TEXT" NUM_ROW="70"
 		REPOSITORY_VALUE="SID" REQUIRED="true"
-		NOT_SHOW_IF="(DBTYPE=='FIREBIRD') or (DBTYPE=='ACCESS') or (DBTYPE=='SQLITE') or (DBTYPE == 'INTERBASE') or (DBTYPE == 'HSQLDB')
+		NOT_SHOW_IF="(DBTYPE=='FIREBIRD') or (DBTYPE=='ACCESS') or (DBTYPE=='SQLITE') or (DBTYPE == 'HSQLDB')
 					or (DBTYPE == 'JAVADB') or (DBTYPE == 'ODBC') or (DBTYPE=='MYSQL' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='MSSQL' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='DBORACLE' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='POSTGRE' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='POSTGREPLUS' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='TERADATA' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE')
-					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true')
+					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true') or  (DBTYPE == 'DBORACLE' AND (CONNECTION_TYPE == 'ORACLE_OCI'
 				    or CONNECTION_TYPE == 'ORACLE_WALLET' or CONNECTION_TYPE == 'ORACLE_RAC')) or (DBTYPE=='GREENPLUM' and USE_EXISTING_CONNECTION == 'true')
 				    or (DBTYPE=='VERTICA' and USE_EXISTING_CONNECTION == 'true')
@@ -178,8 +174,8 @@
 					or (DBTYPE=='POSTGREPLUS' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='TERADATA' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='FIREBIRD' and USE_EXISTING_CONNECTION=='TRUE')
-					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true')
-					or (DBTYPE=='INTERBASE' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
+					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE')
+					or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='ACCESS' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE == 'DBORACLE' and CONNECTION_TYPE == 'ORACLE_WALLET')
 					or (DBTYPE=='GREENPLUM' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='VERTICA' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='EXASOL' and USE_EXISTING_CONNECTION == 'true')
@@ -194,8 +190,8 @@
 					or (DBTYPE=='POSTGREPLUS' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='TERADATA' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='TRUE')
 					or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='FIREBIRD' and USE_EXISTING_CONNECTION=='TRUE')
-					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true')
-					or (DBTYPE=='INTERBASE' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
+					or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE')
+					or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='ACCESS' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE == 'DBORACLE' and CONNECTION_TYPE == 'ORACLE_WALLET')
 					or (DBTYPE=='GREENPLUM' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='VERTICA' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='EXASOL' and USE_EXISTING_CONNECTION == 'true')
@@ -213,10 +209,10 @@
 	  				or (DBTYPE=='MSSQL' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='MYSQL' and USE_EXISTING_CONNECTION=='TRUE')
 	  				or (DBTYPE=='DBORACLE' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='NETEZZA' and USE_EXISTING_CONNECTION=='TRUE')
 	  				or (DBTYPE=='POSTGRE' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='POSTGREPLUS' and USE_EXISTING_CONNECTION=='TRUE')
-	  				or (DBTYPE == 'JAVADB' and FRAMEWORK_TYPE=='EMBEDED') or (DBTYPE == 'ODBC') or (DBTYPE == 'INTERBASE')
+	  				or (DBTYPE == 'JAVADB' and FRAMEWORK_TYPE=='EMBEDED') or (DBTYPE == 'ODBC')
 	  				or (DBTYPE == 'HSQLDB' and RUNNING_MODE == 'HSQLDB_INPROGRESS_PERSISTENT')
 	  				or (DBTYPE=='DB2' and USE_EXISTING_CONNECTION=='TRUE') or (DBTYPE=='INFORMIX' and USE_EXISTING_CONNECTION=='TRUE')
-	  				or (DBTYPE=='INGRES' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
+	  				or (DBTYPE=='SYBASE' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE == 'DBORACLE' and (CONNECTION_TYPE == 'ORACLE_OCI' or CONNECTION_TYPE == 'ORACLE_WALLET' or CONNECTION_TYPE == 'ORACLE_RAC'))
 					or (DBTYPE=='GREENPLUM' and USE_EXISTING_CONNECTION == 'true') or (DBTYPE=='VERTICA' and USE_EXISTING_CONNECTION == 'true')
 					or (DBTYPE=='EXASOL' and USE_EXISTING_CONNECTION == 'true')
@@ -256,12 +252,22 @@
 	<PARAMETER NAME="DB_AS400_VERSION" FIELD="CLOSED_LIST" NUM_ROW="50"
 			REPOSITORY_VALUE="DB_VERSION" SHOW_IF="(DBTYPE=='AS400' and USE_EXISTING_CONNECTION=='FALSE')">
 			<ITEMS DEFAULT="V7R1_V7R3">
-				<ITEM NAME="V5R2_V5R4" VALUE="jt400_V5R2.jar"/>
-				<ITEM NAME="V5R3_V6R1" VALUE="jt400_V5R3.jar"/>
                 <ITEM NAME="V6R1_V7R2" VALUE="jt400_V6R1.jar"/>
                 <ITEM NAME="V7R1_V7R3" VALUE="jt400-9.8.jar" />
 			</ITEMS>
 	</PARAMETER>
+
+	  <PARAMETER
+			  NAME="REDSHIFT_DRIVER_VERSION"
+			  FIELD="CLOSED_LIST"
+			  NUM_ROW="50"
+			  SHOW_IF="(DBTYPE=='REDSHIFT' and USE_EXISTING_CONNECTION=='FALSE')"
+			  REPOSITORY_VALUE="DRIVER_VERSION">
+		  <ITEMS DEFAULT="DRIVER_V2">
+			  <ITEM NAME="DRIVER_V1" VALUE="DRIVER_V1" />
+			  <ITEM NAME="DRIVER_V2" VALUE="DRIVER_V2" />
+		  </ITEMS>
+	  </PARAMETER>
 
 	<PARAMETER
       NAME="CONNECTION_AS400"
@@ -363,32 +369,6 @@
       <DEFAULT>""</DEFAULT>
     </PARAMETER>
 	<!--Informix configuration end-->
-
-	<!--Ingres configuration start-->
-	<PARAMETER
-      NAME="CONNECTION_INGRES"
-      FIELD="COMPONENT_LIST"
-      FILTER="tIngresConnection"
-	  REQUIRED="true"
-      NUM_ROW="30"
-      SHOW_IF="(DBTYPE=='INGRES') and (USE_EXISTING_CONNECTION == 'true')"
-    />
-	<!--Ingres configuration end-->
-
-	<!--Interbase configuration start-->
-	<PARAMETER
-      NAME="CONNECTION_INTERBASE"
-      FIELD="COMPONENT_LIST"
-      FILTER="tInterbaseConnection"
-	  REQUIRED="true"
-      NUM_ROW="30"
-      SHOW_IF="(DBTYPE=='INTERBASE') and (USE_EXISTING_CONNECTION == 'true')"
-    />
-	<PARAMETER NAME="DBFILE_INTERBASE" FIELD="TEXT" NUM_ROW="40"
-		REQUIRED="true" REPOSITORY_VALUE="SID" SHOW_IF="(DBTYPE=='INTERBASE' and (USE_EXISTING_CONNECTION == 'false'))">
-		<DEFAULT>"__COMP_DEFAULT_FILE_DIR__/in.gdb"</DEFAULT>
-	</PARAMETER>
-	<!--Interbase configuration end-->
 
 	<!--JavaDb configuration start-->
 	<PARAMETER NAME="FRAMEWORK_TYPE" FIELD="CLOSED_LIST" NUM_ROW="30"
@@ -530,9 +510,6 @@
 			<ITEM NAME="ORACLE_18" VALUE="ORACLE_18" />
 			<ITEM NAME="ORACLE_12" VALUE="ORACLE_12" />
 			<ITEM NAME="ORACLE_11" VALUE="ORACLE_11" />
-			<ITEM NAME="ORACLE_10" VALUE="ORACLE_10" />
-			<ITEM NAME="ORACLE_9" VALUE="ORACLE_9" />
-			<ITEM NAME="ORACLE_8" VALUE="ORACLE_8" />
 		</ITEMS>
 	</PARAMETER>
 	<!--Oracle configuration end-->
@@ -656,16 +633,6 @@
 		REPOSITORY_VALUE="DB_VERSION"
 		SHOW_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false')">
 		<ITEMS DEFAULT="VERTICA_9_0">
-			<ITEM NAME="VERTICA_3" VALUE="VERTICA_3" />
-			<ITEM NAME="VERTICA_3.5" VALUE="VERTICA_3.5" />
-			<ITEM NAME="VERTICA_4" VALUE="VERTICA_4" />
-			<ITEM NAME="VERTICA_4.1" VALUE="VERTICA_4_1" />
-			<ITEM NAME="VERTICA_5.0" VALUE="VERTICA_5" />
-			<ITEM NAME="VERTICA_5_1" VALUE="VERTICA_5_1" />
-			<ITEM NAME="VERTICA_6_0" VALUE="VERTICA_6_0" />
-			<ITEM NAME="VERTICA_6_1_X" VALUE="VERTICA_6_1_X" />
-			<ITEM NAME="VERTICA_7_0_X" VALUE="VERTICA_7_0_X" />
-			<ITEM NAME="VERTICA_7_1_X" VALUE="VERTICA_7_1_X" />
 			<ITEM NAME="VERTICA_9_0" VALUE="VERTICA_9_0" />
 		</ITEMS>
 	</PARAMETER>
@@ -761,8 +728,6 @@
       <DEFAULT IF="DBTYPE=='FIREBIRD'">firebird_id</DEFAULT>
       <DEFAULT IF="DBTYPE=='HSQLDB'">hsqldb_id</DEFAULT>
       <DEFAULT IF="DBTYPE=='INFORMIX'">informix_id</DEFAULT>
-      <DEFAULT IF="DBTYPE=='INGRES'">ingres_id</DEFAULT>
-      <DEFAULT IF="DBTYPE=='INTERBASE'">interbase_id</DEFAULT>
       <DEFAULT IF="DBTYPE=='JAVADB'">javadb_id</DEFAULT>
       <DEFAULT IF="DBTYPE=='MAXDB'">maxdb_id</DEFAULT>
       <DEFAULT IF="DBTYPE=='MSSQL'">id_MSSQL</DEFAULT>
@@ -802,11 +767,31 @@
       FIELD="TEXT" 
       NUM_ROW="10" 
       REPOSITORY_VALUE="PROPERTIES_STRING"
-      NOT_SHOW_IF="(DBTYPE=='SQLITE') OR ((DBTYPE=='DBORACLE') AND (CONNECTION_TYPE == 'ORACLE_WALLET')) OR USE_EXISTING_CONNECTION == 'true'"
+      NOT_SHOW_IF="(DBTYPE=='SQLITE') OR ((DBTYPE=='DBORACLE') AND (CONNECTION_TYPE == 'ORACLE_WALLET')) OR ((DBTYPE=='REDSHIFT')  AND (USE_STRING_PROPERTIES == 'false') AND (REDSHIFT_DRIVER_VERSION == 'DRIVER_V2'))  OR USE_EXISTING_CONNECTION == 'true'"
     >
         <DEFAULT IF="((DBTYPE!='AS400') AND (DBTYPE!='MSSQL'))">""</DEFAULT>
         <DEFAULT IF="(DBTYPE=='AS400') OR (DBTYPE=='MSSQL')">"prompt=false"</DEFAULT>
     </PARAMETER>
+
+	  <PARAMETER
+			  NAME="USE_STRING_PROPERTIES"
+			  SHOW_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='REDSHIFT') AND (REDSHIFT_DRIVER_VERSION == 'DRIVER_V2')"
+			  REPOSITORY_VALUE="USE_STRING_PROPERTIES"
+			  FIELD="CHECK"
+			  NUM_ROW="5"
+			  REQUIRED="true"
+	  >
+	  </PARAMETER>
+
+	  <PARAMETER NAME="ENTRY_PROPERTIES" FIELD="TABLE"
+				 SHOW_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='REDSHIFT')  AND (USE_STRING_PROPERTIES == 'false') AND (REDSHIFT_DRIVER_VERSION == 'DRIVER_V2')"
+				 REPOSITORY_VALUE="ENTRY_PROPERTIES"
+				 REQUIRED="false" NUM_ROW="10" NB_LINES="4">
+		  <ITEMS>
+			  <ITEM NAME="KEY" />
+			  <ITEM NAME="VALUE" />
+		  </ITEMS>
+	  </PARAMETER>
 
     <PARAMETER NAME="MSSQL_ACTIVE_DIR_AUTH" FIELD="CHECK" NUM_ROW="12" SHOW_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP')">
         <DEFAULT>false</DEFAULT>
@@ -850,8 +835,6 @@
 
    <CODEGENERATION>
      <IMPORTS>
-        <IMPORT NAME="Driver-V5R2_V5R4" MODULE="jt400_V5R2.jar" MVN="mvn:org.talend.libraries/jt400_V5R2/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='AS400') and (DB_AS400_VERSION=='jt400_V5R2.jar')"/>
-        <IMPORT NAME="Driver-V5R3_V6R1" MODULE="jt400_V5R3.jar" MVN="mvn:org.talend.libraries/jt400_V5R3/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='AS400') and (DB_AS400_VERSION=='jt400_V5R3.jar')"/>
         <IMPORT NAME="Driver-V6R1_V7R2" MODULE="jt400_V6R1.jar" MVN="mvn:org.talend.libraries/jt400_V6R1/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='AS400') and (DB_AS400_VERSION=='jt400_V6R1.jar')" />
         <IMPORT NAME="Driver-V7R1_V7R3" MODULE="jt400-9.8.jar" MVN="mvn:net.sf.jt400/jt400/9.8"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='AS400') and (DB_AS400_VERSION=='jt400-9.8.jar')" />
 		<IMPORT NAME="Driver-DB2" MODULE="db2jcc4.jar" MVN="mvn:org.talend.libraries/db2jcc4/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='DB2')" />
@@ -859,36 +842,37 @@
 		<IMPORT NAME="Driver-DB2-LICENSE-CU" MODULE="db2jcc_license_cu.jar" MVN="mvn:org.talend.libraries/db2jcc_license_cu/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='DB2')" />
 		<IMPORT NAME="Driver_MaxDB" MODULE="sapdbc.jar" MVN="mvn:org.talend.libraries/sapdbc/6.0.0"  REQUIRED_IF="DBTYPE=='MAXDB'" />
 		<IMPORT NAME="Driver-MSSQL" MODULE="jtds-1.3.1-patch-20190523.jar" MVN="mvn:net.sourceforge.jtds/jtds/1.3.1-patch-20190523" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='JTDS')" />
-		<IMPORT NAME="Driver-MSSQL-prop" MODULE="mssql-jdbc.jar" MVN="mvn:org.talend.libraries/mssql-jdbc/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP')" />
-		<IMPORT NAME="adal4j" MODULE="adal4j-1.6.5.jar" MVN="mvn:com.microsoft.azure/adal4j/1.6.5"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="commons-lang3" MODULE="commons-lang3-3.10.jar" MVN="mvn:org.apache.commons/commons-lang3/3.10"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="commons-codec" MODULE="commons-codec-1.14.jar" MVN="mvn:commons-codec/commons-codec/1.14"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="gson" MODULE="gson-2.8.6.jar" MVN="mvn:com.google.code.gson/gson/2.8.6"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="oauth2-oidc-sdk" MODULE="oauth2-oidc-sdk-6.5.jar" MVN="mvn:com.nimbusds/oauth2-oidc-sdk/6.5"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="Driver-MSSQL-prop" MODULE="mssql-jdbc.jar" MVN="mvn:com.microsoft.sqlserver/mssql-jdbc/actual"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP')" />
+		<!--Active directory dependency module: msal4j and transitive -->
+		<IMPORT NAME="msal4j" MODULE="msal4j-1.11.0.jar" MVN="mvn:com.microsoft.azure/msal4j/1.11.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="jackson-core" MODULE="jackson-core-2.13.4.jar" MVN="mvn:com.fasterxml.jackson.core/jackson-core/2.13.4"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="jackson-databind" MODULE="jackson-databind-2.13.4.2.jar" MVN="mvn:com.fasterxml.jackson.core/jackson-databind/2.13.4.2"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="jackson-annotations" MODULE="jackson-annotations-2.13.4.jar" MVN="mvn:com.fasterxml.jackson.core/jackson-annotations/2.13.4"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="oauth2-oidc-sdk" MODULE="oauth2-oidc-sdk-9.7.jar" MVN="mvn:com.nimbusds/oauth2-oidc-sdk/9.7"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="jcip-annotations" MODULE="jcip-annotations-1.0-1.jar" MVN="mvn:com.github.stephenc.jcip/jcip-annotations/1.0-1"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
 		<IMPORT NAME="json-smart" MODULE="json-smart-2.4.7.jar" MVN="mvn:net.minidev/json-smart/2.4.7"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="nimbus-jose-jwt" MODULE="nimbus-jose-jwt-8.11.jar" MVN="mvn:com.nimbusds/nimbus-jose-jwt/8.11"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="javax.mail" MODULE="javax.mail-1.6.2.jar" MVN="mvn:com.sun.mail/javax.mail/1.6.2"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
-		<IMPORT NAME="Driver-MYSQL5" MODULE="mysql-connector-java-5.1.30-bin.jar" MVN="mvn:org.talend.libraries/mysql-connector-java-5.1.30-bin/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='MYSQL') and (DB_MYSQL_VERSION=='MYSQL_5')"/>
+		<IMPORT NAME="accessors-smart" MODULE="accessors-smart-2.4.7.jar" MVN="mvn:net.minidev/accessors-smart/2.4.7"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="asm" MODULE="asm-9.1.jar" MVN="mvn:org.ow2.asm/asm/9.1"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="content-type" MODULE="content-type-2.1.jar" MVN="mvn:com.nimbusds/content-type/2.1"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="lang-tag" MODULE="lang-tag-1.5.jar" MVN="mvn:com.nimbusds/lang-tag/1.5"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+		<IMPORT NAME="nimbus-jose-jwt" MODULE="nimbus-jose-jwt-9.22.jar" MVN="mvn:com.nimbusds/nimbus-jose-jwt/9.22"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MSSQL') AND (MSSQL_DRIVER=='MSSQL_PROP') AND (MSSQL_ACTIVE_DIR_AUTH == 'true')" />
+
+		<IMPORT NAME="Driver-MYSQL5" MODULE="mysql-connector-java-5.1.49.jar" MVN="mvn:mysql/mysql-connector-java/5.1.49"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='MYSQL') and (DB_MYSQL_VERSION=='MYSQL_5')"/>
 		<IMPORT NAME="Driver-MYSQL8"  MODULE="mysql-connector-java-8.0.18.jar" MVN="mvn:mysql/mysql-connector-java/8.0.18" REQUIRED_IF="(DB_MYSQL_VERSION == 'MYSQL_8') AND (USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='MYSQL')" />
 		<IMPORT NAME="Driver-MARIADB"  MODULE="mariadb-java-client-2.5.3.jar" MVN="mvn:org.mariadb.jdbc/mariadb-java-client/2.5.3"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') and (DBTYPE=='MYSQL') and (DB_MYSQL_VERSION=='MARIADB')" />
-        <IMPORT NAME="Driver-Oracle8i" MODULE="ojdbc12.jar" MVN="mvn:org.talend.libraries/ojdbc12/6.0.0"  REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_8') AND (USE_EXISTING_CONNECTION == 'false')" />
-        <IMPORT NAME="Driver-Oracle9i" MODULE="ojdbc14-9i.jar" MVN="mvn:org.talend.libraries/ojdbc14-9i/6.0.0"  REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_9') AND (USE_EXISTING_CONNECTION == 'false')" />
-        <IMPORT NAME="Driver-Oracle10g" MODULE="ojdbc14.jar" MVN="mvn:org.talend.libraries/ojdbc14/6.0.0"  REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_10') AND (USE_EXISTING_CONNECTION == 'false')" />
         <IMPORT NAME="Driver-Oracle11g" MODULE="ojdbc6.jar" MVN="mvn:org.talend.libraries/ojdbc6/6.0.0"  REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_11') AND (USE_EXISTING_CONNECTION == 'false')" />
         <IMPORT NAME="Driver-Oracle12c" MODULE="ojdbc7.jar" MVN="mvn:org.talend.libraries/ojdbc7/6.0.0"  REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_12') AND (USE_EXISTING_CONNECTION == 'false')" />
         <IMPORT NAME="ORACLE_18"        MODULE="ojdbc8-19.3.0.0.jar" MVN="mvn:com.oracle.ojdbc/ojdbc8/19.3.0.0" REQUIRED_IF="(DBTYPE=='DBORACLE') AND (DB_VERSION == 'ORACLE_18') AND (USE_EXISTING_CONNECTION == 'false')" />
 		<IMPORT NAME="Driver-POSTGRESQL" MODULE="postgresql-8.4-703.jdbc4.jar" MVN="mvn:postgresql/postgresql/8.4-703.jdbc4" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND ((((DBTYPE=='POSTGRE') or (DBTYPE=='POSTGREPLUS')) AND (DB_POSTGRE_VERSION =='PRIOR_TO_V9')) or (DBTYPE=='GREENPLUM'))" />
-		<IMPORT NAME="Driver-Postgres9" MODULE="postgresql-42.2.14.jar" MVN="mvn:org.postgresql/postgresql/42.2.14" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (((DBTYPE=='POSTGRE') or (DBTYPE=='POSTGREPLUS')) AND (DB_POSTGRE_VERSION =='V9_X'))" />
+		<IMPORT NAME="Driver-Postgres9" MODULE="postgresql-42.2.26.jar" MVN="mvn:org.postgresql/postgresql/42.2.26" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (((DBTYPE=='POSTGRE') or (DBTYPE=='POSTGREPLUS')) AND (DB_POSTGRE_VERSION =='V9_X'))" />
 		<IMPORT NAME="Driver-FIREBIRD" MODULE="jaybird-full-2.1.1.jar" MVN="mvn:org.talend.libraries/jaybird-full-2.1.1/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.jdbc.firebird/lib/jaybird-full-2.1.1.jar" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='FIREBIRD')" />
-		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb.jar" MVN="mvn:org.talend.libraries/hsqldb/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.jdbc.hsql/lib/hsqldb.jar" REQUIRED_IF="DBTYPE=='HSQLDB'"/>
+		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb-2.7.1.jar" MVN="mvn:org.hsqldb/hsqldb/2.7.1" REQUIRED_IF="DBTYPE=='HSQLDB'"/>
 		<IMPORT NAME="Driver-INFORMIX-JDBC" MODULE="ifxjdbc.jar" MVN="mvn:org.talend.libraries/ifxjdbc/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')" />
 		<IMPORT NAME="Driver-INFORMIX-JDBCX" MODULE="ifxjdbcx.jar" MVN="mvn:org.talend.libraries/ifxjdbcx/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')" />
 		<IMPORT NAME="Driver-INFORMIX-LANG" MODULE="ifxlang.jar" MVN="mvn:org.talend.libraries/ifxlang/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')" />
 		<IMPORT NAME="Driver-INFORMIX-LSUPP" MODULE="ifxlsupp.jar" MVN="mvn:org.talend.libraries/ifxlsupp/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')" />
 		<IMPORT NAME="Driver-INFORMIX-SQLJ" MODULE="ifxsqlj.jar" MVN="mvn:org.talend.libraries/ifxsqlj/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')" />
 		<IMPORT NAME="Driver-INFORMIX-TOOLS" MODULE="ifxtools.jar" MVN="mvn:org.talend.libraries/ifxtools/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INFORMIX')"/>
-		<IMPORT NAME="Driver-INGRES" MODULE="iijdbc.jar" MVN="mvn:org.talend.libraries/iijdbc/6.0.0" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INGRES')"/>
-		<IMPORT NAME="Driver-Interbase" MODULE="interclient.jar" MVN="mvn:org.talend.libraries/interclient/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='INTERBASE')" />
 		<IMPORT NAME="Driver-JAVADB-DERBY" MODULE="derby.jar" MVN="mvn:org.talend.libraries/derby/6.0.0" REQUIRED_IF="DBTYPE=='JAVADB'"/>
 		<IMPORT NAME="Driver-JAVADB-DERBYCLIENT" MODULE="derbyclient.jar" MVN="mvn:org.talend.libraries/derbyclient/6.0.0" REQUIRED_IF="DBTYPE=='JAVADB'"/>
 		<IMPORT NAME="Driver-JAVADB-DERBYNET" MODULE="derbynet.jar" MVN="mvn:org.talend.libraries/derbynet/6.0.0" REQUIRED_IF="DBTYPE=='JAVADB'"/>
@@ -896,24 +880,20 @@
 		<IMPORT NAME="Driver-SYBASE-JCONN3" MODULE="jconn3.jar" MVN="mvn:org.talend.libraries/jconn3/6.0.0" BundleID="" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='SYBASE') AND (DB_SYBASE_VERSION == 'SYBSEIQ_12_15')" />
 		<IMPORT NAME="Driver-SYBASE-JCONN4" MODULE="jconn4.jar" MVN="mvn:org.talend.libraries/jconn4/6.0.0" BundleID="" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='SYBASE') AND (DB_SYBASE_VERSION == 'SYBSEIQ_16')" />
 		<IMPORT NAME="Driver-SqlAnywhere" MODULE="sajdbc4.jar" MVN="mvn:sap.jdbc4.sqlanywhere/sajdbc4/17.0.0"  BundleID="" REQUIRED_IF = "(DB_VERSION == 'SYBSEIQ_16_SA') AND (USE_EXISTING_CONNECTION == 'false')" />
-		<IMPORT NAME="Driver-Teradata_jdbc" MODULE="terajdbc4-16.20.00.02.jar" MVN="mvn:com.teradata/terajdbc4/16.20.00.02"   REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='TERADATA')" />
-		<IMPORT NAME="Driver-Teradata_config" MODULE="tdgssconfig-16.20.00.02.jar" MVN="mvn:com.teradata/tdgssconfig/16.20.00.02"   REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='TERADATA')" />
+		<IMPORT NAME="Driver-Teradata" MODULE="terajdbc4-17.10.00.27.jar" MVN="mvn:com.teradata.jdbc/terajdbc4/17.10.00.27" REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='TERADATA')" />
 		<IMPORT NAME="Driver-Netezza" MODULE="nzjdbc.jar" MVN="mvn:org.talend.libraries/nzjdbc/6.0.0"  REQUIRED_IF="(USE_EXISTING_CONNECTION == 'false') AND (DBTYPE=='NETEZZA')" />
 		
-		<IMPORT NAME="Driver-VERTICA" MODULE="vertica_3.0_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_3.0_jdk_5/6.0.0"   			REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_3')" />
-		<IMPORT NAME="Driver-VERTICA_3.5" MODULE="vertica_3.5_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_3.5_jdk_5/6.0.0"   		REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_3.5')" />
-		<IMPORT NAME="Driver-VERTICA_4" MODULE="vertica_4.0_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_4.0_jdk_5/6.0.0"   		REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_4')" />
-		<IMPORT NAME="Driver-VERTICA_4.1" MODULE="vertica_4.1.7_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_4.1.7_jdk_5/6.0.0"   	REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_4.1')" />
-		<IMPORT NAME="Driver-VERTICA_5.0" MODULE="vertica_4.1.14_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_4.1.14_jdk_5/6.0.0"   REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_5.0')" />
-		<IMPORT NAME="Driver-VERTICA_5.1" MODULE="vertica_5.1.6_jdk_5.jar" MVN="mvn:org.talend.libraries/vertica_5.1.6_jdk_5/6.0.0"   	REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_5_1')" />
-		<IMPORT NAME="Driver-VERTICA_6.0" MODULE="vertica-jdk5-6.0.2-0.jar" MVN="mvn:org.talend.libraries/vertica-jdk5-6.0.2-0/6.0.0"   REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_6_0')" />
-		<IMPORT NAME="Driver-VERTICA_6.1.2" MODULE="vertica-jdk5-6.1.2-0.jar" MVN="mvn:org.talend.libraries/vertica-jdk5-6.1.2-0/6.0.0"   REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_6_1_X')" />
-		<IMPORT NAME="Driver-VERTICA_7.0.1" MODULE="vertica-jdbc-7.0.1-0.jar" MVN="mvn:org.talend.libraries/vertica-jdbc-7.0.1-0/6.0.0"   REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_7_0_X')" />
-  		<IMPORT NAME="Driver-VERTICA_7.1.2" MODULE="vertica-jdbc-7.1.2-0.jar" MVN="mvn:org.talend.libraries/vertica-jdbc-7.1.2-0/6.0.0" REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_7_1_X')" />
   		<IMPORT NAME="Driver-EXASolution" MODULE="exajdbc-6.0.9302.jar" MVN="mvn:org.talend.libraries/exajdbc-6.0.9302/6.3.0"  REQUIRED_IF="(DBTYPE=='EXASOL') and (USE_EXISTING_CONNECTION == 'false')" />
-		<IMPORT NAME="Driver-Redshift" MODULE="redshift-jdbc42-no-awssdk-1.2.37.1061.jar" MVN="mvn:com.amazon.redshift/redshift-jdbc42-no-awssdk/1.2.37.1061" REQUIRED_IF="(DBTYPE=='REDSHIFT') and (USE_EXISTING_CONNECTION == 'false')" />
-		<IMPORT NAME="Driver-Snowflake" MODULE="snowflake-jdbc-3.12.11.jar" MVN="mvn:net.snowflake/snowflake-jdbc/3.12.11"  REQUIRED_IF="(DBTYPE=='SNOWFLAKE') and (USE_EXISTING_CONNECTION == 'false')" />
+		 <IMPORT NAME="Driver-Redshift-v2" MODULE="redshift-jdbc42-2.1.0.10.jar" MVN="mvn:com.amazon.redshift/redshift-jdbc42/2.1.0.10" REQUIRED_IF="(DBTYPE=='REDSHIFT') AND (USE_EXISTING_CONNECTION == 'false') AND (REDSHIFT_DRIVER_VERSION == 'DRIVER_V2')" />
+		 <IMPORT NAME="Driver-Redshift-v1" MODULE="redshift-jdbc42-no-awssdk-1.2.55.1083.jar" MVN="mvn:com.amazon.redshift/redshift-jdbc42-no-awssdk/1.2.55.1083" REQUIRED_IF="(DBTYPE=='REDSHIFT') and (USE_EXISTING_CONNECTION == 'false') AND (REDSHIFT_DRIVER_VERSION == 'DRIVER_V1')" />
+		<IMPORT NAME="antlr4-runtime-4.8-1.jar" MODULE="antlr4-runtime-4.8-1.jar" MVN="mvn:org.antlr/antlr4-runtime/4.8-1"  REQUIRED_IF="(DBTYPE=='REDSHIFT') and (USE_EXISTING_CONNECTION == 'false')" />
+		<IMPORT NAME="Driver-Snowflake" MODULE="snowflake-jdbc-3.13.14.jar" MVN="mvn:net.snowflake/snowflake-jdbc/3.13.14"  REQUIRED_IF="(DBTYPE=='SNOWFLAKE') and (USE_EXISTING_CONNECTION == 'false')" />
 		<IMPORT NAME="Driver-VERTICA_9.0" MODULE="vertica-jdbc-9.3.1-0.jar" MVN="mvn:com.vertica/vertica-jdbc/9.3.1-0"   REQUIRED_IF="(DBTYPE=='VERTICA') and (USE_EXISTING_CONNECTION == 'false') and (DB_VERTICA_VERSION=='VERTICA_9_0')"/>
+
+		 <!-- java 11 dependencies for jdbc driver HSQLDB-->
+		 <IMPORT NAME="jaxb-api-2.3.1" MODULE="jaxb-api-2.3.1.jar" MVN="mvn:javax.xml.bind/jaxb-api/2.3.1" REQUIRED="true"/>
+		 <IMPORT NAME="activation-1.1.1" MODULE="activation-1.1.1.jar" MVN="mvn:javax.activation/activation/1.1.1" REQUIRED="true"/>
+		 <IMPORT NAME="jaxb-impl-2.1.13" MODULE="jaxb-impl-2.1.13.jar" MVN="mvn:com.sun.xml.bind/jaxb-impl/2.1.13" REQUIRED="true"/>
      </IMPORTS>
    </CODEGENERATION>
 

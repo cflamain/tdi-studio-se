@@ -35,6 +35,7 @@ import org.eclipse.ui.views.properties.tabbed.ITabbedPropertyConstants;
 import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.IAdvancedElementParameter;
 import org.talend.core.model.process.IElementParameter;
+import org.talend.core.model.process.IGenericElementParameter;
 import org.talend.core.model.utils.ContextParameterUtils;
 import org.talend.core.model.utils.TalendTextUtils;
 import org.talend.core.ui.properties.tab.IDynamicProperty;
@@ -130,16 +131,6 @@ public class TextController extends AbstractElementPropertySectionController {
         addDragAndDropTarget(labelText);
 
         CLabel labelLabel = getWidgetFactory().createCLabel(subComposite, param.getDisplayName());
-        data = new FormData();
-        if (lastControl != null) {
-            data.left = new FormAttachment(lastControl, 0);
-        } else {
-            data.left = new FormAttachment((((numInRow - 1) * MAX_PERCENT) / nbInRow), 0);
-        }
-        data.top = new FormAttachment(0, top);
-        labelLabel.setLayoutData(data);
-        // *********************
-        data = new FormData();
         int currentLabelWidth = STANDARD_LABEL_WIDTH;
         GC gc = new GC(labelLabel);
         Point labelSize = gc.stringExtent(param.getDisplayName());
@@ -147,6 +138,17 @@ public class TextController extends AbstractElementPropertySectionController {
         if ((labelSize.x + (ITabbedPropertyConstants.HSPACE * 2)) > currentLabelWidth) {
             currentLabelWidth = labelSize.x + (ITabbedPropertyConstants.HSPACE * 2);
         }
+        data = new FormData();
+        if (lastControl != null) {
+            data.left = new FormAttachment(lastControl, 0);
+        } else {
+            data.left = new FormAttachment((((numInRow - 1) * MAX_PERCENT) / nbInRow), 0);
+        }
+        data.top = new FormAttachment(0, top);
+        data.width = currentLabelWidth;
+        labelLabel.setLayoutData(data);
+        // *********************
+        data = new FormData();
 
         if (numInRow == 1) {
             if (lastControl != null) {
@@ -171,22 +173,28 @@ public class TextController extends AbstractElementPropertySectionController {
 
         if (isInWizard()) {
             labelLabel.setAlignment(SWT.RIGHT);
-            if (lastControl != null) {
-                data.right = new FormAttachment(lastControl, 0);
-            } else {
-                data.right = new FormAttachment(100, -ITabbedPropertyConstants.HSPACE);
+            if (isTcompv0(param)) {
+                if (lastControl != null) {
+                    data.right = new FormAttachment(lastControl, 0);
+                } else {
+                    data.right = new FormAttachment(100, -ITabbedPropertyConstants.HSPACE);
+                }
+                data.left = new FormAttachment((((nbInRow - numInRow) * MAX_PERCENT) / nbInRow),
+                        currentLabelWidth + ITabbedPropertyConstants.HSPACE);
+
+                data = (FormData) labelLabel.getLayoutData();
+                data.right = new FormAttachment(cLayout, 0);
+                data.left = new FormAttachment((((nbInRow - numInRow) * MAX_PERCENT) / nbInRow), 0);
+
+                return labelLabel;
             }
-            data.left = new FormAttachment((((nbInRow - numInRow) * MAX_PERCENT) / nbInRow), currentLabelWidth
-                    + ITabbedPropertyConstants.HSPACE);
-
-            data = (FormData) labelLabel.getLayoutData();
-            data.right = new FormAttachment(cLayout, 0);
-            data.left = new FormAttachment((((nbInRow - numInRow) * MAX_PERCENT) / nbInRow), 0);
-
-            return labelLabel;
         }
 
         return cLayout;
+    }
+
+    protected boolean isTcompv0(IElementParameter param) {
+        return param instanceof IGenericElementParameter;
     }
 
     protected boolean isReadOnly() {
@@ -238,7 +246,7 @@ public class TextController extends AbstractElementPropertySectionController {
         } else {
             if (!value.equals(labelText.getText())) {
                 // see feature 0025
-                if (isPasswordParam(param)) {
+                if (!isInWizard() && isPasswordParam(param)) {
                     labelText.setText(TalendTextUtils.hidePassword(value.toString()));
                 } else {
                     labelText.setText(value.toString());

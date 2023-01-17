@@ -6,7 +6,15 @@
 
 	<groupId>org.talend.components.lib</groupId>
 	<artifactId>job-audit</artifactId>
-	<version>1.4</version>
+	<version>1.5</version>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.talendforge.org/modules/licenses/APACHE_v2.txt</url>
+			<distribution>may be downloaded from the Maven repository</distribution>
+		</license>
+	</licenses>
 
 	<properties>
 		<talend.nexus.url>https://artifacts-oss.talend.com</talend.nexus.url>
@@ -69,13 +77,13 @@
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-api</artifactId>
-			<version>2.12.1</version>
+			<version>2.17.1</version>
 			<optional>true</optional>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
-			<version>2.12.1</version>
+			<version>2.17.1</version>
 			<optional>true</optional>
 		</dependency>
 	</dependencies>

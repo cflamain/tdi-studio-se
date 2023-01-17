@@ -113,19 +113,24 @@
 	
    <CODEGENERATION>
 	 <IMPORTS>
-		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb.jar" MVN="mvn:org.talend.libraries/hsqldb/6.0.0"  UrlPath="platform:/plugin/org.talend.libraries.jdbc.hsql/lib/hsqldb.jar" REQUIRED="true"/>
+		<IMPORT NAME="Driver-HSQLDb" MODULE="hsqldb-2.7.1.jar" MVN="mvn:org.hsqldb/hsqldb/2.7.1" REQUIRED="true"/>
 		<IMPORT NAME="Driver-ucanaccess" MODULE="ucanaccess-2.0.9.5.jar" MVN="mvn:org.talend.libraries/ucanaccess-2.0.9.5/6.0.0"  REQUIRED="true"/>
 		<IMPORT NAME="Driver-JACKCESS" MODULE="jackcess-2.1.12.jar" MVN="mvn:com.healthmarketscience.jackcess/jackcess/2.1.12" REQUIRED="true"/>
 		
 		<IMPORT NAME="jackcess-encrypt-2.1.4" MODULE="jackcess-encrypt-2.1.4.jar" MVN="mvn:com.healthmarketscience.jackcess/jackcess-encrypt/2.1.4" REQUIRED="true"/>
-		<IMPORT NAME="bcprov-jdk15on-1.68" MODULE="bcprov-jdk15on-1.68.jar" MVN="mvn:org.bouncycastle/bcprov-jdk15on/1.68" REQUIRED="true"/>
+		<IMPORT NAME="bcprov-jdk15on-1.70" MODULE="bcprov-jdk15on-1.70.jar" MVN="mvn:org.bouncycastle/bcprov-jdk15on/1.70" REQUIRED="true"/>
 		<IMPORT NAME="talend-ucanaccess-utils-1.0.0" MODULE="talend-ucanaccess-utils-1.0.0.jar" MVN="mvn:org.talend.libraries/talend-ucanaccess-utils-1.0.0/6.4.0" REQUIRED="true"/>
 		
 		<IMPORT NAME="common2.6" MODULE="commons-lang-2.6.jar" MVN="mvn:commons-lang/commons-lang/2.6"   UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-lang-2.6.jar" REQUIRED="true"/>
 		<IMPORT NAME="common-logging1.1.3" MODULE="commons-logging-1.1.3.jar" MVN="mvn:commons-logging/commons-logging/1.1.3"  UrlPath="platform:/plugin/org.talend.libraries.apache.common/lib/commons-logging-1.1.3.jar" REQUIRED="true"/>
 		
-		<IMPORT NAME="slf4j-api-1.7.25.jar" MODULE="slf4j-api-1.7.25.jar" MVN="mvn:org.slf4j/slf4j-api/1.7.25" REQUIRED_IF="USE_SHARED_CONNECTION =='true'" />
-		<IMPORT NAME="slf4j-log4j12-1.7.25.jar" MODULE="slf4j-log4j12-1.7.25.jar" MVN="mvn:org.slf4j/slf4j-log4j12/1.7.25" REQUIRED_IF="USE_SHARED_CONNECTION =='true'" />
+		<IMPORT NAME="slf4j-api-1.7.34.jar" MODULE="slf4j-api-1.7.34.jar" MVN="mvn:org.slf4j/slf4j-api/1.7.34" REQUIRED_IF="USE_SHARED_CONNECTION =='true'" />
+		<IMPORT NAME="slf4j-reload4j-1.7.34.jar" MODULE="slf4j-reload4j-1.7.34.jar" MVN="mvn:org.slf4j/slf4j-reload4j/1.7.34" REQUIRED_IF="USE_SHARED_CONNECTION =='true'" />
+
+    <!-- java 11 dependencies for jdbc driver -->
+		<IMPORT NAME="jaxb-api-2.3.1" MODULE="jaxb-api-2.3.1.jar" MVN="mvn:javax.xml.bind/jaxb-api/2.3.1" REQUIRED="true"/>
+		<IMPORT NAME="activation-1.1.1" MODULE="activation-1.1.1.jar" MVN="mvn:javax.activation/activation/1.1.1" REQUIRED="true"/>
+		<IMPORT NAME="jaxb-impl-2.1.13" MODULE="jaxb-impl-2.1.13.jar" MVN="mvn:com.sun.xml.bind/jaxb-impl/2.1.13" REQUIRED="true"/>
 	</IMPORTS>
 	</CODEGENERATION>
 

@@ -44,7 +44,7 @@ import org.eclipse.ui.dialogs.PatternFilter;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.ui.runtime.image.EImage;
 import org.talend.commons.ui.runtime.image.ImageProvider;
-import org.talend.core.model.repository.SVNConstant;
+import org.talend.core.model.repository.GITConstant;
 import org.talend.repository.i18n.Messages;
 
 /**
@@ -91,7 +91,7 @@ public class BranchesSelectionDialog extends Dialog {
         if (brancheNames != null) {
             for (String branchName : brancheNames) {
                 namemaxlen = Math.max(namemaxlen, branchName.length());
-                if (branchName.startsWith(SVNConstant.NAME_TAGS + SVNConstant.SEP_CHAR)) {
+                if (branchName.startsWith(GITConstant.NAME_TAGS + GITConstant.SEP_CHAR)) {
                     BranchInfo tagLeaf = new BranchInfo();
                     tagLeaf.setParent(tagsRoot);
                     tagLeaf.setImage(tagImage);

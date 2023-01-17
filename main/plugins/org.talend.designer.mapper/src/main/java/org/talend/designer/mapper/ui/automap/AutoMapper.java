@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.talend.core.pendo.mapper.PendoAutoMapManager;
 import org.talend.designer.abstractmap.model.tableentry.IColumnEntry;
 import org.talend.designer.mapper.language.ILanguage;
 import org.talend.designer.mapper.language.LanguageProvider;
@@ -41,6 +42,8 @@ public class AutoMapper {
 
     private MapperSettingsManager settingsManager;
 
+    private PendoAutoMapManager pendoTrackManager;
+
     /**
      * Map all empty output expression cells if possible.
      *
@@ -48,6 +51,7 @@ public class AutoMapper {
      */
     public AutoMapper(MapperManager mapperManager) {
         this.mapperManager = mapperManager;
+        this.pendoTrackManager = new PendoAutoMapManager();
     }
 
     /**
@@ -142,11 +146,14 @@ public class AutoMapper {
 
         mapperManager.getProblemsManager().checkProblems();
 
+        int numberLinks = mapperManager.getCurrentNumberLinks();
         List<DataMapTableView> outputsTablesView = mapperManager.getUiManager().getOutputsTablesView();
         for (DataMapTableView view : outputsTablesView) {
             mapperManager.getUiManager().parseAllExpressions(view, true);
             mapperManager.getProblemsManager().checkProblemsForAllEntries(view, true);
         }
+        pendoTrackManager.setMappingChangeCount(mapperManager.getCurrentNumberLinks() - numberLinks);
+        pendoTrackManager.sendTrackToPendo();
         mapperManager.getUiManager().refreshBackground(true, false);
 
     }

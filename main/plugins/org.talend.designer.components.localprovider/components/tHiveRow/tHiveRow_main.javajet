@@ -30,18 +30,20 @@ boolean usePrepareStatement = "true".equals(ElementParameterParser.getValue(node
 String dbquery= ElementParameterParser.getValue(node, "__QUERY__");
 dbquery = org.talend.core.model.utils.NodeUtil.replaceCRLFInMEMO_SQL(dbquery);
 
+final String studioVersion = org.talend.commons.utils.VersionUtils.getDisplayVersion();
+String encryptedToken = null;
+
 String theDistribution = ElementParameterParser.getValue(node, "__DISTRIBUTION__");
 String theVersion = ElementParameterParser.getValue(node, "__HIVE_VERSION__");
+String connMode = ElementParameterParser.getValue(node, "__CONNECTION_MODE__");
 
-final String studioVersion = org.talend.commons.utils.VersionUtils.getDisplayVersion();
-
-String encryptedToken = null;
 if("true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"))) {
     String connection = ElementParameterParser.getValue(node, "__CONNECTION__");
     for (INode pNode : node.getProcess().getNodesOfType("tHiveConnection")) {
         if(connection!=null && connection.equals(pNode.getUniqueName())) {
             theDistribution = ElementParameterParser.getValue(pNode, "__DISTRIBUTION__");
             theVersion = ElementParameterParser.getValue(pNode, "__HIVE_VERSION__");
+            connMode = ElementParameterParser.getValue(pNode, "__CONNECTION_MODE__");
         }
     }
 }
@@ -88,7 +90,7 @@ if(hiveDistrib.isExecutedThroughWebHCat()) {
 %>
 	}
 <%
-} else if (hiveDistrib.isGoogleDataprocDistribution()) {
+} else if("DATAPROC".equalsIgnoreCase(connMode)) { // Dataproc
     if(isLog4jEnabled) {
 %>
         log.debug("Query for <%=cid%>: " + query_<%=cid %>.replace("';'", "'\\;'") + ";");
@@ -120,7 +122,7 @@ if(hiveDistrib.isExecutedThroughWebHCat()) {
 %>
     }
 <%
-} else { // normal mode
+} else { //Standalone mode
 	List<Map<String, String>> prepareStatementParameters = (List<Map<String,String>>)ElementParameterParser.getObjectValue(node, "__SET_PREPAREDSTATEMENT_PARAMETERS__");  
 	
 	String incomingConnName = null;
@@ -331,3 +333,4 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 	}
 }
 %>
+

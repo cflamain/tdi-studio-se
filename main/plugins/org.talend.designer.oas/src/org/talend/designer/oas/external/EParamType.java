@@ -1,5 +1,7 @@
 package org.talend.designer.oas.external;
 
+import javax.swing.text.Document;
+
 /**
  * MediaTypes *\/* application/xml text/xml application/json
  */
@@ -20,7 +22,7 @@ public enum EParamType {
     STRING("String", String.class),
     // LIST("List"),
     // DYNAMIC("Dynamic"),
-    // DOCUMENT("Document")
+    DOCUMENT("Document", Document.class)
     ;
 
     private String label;

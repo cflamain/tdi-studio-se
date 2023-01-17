@@ -388,6 +388,12 @@ public enum EParameterName {
     UNIFIED_COMPONENTS("Database"),
 
     ACTIVE_DATABASE_DELIMITED_IDENTIFIERS("Active database delimited identifiers"), //$NON-NLS-1$
+    
+    ACTIVE_ADD_QUOTES_IN_TABLE_NAME("Active add quotes in table name"), //$NON-NLS-1$
+    
+    ACTIVE_DELIMITED_CHARACTER("Active delimited character"), //$NON-NLS-1$
+    
+    DELIMITED_CHARACTER_TEXT("Delimited character text"), //$NON-NLS-1$
 
     USE_ALIAS_IN_OUTPUT_TABLE("Use alias in output table"), //$NON-NLS-1$
 

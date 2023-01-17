@@ -36,7 +36,7 @@ public class RenameDbProductIdMigrationTask extends AbstractItemMigrationTask {
 
     private final static int NEW = 1;
 
-    private final static String[][] CHANGE_SET = { { "MSODBC", "ODBC" }, { "MSSQL", "SQL_SERVER" }, { "Interbase", "INTERBASE" } }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
+    private final static String[][] CHANGE_SET = { { "MSODBC", "ODBC" }, { "MSSQL", "SQL_SERVER" }}; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 
     /*
      * (non-Javadoc)

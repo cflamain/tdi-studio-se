@@ -49,9 +49,4 @@
     }
 %>
 
-    if (processor_<%=cid%> != null) {
-        processor_<%=cid%>.stop();
-    }
-
     globalMap.put("<%=cid %>_NB_LINE", nbLineInput_<%=cid%>);
-    globalMap.remove("processor_<%=cid%>");

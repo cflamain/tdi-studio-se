@@ -42,10 +42,10 @@ public class CLASS
       
        //List< ? extends IConnection> onSubJobErrorConns = rootNode.getOutgoingConnections(EConnectionType.ON_SUBJOB_ERROR);
        //if(onSubJobErrorConns!=null){
-       //    for(IConnection conn : onSubJobErrorConns) {               
+       //    for(IConnection conn : onSubJobErrorConns) {
        //        toReturn += createCallProcess(conn.getTarget(),  className, isMultiThread);
        //    }
-       //}            
+       //}
         if(isMultiThread){
             toReturn += "\n}catch (java.lang.Error e_" + rootNode.getUniqueName() + ") {\n";
             toReturn += "globalMap.put(\""+rootNode.getUniqueName()+ "_SUBPROCESS_STATE\", -1);\n";
@@ -55,7 +55,20 @@ public class CLASS
        toReturn += "\n}"; 
        return toReturn;
     }
-		 
+
+    public String statsErrorHandlingAfterMainCall(INode rootNode, List<? extends INode> statsNodes) {
+        String catchErrorReturn = "catch (Error error_" + rootNode.getUniqueName() + " ) {\n";
+        catchErrorReturn+="end = System.currentTimeMillis();\n";
+        for (INode statCatcherNode : statsNodes) {
+            catchErrorReturn += statCatcherNode.getUniqueName() + ".addMessage(\"failure\", (end-startTime));\n";
+            catchErrorReturn += "try {\n " + statCatcherNode.getDesignSubjobStartNode().getUniqueName() + "Process(globalMap);\n";
+            catchErrorReturn += "} catch (Exception e_" + statCatcherNode.getUniqueName() + ") {\n";
+            catchErrorReturn += "e_" + statCatcherNode.getUniqueName() + ".printStackTrace();\n}\n";
+        }
+        catchErrorReturn+= "throw error_" + rootNode.getUniqueName() + ";\n}\n";
+        return catchErrorReturn;
+    }
+
     public String generate(Object argument) {
         return "";
     }

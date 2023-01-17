@@ -23,6 +23,7 @@ import org.talend.sdk.component.server.front.model.ConfigTypeNode;
 import org.talend.sdk.component.server.front.model.ConfigTypeNodes;
 import org.talend.sdk.component.studio.Lookups;
 import org.talend.sdk.component.studio.VirtualComponentModel;
+import org.talend.sdk.component.studio.VirtualComponentModel.VirtualComponentModelType;
 import org.talend.sdk.component.studio.metadata.migration.TaCoKitMigrationManager;
 import org.talend.sdk.component.studio.util.TaCoKitConst;
 
@@ -194,6 +195,18 @@ public class TaCoKitCache {
             return true;
         }
         return false;
+    }
+
+    public boolean isVirtualConnectionComponent(String componentName) {
+        VirtualComponentModel virtualComponent = getVirtualComponent(componentName);
+        if (virtualComponent == null) {
+            return false;
+        }
+        return VirtualComponentModelType.CONNECTION.equals(virtualComponent.getModelType());
+    }
+
+    public VirtualComponentModel getVirtualComponent(String componentName) {
+        return VIRTUAL_COMPONENT_NAME_CACHE.get(componentName);
     }
 
     public boolean isVirtualComponentId(String componentId) {

@@ -58,13 +58,9 @@ if(useExistingConn) {
 	<%
 	}
 	%>
-    String dbProperties_<%=cid%> = <%=dbproperties%>;
-    String connectionString_<%=cid%> = null;
-    if(dbProperties_<%=cid%> == null || dbProperties_<%=cid%>.trim().length() == 0) {
-        connectionString_<%=cid%> = "<%=jdbcURL%>://" + <%=dbhost%> + ":" + <%=dbport%> + "/" + <%=dbname%>;
-    } else {
-        connectionString_<%=cid%> = "<%=jdbcURL%>://" + <%=dbhost%> + ":" + <%=dbport%> + "/" + <%=dbname%> + "?" + dbProperties_<%=cid%>;
-    }
+    
+    <%@ include file="@{org.talend.designer.components.localprovider}/components/templates/Mysql/jdbcurl4basic.javajet"%>
+    
     String dbUser_<%=cid%> = <%=dbuser%>;
 
     <%
@@ -77,9 +73,9 @@ if(useExistingConn) {
 
     java.lang.Class.forName("<%=drverClass%>");
     <%dbLog.conn().logJDBCDriver(dbLog.str(drverClass));%>
-    <%dbLog.conn().connTry(dbLog.var("connectionString"), dbLog.var("dbUser"));%>
-    connection_<%=cid%> = java.sql.DriverManager.getConnection(connectionString_<%=cid%>, dbUser_<%=cid%>, dbPwd_<%=cid%>);
-    <%dbLog.conn().connDone(dbLog.var("connectionString"));%>
+    <%dbLog.conn().connTry(dbLog.var("url"), dbLog.var("dbUser"));%>
+    connection_<%=cid%> = java.sql.DriverManager.getConnection(url_<%=cid%>, dbUser_<%=cid%>, dbPwd_<%=cid%>);
+    <%dbLog.conn().connDone(dbLog.var("url"));%>
     <%
 	if(specify_alias){
 	%>
