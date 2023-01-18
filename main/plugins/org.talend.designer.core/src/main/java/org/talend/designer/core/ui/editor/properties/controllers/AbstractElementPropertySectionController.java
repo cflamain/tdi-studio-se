@@ -75,6 +75,7 @@ import org.talend.core.GlobalServiceRegister;
 import org.talend.core.context.RepositoryContext;
 import org.talend.core.database.EDatabase4DriverClassName;
 import org.talend.core.database.EDatabaseTypeName;
+import org.talend.core.database.ERedshiftDriver;
 import org.talend.core.database.conn.ConnParameterKeys;
 import org.talend.core.database.conn.version.EDatabaseVersion4Drivers;
 import org.talend.core.language.CodeProblemsChecker;
@@ -2213,6 +2214,21 @@ public abstract class AbstractElementPropertySectionController implements Proper
 
             String distroVersion = getValueFromRepositoryName(elem, "IMPALA_VERSION");
             connParameters.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_IMPALA_VERSION, distroVersion);
+        } else if (EDatabaseTypeName.REDSHIFT.getDisplayName().equalsIgnoreCase(type)
+                || EDatabaseTypeName.REDSHIFT_SSO.getDisplayName().equalsIgnoreCase(type)) {
+            String driverVersion = getValueFromRepositoryName(elem, "DRIVER_VERSION", basePropertyParameter); //$NON-NLS-1$
+            connParameters.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_REDSHIFT_DRIVER, driverVersion);
+            if (ERedshiftDriver.DRIVER_V2.name().equalsIgnoreCase(driverVersion)) {
+                IElementParameter entryPropertiesParam = elem.getElementParameter("ENTRY_PROPERTIES");
+                if (entryPropertiesParam != null) {
+                    Object value = entryPropertiesParam.getValue();
+                    if (value != null && value instanceof List) {
+                        List<Map<String, Object>> entryProperties = (List<Map<String, Object>>) value;
+                        connParameters.getParameters().put(ConnParameterKeys.CONN_PARA_KEY_REDSHIFT_PARATABLE,
+                                ConvertionHelper.getEntryPropertiesString(entryProperties));
+                    }
+                }
+            }
         }
         // Get real hsqldb type
         if (type.equals(EDatabaseTypeName.HSQLDB.name())
