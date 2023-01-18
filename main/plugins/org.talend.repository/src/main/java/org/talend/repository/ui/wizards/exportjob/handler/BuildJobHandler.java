@@ -61,6 +61,7 @@ import org.talend.core.model.routines.CodesJarInfo;
 import org.talend.core.model.utils.JavaResourcesHelper;
 import org.talend.core.repository.constants.FileConstants;
 import org.talend.core.runtime.CoreRuntimePlugin;
+import org.talend.core.runtime.maven.MavenConstants;
 import org.talend.core.runtime.process.LastGenerationInfo;
 import org.talend.core.runtime.process.TalendProcessArgumentConstant;
 import org.talend.core.runtime.repository.build.BuildExportManager;
@@ -118,6 +119,7 @@ public class BuildJobHandler extends AbstractBuildJobHandler {
         argumentsMap.put(TalendProcessArgumentConstant.ARG_AVOID_BRANCH_NAME, isOptionChoosed(ExportChoice.avoidBranchName));
         argumentsMap.put(TalendProcessArgumentConstant.ARG_CLEAR_PASSWORD_CONTEXT_PARAMETERS,
         		isOptionChoosed(ExportChoice.clearPasswordContextParameters));
+        argumentsMap.put(MavenConstants.USE_JOBLET_SHORT_NAME, isOptionChoosed(ExportChoice.allowLongNameJoblet));
         Properties prop = (Properties) exportChoice.get(ExportChoice.properties);
         if (prop != null) { // add all properties for arugment map.
             Enumeration<Object> keys = prop.keys();

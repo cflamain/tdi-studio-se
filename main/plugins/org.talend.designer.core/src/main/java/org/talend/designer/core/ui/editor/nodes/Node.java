@@ -329,6 +329,10 @@ public class Node extends Element implements IGraphicalNode {
 
     private IReplaceNodeHandler replaceNodeHandler;
 
+    private String uniqueShortName;
+
+    private String generatingUniqueName;
+
     /**
      * Getter for index.
      *
@@ -2078,6 +2082,9 @@ public class Node extends Element implements IGraphicalNode {
             externalNode.setSubProcessStart(isSubProcessStart());
             externalNode.setProcess(getProcess());
             externalNode.setComponent(getComponent());
+            if (!getUniqueName().equals(getGeneratingUniqueName())) {
+                externalNode.setGeneratingUniqueName(getGeneratingUniqueName());
+            }
         }
         return this.externalNode;
     }
@@ -5330,8 +5337,14 @@ public class Node extends Element implements IGraphicalNode {
      */
     @Override
     public String getUniqueShortName() {
-        // should't be call from here, should be called from something extends AbstractNode (DataNode, ExternalNode...).
-        return null;
+        // should't be call from here normally, should be called from something extends AbstractNode (DataNode,
+        // ExternalNode...). used for joblet here
+        return this.uniqueShortName;
+    }
+
+    @Override
+    public void setUniqueShortName(String uniqueShortName) {
+        this.uniqueShortName = uniqueShortName;
     }
 
     public List<INode> getNodesFromSubProcess() {
@@ -5777,6 +5790,19 @@ public class Node extends Element implements IGraphicalNode {
 
     public void setReplaceNodeHandler(IReplaceNodeHandler replaceNodeHandler) {
         this.replaceNodeHandler = replaceNodeHandler;
+    }
+
+    @Override
+    public String getGeneratingUniqueName() {
+        if (StringUtils.isNotBlank(generatingUniqueName)) {
+            return generatingUniqueName;
+        }
+        return getUniqueName();
+    }
+
+    @Override
+    public void setGeneratingUniqueName(String generatingUniqueName) {
+        this.generatingUniqueName = generatingUniqueName;
     }
 
 }
