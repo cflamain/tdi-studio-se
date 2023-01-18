@@ -928,6 +928,9 @@ public class DataProcess implements IGeneratingProcess {
                 curNode.setListConnector(graphicalNode.getListConnector());
                 copyElementParametersValue(graphicalNode, curNode);
                 curNode.setUniqueName(uniqueName);
+                if (!graphicalNode.getUniqueName().equals(graphicalNode.getGeneratingUniqueName())) {
+                    curNode.setGeneratingUniqueName(graphicalNode.getGeneratingUniqueName() + "_" + curItem.getName());
+                }
                 curNode.setSubProcessStart(graphicalNode.isSubProcessStart());
                 curNode.setThereLinkWithHash(graphicalNode.isThereLinkWithHash());
                 curNode.setHasConditionalOutputs(graphicalNode.hasConditionalOutputs());
