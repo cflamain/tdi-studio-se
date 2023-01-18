@@ -1,0 +1,19 @@
+<%@ jet 
+imports="
+    	org.talend.core.model.process.INode 
+    	org.talend.core.model.metadata.IMetadataColumn
+    	org.talend.designer.codegen.config.CodeGeneratorArgument
+    	org.talend.core.model.process.IConnection
+    	"
+%>
+<%
+CodeGeneratorArgument codeGenArgument = (CodeGeneratorArgument) argument;
+INode node = (INode) codeGenArgument.getArgument();
+String cid = node.getUniqueName();
+IConnection connection = node.getIncomingConnections().get(0);
+IMetadataColumn column = connection.getMetadataTable().getListColumns().get(0);
+%>
+if (out_count_<%=cid %>++ == 0) {
+	mapper_<%=cid %>.writeValue(out_<%=cid %>, <%=connection.getName() %>.<%=column.getLabel() %>.metadatas);
+	break;
+}

@@ -613,6 +613,11 @@
         class="org.talend.designer.core.ui.editor.properties.controllers.generator.SapSchemaTypeGenerator"
         mapping="SAP_SCHEMA_TYPE"
         name="Sap Schema Type">
+  </generator>
+  <generator
+        class="org.talend.designer.core.ui.editor.properties.controllers.dynamic.DynamicGuessSchemaGenerator"
+        mapping="DYNAMIC_GUESS_SCHEMA"
+        name="Dynamic Guess Schema">
   </generator>   
    </extension>
    <extension

@@ -20,6 +20,7 @@ import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.IExtensionRegistry;
 import org.eclipse.core.runtime.Platform;
 import org.talend.commons.ui.runtime.exception.ExceptionHandler;
+import org.talend.core.PluginChecker;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.ui.properties.tab.IDynamicProperty;
 import org.talend.designer.core.ui.editor.properties.controllers.AbstractElementPropertySectionController;
@@ -55,6 +56,9 @@ public class DynamicPropertyGenerator {
                 try {
                     String controllerName = element.getAttribute("mapping"); //$NON-NLS-1$
                     EParameterFieldType key = EParameterFieldType.getFieldTypeByName(controllerName);
+                    if (EParameterFieldType.DYNAMIC_GUESS_SCHEMA == key && !PluginChecker.isTIS()) {
+                        continue;
+                    }
                     if (!dtpControls.containsKey(key)) {
                         if (!controllerName.equals(key.toString())) {
                             throw new RuntimeException("Mapping attribute " + controllerName //$NON-NLS-1$
