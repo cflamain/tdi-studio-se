@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -161,6 +162,7 @@ public class CustomComponentSettingPage extends ProjectSettingPage {
         });
 
         List<IComponent> input = ComponentsFactoryProvider.getInstance().getCustomComponents();
+        input = input.stream().filter(comp ->!"tTaCoKitGuessSchema".equals(comp.getName())).collect(Collectors.toList());
         componentViewer.setInput(input);
         shareViewer.setInput(input);
     }

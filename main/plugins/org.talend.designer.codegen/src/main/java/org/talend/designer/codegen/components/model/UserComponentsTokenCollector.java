@@ -13,6 +13,7 @@
 package org.talend.designer.codegen.components.model;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.talend.core.model.components.IComponent;
 import org.talend.core.ui.component.ComponentsFactoryProvider;
@@ -45,6 +46,7 @@ public class UserComponentsTokenCollector extends AbstractTokenCollector {
     public JSONObject collect() throws Exception {
         JSONObject object = new JSONObject();
         List<IComponent> customComponents = ComponentsFactoryProvider.getInstance().getCustomComponents();
+        customComponents = filterOutComponents(customComponents);
         JSONArray customComponentsArray = new JSONArray();
         if (customComponents != null) {
             for (int i = 0; i < customComponents.size(); i++) {
@@ -53,6 +55,11 @@ public class UserComponentsTokenCollector extends AbstractTokenCollector {
         }
         object.put(USER_COMPONENTS.getKey(), customComponentsArray);
         return object;
+    }
+
+    private List<IComponent> filterOutComponents(List<IComponent> customComponents) {
+        customComponents = customComponents.stream().filter(comp ->!"tTaCoKitGuessSchema".equals(comp.getName())).collect(Collectors.toList());
+        return customComponents;
     }
 
 }
