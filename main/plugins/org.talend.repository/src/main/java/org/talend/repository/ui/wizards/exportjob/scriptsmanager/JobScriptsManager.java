@@ -205,7 +205,6 @@ public abstract class JobScriptsManager {
         onlyDefautContext,
         applyToChildren,
         applyLog4jToChildren,
-        allowLongNameJoblet,
         needLog4jLevel,
         log4jLevel,
         addStatistics, // for feature 11031
