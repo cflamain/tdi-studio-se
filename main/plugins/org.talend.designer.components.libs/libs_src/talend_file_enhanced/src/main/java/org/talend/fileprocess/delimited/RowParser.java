@@ -256,6 +256,7 @@ public class RowParser extends DelimitedDataReader {
                         separatorIndex =  0;
                         extendedArrayStartIndex = 0;
                         buffer = new char[BUFFER_SIZE];
+                        readSymbols = -1;     // buffer is empty no read data for now
                         if (!skipEmptyRecord || !"".equals(rowRecord)) {
                             requireAdditionalReadFromSource = true;
                             currentRecord++;
