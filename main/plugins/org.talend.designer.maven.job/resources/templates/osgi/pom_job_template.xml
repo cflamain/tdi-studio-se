@@ -38,6 +38,7 @@
         <project.distribution-management.repository.id>@ProjectDistributionManagementRepositoryId@</project.distribution-management.repository.id>
         <project.distribution-management.repository.url>@ProjectDistributionManagementRepositoryUrl@</project.distribution-management.repository.url>
         <docker.skip>true</docker.skip>
+        <talend.job.parent.id>@JobParentId@</talend.job.parent.id>
 	</properties>
 
 	<dependencies>
