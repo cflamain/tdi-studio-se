@@ -285,12 +285,12 @@ public class JobJavaScriptOSGIForESBManager extends JobJavaScriptsManager {
             for (ExportFileResource process : processes) {
                 processItem = (ProcessItem) process.getItem();
                 if (processItem.eIsProxy() || processItem.getProcess().eIsProxy()) {
-                    try {
-                        Property property = ProxyRepositoryFactory.getInstance().getUptodateProperty(processItem.getProperty());
-                        processItem = (ProcessItem) property.getItem();
-                    } catch (PersistenceException e) {
-                        throw new ProcessorException(e);
-                    }
+//                    try {
+//                        Property property = ProxyRepositoryFactory.getInstance().getUptodateProperty(processItem.getProperty());
+//                        processItem = (ProcessItem) property.getItem();
+//                    } catch (PersistenceException e) {
+//                        throw new ProcessorException(e);
+//                    }
                 }
 
                 String jobVersion = processItem.getProperty().getVersion();
