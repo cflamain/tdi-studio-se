@@ -120,7 +120,7 @@ public class ConnectionManager {
             }
             boolean isJoblet = false;
             if (PluginChecker.isJobLetPluginLoaded()) {
-                IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+                IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                         IJobletProviderService.class);
                 if (service != null) {
                     if (service.isJobletComponent(target) && !connType.hasConnectionCategory(IConnectionCategory.FLOW)) {
@@ -247,7 +247,7 @@ public class ConnectionManager {
             }
             boolean isJoblet = false;
             if (PluginChecker.isJobLetPluginLoaded()) {
-                IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+                IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                         IJobletProviderService.class);
                 if (service != null) {
                     if (service.isJobletComponent(target) && !connType.hasConnectionCategory(IConnectionCategory.FLOW)) {
@@ -371,7 +371,7 @@ public class ConnectionManager {
             return false;
         }
         if (PluginChecker.isJobLetPluginLoaded()) {
-            IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+            IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                     IJobletProviderService.class);
             if (service != null) {
                 // can't connect to joblet's node, , bug 21411
@@ -460,7 +460,7 @@ public class ConnectionManager {
             return false;
         }
         if (PluginChecker.isJobLetPluginLoaded()) {
-            IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+            IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                     IJobletProviderService.class);
             if (service != null) {
                 if (service.isTriggerNode(newTarget) && !service.canConnectTriggerNode(newTarget, lineStyle)) {
@@ -492,6 +492,12 @@ public class ConnectionManager {
                     return false;
                 }
                 newlineStyle = EConnectionType.TABLE_REF;
+            }
+            // elt inputs can't connect to uniteMap directly
+            if (newTarget.getComponent().getName().endsWith("UniteMap")) {
+                if (source.isELTComponent() && !source.getComponent().getName().endsWith("Map")) {
+                    return false;
+                }
             }
         }
 
@@ -566,7 +572,7 @@ public class ConnectionManager {
         }
         boolean isJoblet = false;
         if (PluginChecker.isJobLetPluginLoaded()) {
-            IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+            IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                     IJobletProviderService.class);
             if (service != null && service.isJobletComponent(newTarget)
                     && !lineStyle.hasConnectionCategory(IConnectionCategory.FLOW)) {
@@ -622,7 +628,7 @@ public class ConnectionManager {
             return false;
         }
         if (PluginChecker.isJobLetPluginLoaded()) {
-            IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+            IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                     IJobletProviderService.class);
             if (service != null) {
                 if (service.isTriggerNode(newTarget) && !service.canConnectTriggerNode(newTarget, lineStyle)) {
@@ -696,7 +702,7 @@ public class ConnectionManager {
         }
         boolean isJoblet = false;
         if (PluginChecker.isJobLetPluginLoaded()) {
-            IJobletProviderService service = (IJobletProviderService) GlobalServiceRegister.getDefault().getService(
+            IJobletProviderService service = GlobalServiceRegister.getDefault().getService(
                     IJobletProviderService.class);
             if (service != null && service.isJobletComponent(newTarget)
                     && !lineStyle.hasConnectionCategory(IConnectionCategory.FLOW)) {
