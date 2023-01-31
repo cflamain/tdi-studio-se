@@ -246,54 +246,47 @@ skeleton="../templates/db_output_bulk.skeleton"
 <%
             }else if(useUpdateStatement){
 %>
-                StringBuffer updateQuery_<%=cid %> = new StringBuffer(select_query_<%=cid %>);
+                query_<%=cid %> = select_query_<%=cid %>;
 <%
-                if((CodeGenerationUtils.hasAlphaNumericCharacter(whereClause) && (!useWhereTable)) || (useWhereTable && whereConditions.size() > 0)) {
-%>
-                    if (updateQuery_<%=cid %>.toString().toUpperCase().contains(" WHERE ")) {
-						useAnd_<%=cid %> = true;
-                        updateQuery_<%=cid %>.append(" AND (");
-                    } else {
-                        updateQuery_<%=cid %>.append(" WHERE ");
-                    }
-<%
-                }
             } else {
 %>
                 StringBuffer updateQuery_<%=cid %> = new StringBuffer("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> ");
 <%
+				// -- For useUpdateStatement this part is added inside tELTMap GenerationManager --
                 if((CodeGenerationUtils.hasAlphaNumericCharacter(whereClause) && (!useWhereTable)) || (useWhereTable && whereConditions.size() > 0)) {
 %>
                     updateQuery_<%=cid %>.append("  WHERE ");
 <%
                 }
-            }
-        	if(!useWhereTable) {
-            	if(CodeGenerationUtils.hasAlphaNumericCharacter(whereClause)) {
+
+				if(!useWhereTable) {
+					if(CodeGenerationUtils.hasAlphaNumericCharacter(whereClause)) {
 %>
-					updateQuery_<%=cid %>.append(<%=CodeGenerationUtils.replaceAllCrBySpace(whereClause)%>);
+						updateQuery_<%=cid %>.append(<%=CodeGenerationUtils.replaceAllCrBySpace(whereClause)%>);
 <%
-				}
-			} else {
-				if(whereConditions.size() > 0) {
-					String operator = "\"\"";
-					for(Map<String, String> whereCondition : whereConditions) {
-						String column_condition = whereCondition.get("COLUMN");
-						String function_condition = whereCondition.get("FUNCTION");
-						String value_condition = whereCondition.get("VALUE_SQL");
+					}
+				} else {
+					if(whereConditions.size() > 0) {
+						String operator = "\"\"";
+						for(Map<String, String> whereCondition : whereConditions) {
+							String column_condition = whereCondition.get("COLUMN");
+							String function_condition = whereCondition.get("FUNCTION");
+							String value_condition = whereCondition.get("VALUE_SQL");
 %>
-						updateQuery_<%=cid %>.append(<%=operator %> + <%=column_condition %> + " " + <%=function_condition %> + " " + <%=value_condition %>);
+							updateQuery_<%=cid %>.append(<%=operator %> + <%=column_condition %> + " " + <%=function_condition %> + " " + <%=value_condition %>);
 <%
-						operator = "\" AND \"";
+							operator = "\" AND \"";
+						}
 					}
 				}
-			}
 %>
-			if(useAnd_<%=cid %>) {
-				updateQuery_<%=cid %>.append(")");
-			}
-			query_<%=cid %> = updateQuery_<%=cid %>.toString();
+				if(useAnd_<%=cid %>) {
+					updateQuery_<%=cid %>.append(")");
+				}
+				query_<%=cid %> = updateQuery_<%=cid %>.toString();
 <%
+				// --! For useUpdateStatement this part is added inside tELTMap GenerationManager !--
+			}
     	} else if (("DELETE").equals(dataAction)){
 %>
 			StringBuffer deleteQuery_<%=cid %> = new StringBuffer("DELETE  FROM "+ tableName_<%=cid%>+" WHERE EXISTS ("+select_query_<%=cid %>+") ");
