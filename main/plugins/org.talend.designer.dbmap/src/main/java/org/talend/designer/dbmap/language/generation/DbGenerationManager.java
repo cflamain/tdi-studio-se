@@ -41,6 +41,7 @@ import org.talend.core.model.metadata.MetadataTalendType;
 import org.talend.core.model.metadata.MetadataToolHelper;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
 import org.talend.core.model.process.EConnectionType;
+import org.talend.core.model.process.ElementParameterParser;
 import org.talend.core.model.process.IConnection;
 import org.talend.core.model.process.IContext;
 import org.talend.core.model.process.IContextParameter;
@@ -2643,9 +2644,9 @@ public abstract class DbGenerationManager {
                         ExternalDbMapTable nextTable = null;
                         if (i < lstSizeInputTables) {
                             nextTable = inputTables.get(i);
-                                appendSqlQuery(sb, labelJoinType);
-                                appendSqlQuery(sb, DbMapSqlConstants.SPACE);
-                                buildTableDeclaration(component, sb, nextTable, false, true, true);
+                            appendSqlQuery(sb, labelJoinType);
+                            appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                            buildTableDeclaration(component, sb, nextTable, false, true, true);
                         }
 
                     } else {
@@ -2733,10 +2734,12 @@ public abstract class DbGenerationManager {
             this.tabSpaceString = tabString;
 
             String whereClauses = sbWhere.toString();
+            String additionalWhereClause = this.getWhereClauseFromTarget(dbMapComponent, outputTableName);
+            boolean additionalWhereFlag = additionalWhereClause != null && additionalWhereClause.trim().length() > 0;
             boolean whereFlag = whereClauses.trim().length() > 0;
             boolean whereAddFlag = !whereAddition.isEmpty();
             boolean whereOriginalFlag = !originalWhereAddition.isEmpty();
-            if (whereFlag || whereAddFlag || whereOriginalFlag) {
+            if (whereFlag || whereAddFlag || whereOriginalFlag || additionalWhereFlag) {
                 appendSqlQuery(sb, DbMapSqlConstants.NEW_LINE);
                 appendSqlQuery(sb, tabSpaceString);
                 appendSqlQuery(sb, DbMapSqlConstants.WHERE);
@@ -2744,9 +2747,19 @@ public abstract class DbGenerationManager {
             if (whereFlag) {
                 appendSqlQuery(sb, whereClauses);
             }
+            if (additionalWhereFlag) {
+                if (whereFlag) {
+                    appendSqlQuery(sb, DbMapSqlConstants.NEW_LINE);
+                    appendSqlQuery(sb, tabSpaceString);
+                    appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                    appendSqlQuery(sb, DbMapSqlConstants.AND);
+                }
+                appendSqlQuery(sb, DbMapSqlConstants.SPACE);
+                appendSqlQuery(sb, additionalWhereClause);
+            }
             if (whereAddFlag) {
                 for (int i = 0; i < whereAddition.size(); i++) {
-                    if (i == 0 && whereFlag || i > 0) {
+                    if ((i == 0 && (whereFlag || additionalWhereFlag)) || i > 0) {
                         appendSqlQuery(sb, DbMapSqlConstants.NEW_LINE);
                         appendSqlQuery(sb, tabSpaceString);
                         appendSqlQuery(sb, DbMapSqlConstants.SPACE);
@@ -2778,6 +2791,70 @@ public abstract class DbGenerationManager {
         sqlQuery = handleQuery(sqlQuery);
         queryColumnsName = handleQuery(queryColumnsName);
         return sqlQuery;
+    }
+
+    protected String getWhereClauseFromTarget(DbMapComponent dbMapComponent, String outputTableName) {
+        List<IConnection> outputConnections = (List<IConnection>) dbMapComponent.getOutgoingConnections();
+        if (outputConnections != null) {
+            IConnection iconn = this.getConnectonByMetadataName(outputConnections, outputTableName);
+            if (iconn != null && iconn.getTarget() != null) {
+                source = iconn.getTarget();
+                IElementParameter useWhereClauseTable = source.getElementParameter("USE_WHERE_CONDITIONS_TABLE");
+                if (useWhereClauseTable != null && Boolean.parseBoolean(useWhereClauseTable.getValue().toString())) {
+                    StringBuilder whereSb = new StringBuilder();
+                    List<Map<String, String>> whereConditions = (List<Map<String,String>>)ElementParameterParser.getObjectValue(source, "__WHERE_CONDITIONS_TABLE__");
+                    if(whereConditions.size() > 0) {
+                        String operator = "";
+                        for(Map<String, String> whereCondition : whereConditions) {
+                            String column_condition = this.adjustVariableOnEdge(whereCondition.get("COLUMN"));
+                            String function_condition = TalendTextUtils.removeQuotes(whereCondition.get("FUNCTION"));
+                            String value_condition = this.adjustVariableOnEdge(whereCondition.get("VALUE_SQL"));
+                            whereSb.append(operator)
+                                    .append(column_condition)
+                                    .append(" ")
+                                    .append(function_condition)
+                                    .append(" ")
+                                    .append(value_condition);
+
+                            operator = " AND ";
+                        }
+                    }
+                    String clause = whereSb.toString();
+                    if (org.apache.commons.lang.StringUtils.isNotBlank(clause)) {
+                        return clause;
+                    }
+                } else {
+                    IElementParameter whereClauseParam = source.getElementParameter("WHERE_CLAUSE"); //$NON-NLS-1$
+
+                    if (whereClauseParam != null && whereClauseParam.getValue() != null) {
+                        String whereTextArea = this.adjustVariableOnEdge(String.valueOf(whereClauseParam.getValue()));
+
+                        if (org.apache.commons.lang.StringUtils.isNotBlank(whereTextArea)) {
+                            return whereTextArea;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    protected String adjustVariableOnEdge(String code) {
+        if (code == null) {
+            return null;
+        }
+        StringBuilder codeSb = new StringBuilder(code);
+        if (!code.startsWith("\"")) {
+            codeSb.insert(0, "\" + ");
+        } else {
+            codeSb.deleteCharAt(0);
+        }
+        if (!code.endsWith("\"")) {
+            codeSb.append(" + \"");
+        } else {
+            codeSb.deleteCharAt(codeSb.length() - 1);
+        }
+        return codeSb.toString();
     }
 
     protected boolean isVariable(String expression) {
