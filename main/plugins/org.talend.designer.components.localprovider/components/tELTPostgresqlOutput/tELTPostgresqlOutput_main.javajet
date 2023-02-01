@@ -285,47 +285,37 @@ for(Column colStmt:stmtStructure){
 
 <%
 	}else if (("UPDATE").equals(dataAction)){
-%>
-<%
 		if(useUpdateStatement){
 %>
-			StringBuffer updateQuery_<%=cid %> = new StringBuffer(select_query_<%=cid %>);	
+    		StringBuffer updateQuery_<%=cid %> = new StringBuffer(select_query_<%=cid %>);
 <%
-		}else{
+    	}else{
 %>
 			StringBuffer updateQuery_<%=cid %> = new StringBuffer("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> ");
 <%
-		}
-		if((CodeGenerationUtils.hasAlphaNumericCharacter(whereClause) && (!useWhereTable)) || (useWhereTable && whereConditions.size() > 0)) {
-			if(useUpdateStatement){
-%>
-				if(select_query_<%=cid %>.indexOf("WHERE")==-1){
-					updateQuery_<%=cid %>.append("  WHERE ");
-				}else{
-					updateQuery_<%=cid %>.append("  AND ");
-				} 
-<%
-			}else{
+			// -- For useUpdateStatement this part is added inside tELTMap GenerationManager TDI-49267 --
+			if((CodeGenerationUtils.hasAlphaNumericCharacter(whereClause) && (!useWhereTable)) || (useWhereTable && whereConditions.size() > 0)) {
 %>
 				updateQuery_<%=cid %>.append("  WHERE ");
 <%
-			}
-			if(!useWhereTable) {
+				if(!useWhereTable) {
 %>
-				updateQuery_<%=cid %>.append(<%=CodeGenerationUtils.replaceAllCrBySpace(whereClause)%>);
+					updateQuery_<%=cid %>.append(<%=CodeGenerationUtils.replaceAllCrBySpace(whereClause)%>);
 <%
-			} else {
-				String operator = "\"\"";
-				for(Map<String, String> whereCondition : whereConditions) {
-					String column_condition = whereCondition.get("COLUMN");
-					String function_condition = whereCondition.get("FUNCTION");
-					String value_condition = whereCondition.get("VALUE_SQL");
+				} else {
+					String operator = "\"\"";
+					for(Map<String, String> whereCondition : whereConditions) {
+						String column_condition = whereCondition.get("COLUMN");
+						String function_condition = whereCondition.get("FUNCTION");
+						String value_condition = whereCondition.get("VALUE_SQL");
 %>
-					updateQuery_<%=cid %>.append(<%=operator %> + <%=column_condition %> + " " + <%=function_condition %> + " " + <%=value_condition %>);
+						updateQuery_<%=cid %>.append(<%=operator %> + <%=column_condition %> + " " + <%=function_condition %> + " " + <%=value_condition %>);
 <%
-					operator = "\" AND \"";
+						operator = "\" AND \"";
+					}
 				}
 			}
+			// --! For useUpdateStatement this part is added inside tELTMap GenerationManager TDI-49267 !--
 		}
 %>
 		pstmt_<%=cid %> = conn_<%=cid%>.prepareStatement(updateQuery_<%=cid %>.toString());
