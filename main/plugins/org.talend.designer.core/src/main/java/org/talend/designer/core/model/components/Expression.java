@@ -111,6 +111,8 @@ public final class Expression {
     
     private static final String IS_CONTEXT = "isContext["; //$NON-NLS-1$
     
+    private static final String IS_DIJOB = "isDIJob[]"; //$NON-NLS-1$
+    
     private static final String IS_PLUGIN_LOADED = "IS_PLUGIN_LOADED"; //$NON-NLS-1$
 
     private Expression(String expressionString) {
@@ -299,6 +301,10 @@ public final class Expression {
             test = GREAT_THAN;
         } else if (simpleExpression.contains(LESS_THAN)) {
             test = LESS_THAN;
+        }
+        
+        if (simpleExpression.contains(IS_DIJOB)) { //$NON-NLS-1$
+            return evaluateIsDIJob(simpleExpression, listParam, currentParam);
         }
 
         if (simpleExpression.contains("SPARK_MODE") && simpleExpression.contains("LINK@")) { //$NON-NLS-1$
@@ -907,6 +913,17 @@ public final class Expression {
     			.findFirst()
     			.map(value -> value.getValue().toString().startsWith("context"))
     			.orElse(false);
+    }
+    
+    private static boolean evaluateIsDIJob(String simpleExpression, List<? extends IElementParameter> listParam,
+            ElementParameter currentParam) {
+    	String toEvaluate = simpleExpression.substring(simpleExpression.indexOf("'") + 1, simpleExpression.lastIndexOf("'"));
+    	if ("true".equals(toEvaluate)) {
+    		return "DI".equals(retrieveNodeElementFromParameter(currentParam, listParam).getComponent().getPaletteType());
+    	} else {
+    		return !"DI".equals(retrieveNodeElementFromParameter(currentParam, listParam).getComponent().getPaletteType());
+    	}
+    	
     }
 
     /**
