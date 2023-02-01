@@ -14,6 +14,7 @@ package org.talend.sdk.component.studio.ui.guessschema;
 
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -116,31 +117,37 @@ public class TaCoKitGuessSchemaProcess {
                     IProcessor.NO_TRACES);
             
             
-            final Future<String> result = executorService.submit(() -> {
+            final Future<GuessSchemaResult> result = executorService.submit(() -> {
                 final Pattern pattern = Pattern.compile("^\\[\\s*(INFO|WARN|ERROR|DEBUG|TRACE)\\s*]");
+                String out;
+                final List<String> err = new ArrayList();
+                // read stderr stream
+                try (final BufferedReader reader = new BufferedReader(new InputStreamReader(executeProcess.getErrorStream()))) {
+                    err.addAll(reader.lines().collect(toList()));
+                    err.add("===== Root cause ======");
+                }
+                // read stdout stream
                 try (final BufferedReader reader =
                              new BufferedReader(new InputStreamReader(executeProcess.getInputStream()))) {
-                    return reader.lines()
+                    out = reader.lines()
+                            .peek(l -> err.add(l)) // may have interesting infos during execution, adding to stack
                             .filter(l -> !pattern.matcher(l).find())                // filter out logs
                             .filter(l -> l.startsWith("[") || l.startsWith("{"))    // ignore line with non json data
                             .collect(joining("\n"));
                 }
+                return new GuessSchemaResult(out, err.stream().collect(joining("\n")));
             });
 
-            // read error stream
-            final Future<String> error = executorService.submit(() -> {
-                try (
-                        final BufferedReader reader = new BufferedReader(
-                                new InputStreamReader(executeProcess.getErrorStream()))) {
-                    return reader.lines().collect(joining("\n"));
-                }
-            });
             executeProcess.waitFor();
-            final String resultStr = result.get();
-            if (resultStr != null && !resultStr.trim().isEmpty()) {
-                return new GuessSchemaResult(resultStr, error.get());
+            final GuessSchemaResult guessResult = result.get();
+            if (executeProcess.exitValue() != 0){
+                return new GuessSchemaResult(guessResult.getError(), guessResult.getError());
             }
-            final String errMessage = error.get();
+            final String resultStr = guessResult.getResult();
+            if (resultStr != null && !resultStr.trim().isEmpty()) {
+                return guessResult;
+            }
+            final String errMessage = guessResult.getError();
             if (errMessage != null && !errMessage.isEmpty()) {
                 throw new IllegalStateException(errMessage);
             } else {

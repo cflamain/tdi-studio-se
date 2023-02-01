@@ -19,7 +19,6 @@ import java.util.Set;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.ltk.core.refactoring.resource.RenameResourceChange;
 import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.utils.generation.JavaUtils;
 import org.talend.core.GlobalServiceRegister;
@@ -36,7 +35,6 @@ import org.talend.core.repository.model.ProxyRepositoryFactory;
 import org.talend.core.repository.utils.XmiResourceManager;
 import org.talend.core.runtime.process.ITalendProcessJavaProject;
 import org.talend.core.utils.CodesJarResourceCache;
-import org.talend.designer.maven.tools.AggregatorPomsHelper;
 import org.talend.designer.maven.tools.CodeM2CacheManager;
 import org.talend.designer.maven.tools.CodesJarM2CacheManager;
 import org.talend.designer.maven.utils.CodesJarMavenUtil;
@@ -86,9 +84,6 @@ public class CodesJarChangeListener implements PropertyChangeListener {
                 String oldVersion = oldFields[1];
                 CodesJarResourceCache.updateCache(null, oldName, oldVersion, property);
                 ERepositoryObjectType type = ERepositoryObjectType.getItemType(property.getItem());
-                IFolder folder = new AggregatorPomsHelper().getCodeFolder(type).getFolder(oldName);
-                RenameResourceChange change = new RenameResourceChange(folder.getFullPath(), property.getLabel());
-                change.perform(new NullProgressMonitor());
                 TalendJavaProjectManager.deleteTalendCodesJarProject(type,
                         ProjectManager.getInstance().getProject(property).getTechnicalLabel(), oldName, true);
                 boolean isLabelChanged = !property.getLabel().equals(oldName);

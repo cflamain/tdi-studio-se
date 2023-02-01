@@ -354,15 +354,22 @@ for(int i = 0; i &lt; result.length; i++){
 			/>
 			<IMPORT
 				NAME="talend-ws"
-				MODULE="talend-ws-2.0-20221219.jar"
-				MVN="mvn:org.talend.components/talend-ws/2.0-20221219"
+				MODULE="talend-ws-2.1-20230114.jar"
+				MVN="mvn:org.talend.components/talend-ws/2.1-20230114"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 	
 			<IMPORT
 				NAME="velocity"
-				MODULE="velocity-1.7.jar"
-				MVN="mvn:org.apache.velocity/velocity/1.7"
+				MODULE="velocity-engine-core-2.3.jar"
+				MVN="mvn:org.apache.velocity/velocity-engine-core/2.3"
+				REQUIRED_IF="(API=='CXF')"
+			/>
+			
+			<IMPORT
+				NAME="commons-lang3"
+				MODULE="commons-lang3-3.10.jar"
+				MVN="mvn:org.apache.commons/commons-lang3/3.10"
 				REQUIRED_IF="(API=='CXF')"
 			/>
 	

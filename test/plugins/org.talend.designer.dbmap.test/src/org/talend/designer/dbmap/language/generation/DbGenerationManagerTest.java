@@ -518,6 +518,10 @@ public class DbGenerationManagerTest extends DbGenerationManagerTestHelper {
             String[] dbColumns) {
         Connection connection = mock(Connection.class);
         Node node = mock(Node.class);
+        when(node.isELTComponent()).thenReturn(true);
+        IComponent component =
+                ComponentsFactoryProvider.getInstance().get("tELTOutput", ComponentCategory.CATEGORY_4_DI.getName());
+        when(node.getComponent()).thenReturn(component);
         ElementParameter param = new ElementParameter(node);
         param.setName("ELT_SCHEMA_NAME");
         param.setValue(schemaName);
@@ -5908,5 +5912,168 @@ public class DbGenerationManagerTest extends DbGenerationManagerTestHelper {
         assertEquals(expectedQuery, query);
     }
 
+
+    @Test
+    public void testSubQuery() {
+        String schema = "";
+        String table1 = "table1";
+        String table2 = "table2";
+        String table3 = "table3";
+        List<IConnection> incomingConnections = new ArrayList<IConnection>();
+        String[] mainTableEntities = new String[] { "id", "column1", "column2" };
+        incomingConnections.add(mockConnection(schema, table1, mainTableEntities));
+        dbMapComponent.setIncomingConnections(incomingConnections);
+
+        ExternalDbMapData externalData = new ExternalDbMapData();
+        List<ExternalDbMapTable> inputs = new ArrayList<ExternalDbMapTable>();
+        List<ExternalDbMapTable> outputs = new ArrayList<ExternalDbMapTable>();
+        // main table
+        ExternalDbMapTable inputTable = new ExternalDbMapTable();
+        String mainTableName = "".equals(schema) ? table1 : schema + "." + table1;
+        // quote will be removed in the ui for connections ,so we do the same for test
+        String mainTableNameNoQuote = TalendTextUtils.removeQuotes(mainTableName);
+        inputTable.setTableName(mainTableNameNoQuote);
+        inputTable.setName(mainTableName);
+        List<ExternalDbMapEntry> entities = getMetadataEntities(mainTableEntities, new String[3]);
+        inputTable.setMetadataTableEntries(entities);
+        inputs.add(inputTable);
+
+        // output
+        ExternalDbMapTable outputTable = new ExternalDbMapTable();
+        mainTableName = "".equals(schema) ? table2 : schema + "." + table2;
+        // quote will be removed in the ui for connections ,so we do the same for test
+        mainTableNameNoQuote = TalendTextUtils.removeQuotes(mainTableName);
+        outputTable.setTableName(mainTableNameNoQuote);
+        outputTable.setName("table2");
+        String[] names = new String[] { "id", "column1", "column2" };
+        String mainTable = mainTableName;
+        String[] expressions = new String[] { "table1.id", "table1.column1", "table1.column2" };
+        outputTable.setMetadataTableEntries(getMetadataEntities(names, expressions));
+
+        outputs.add(outputTable);
+        externalData.setInputTables(inputs);
+        externalData.setOutputTables(outputs);
+        dbMapComponent.setExternalData(externalData);
+        List<IMetadataTable> metadataList = new ArrayList<IMetadataTable>();
+        MetadataTable metadataTable = getMetadataTable(names);
+        metadataTable.setLabel("table2");
+        metadataList.add(metadataTable);
+        dbMapComponent.setMetadataList(metadataList);
+        JobContext newContext = new JobContext("Default");
+        List<IContextParameter> newParamList = new ArrayList<IContextParameter>();
+        newContext.setContextParameterList(newParamList);
+        JobContextParameter param = new JobContextParameter();
+        param.setName("schema");
+        newParamList.add(param);
+        process = mock(Process.class);
+        JobContextManager contextManger = new JobContextManager();
+        contextManger.setDefaultContext(newContext);
+        when(process.getContextManager()).thenReturn(contextManger);
+        dbMapComponent.setProcess(process);
+
+        ExternalDbMapData externalData2 = new ExternalDbMapData();
+        DbMapComponent dbMapComponent2 = new DbMapComponent();
+        dbMapComponent2.setExternalData(externalData2);
+        mainTableEntities = new String[] { "id", "column1", "column2" };
+
+        List<IConnection> outgoingConnections = new ArrayList<IConnection>();
+        Node map1 = mockNode(dbMapComponent);
+        outgoingConnections.add(mockConnection(map1, schema, table2, mainTableEntities));
+        outgoingConnections
+                .add(mockConnection(schema, "input1", "table3", new String[] { "id", "newColumn", "newColumn1" },
+                        new String[] { "id", "newColumn", "newColumn1" }));
+        dbMapComponent.setOutgoingConnections(outgoingConnections);
+
+        dbMapComponent2.setIncomingConnections(outgoingConnections);
+
+        inputs = new ArrayList<ExternalDbMapTable>();
+        outputs = new ArrayList<ExternalDbMapTable>();
+        // main table
+        inputTable = new ExternalDbMapTable();
+        mainTableName = "".equals(schema) ? table2 : schema + "." + table2;
+        // quote will be removed in the ui for connections ,so we do the same for test
+        mainTableNameNoQuote = TalendTextUtils.removeQuotes(mainTableName);
+        inputTable.setTableName(mainTableNameNoQuote);
+        inputTable.setName("table2");
+        entities = getMetadataEntities(mainTableEntities, new String[3]);
+        inputTable.setMetadataTableEntries(entities);
+        
+        // external input table
+        ExternalDbMapTable inputTable2 = new ExternalDbMapTable();
+        String extTableName = "input1";
+        // quote will be removed in the ui for connections ,so we do the same for test
+        String extTableNameNoQuote = TalendTextUtils.removeQuotes(extTableName);
+        inputTable2.setTableName(extTableNameNoQuote);
+        inputTable2.setName(extTableName);
+        mainTableEntities = new String[] { "id", "column1", "column2" };
+        List<ExternalDbMapEntry> entitiesExt = getMetadataEntities(mainTableEntities, new String[3]);
+        ExternalDbMapEntry newColumn = entitiesExt.get(0);
+        newColumn.setExpression("table2.id");
+        newColumn.setOperator("=");
+        newColumn.setJoin(false);
+        inputTable2.setJoinType("NO_JOIN");
+        inputTable2.setMetadataTableEntries(entitiesExt);
+        inputs.add(inputTable2);
+        inputs.add(inputTable);
+
+
+        // output
+        outputTable = new ExternalDbMapTable();
+        mainTableName = "".equals(schema) ? table3 : schema + "." + table3;
+        // quote will be removed in the ui for connections ,so we do the same for test
+        mainTableNameNoQuote = TalendTextUtils.removeQuotes(mainTableName);
+        outputTable.setTableName(mainTableNameNoQuote);
+        outputTable.setName("table3");
+        names = new String[] { "id", "column1", "column2" };
+        mainTable = mainTableName;
+        expressions = new String[] { "table2.id", "table2.column1", "table2.column2" };
+        outputTable.setMetadataTableEntries(getMetadataEntities(names, expressions));
+        outputs.add(outputTable);
+
+        externalData2.setInputTables(inputs);
+        externalData2.setOutputTables(outputs);
+        dbMapComponent2.setExternalData(externalData2);
+        metadataList = new ArrayList<IMetadataTable>();
+        metadataTable = getMetadataTable(names);
+        metadataTable.setLabel("table3");
+        metadataList.add(metadataTable);
+        dbMapComponent2.setMetadataList(metadataList);
+        if (dbMapComponent2.getElementParameters() == null) {
+            dbMapComponent2.setElementParameters(Collections.EMPTY_LIST);
+        }
+        JobContextParameter param1 = new JobContextParameter();
+        param1.setName("param1");
+        newParamList.add(param1);
+
+        JobContextParameter param2 = new JobContextParameter();
+        param2.setName("param2");
+        newParamList.add(param2);
+        dbMapComponent2.setProcess(process);
+        outgoingConnections = new ArrayList<IConnection>();
+        outgoingConnections.add(mockConnection(schema, table3, mainTableEntities));
+        dbMapComponent2.setOutgoingConnections(outgoingConnections);
+
+        ElementParameter comName = new ElementParameter(dbMapComponent);
+        comName.setName("COMPONENT_NAME");
+        comName.setValue("tELTMap");
+        List<ElementParameter> list = new ArrayList<>();
+        list.add(comName);
+        dbMapComponent.setElementParameters(list);
+
+        dbManager = new GenericDbGenerationManager();
+        dbManager.setAddQuotesInTableNames(false);
+
+
+        String queryNoQuotes = dbManager.buildSqlSelect(dbMapComponent2, "table3").replaceAll("\n", "");
+        String exceptQueryNoQuotes =
+                "\"SELECTtable2.id, table2.column1, table2.column2FROM input1 , (  SELECT  table1.id AS id, table1.column1 AS column1, table1.column2 AS column2  FROM   table1 ) table2WHERE  input1.id = table2.id\"";
+        assertEquals(exceptQueryNoQuotes.replaceAll("\n", "").trim(), queryNoQuotes.trim());
+        dbManager.setAddQuotesInTableNames(true);
+        String query = dbManager.buildSqlSelect(dbMapComponent2, "table3").replaceAll("\n", "");
+        String exceptQuery =
+                "\"SELECT\\\"table2\\\".id, \\\"table2\\\".column1, \\\"table2\\\".column2FROM \\\"input1\\\" , (  SELECT  table1.id AS id, table1.column1 AS column1, table1.column2 AS column2  FROM   table1 ) table2WHERE  \\\"input1\\\".id = \\\"table2\\\".id\"";
+        assertEquals(exceptQuery.replaceAll("\n", "").trim(), query.trim());
+
+    }
 }
 

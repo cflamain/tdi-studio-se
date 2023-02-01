@@ -98,7 +98,7 @@
             category="org.talend.core.prefs"
             class="org.talend.designer.core.ui.preferences.ExchangePreferencePage"
             id="org.talend.repository.prefs.exchange"
-            name="%exchange">
+            name="%exchangeDeprecated">
       </page>
       <page
             category="org.talend.core.prefs"

@@ -35,6 +35,17 @@ skeleton="@{org.talend.designer.components.localprovider}/components/templates/d
     
     boolean useExistingConnection = "true".equals(ElementParameterParser.getValue(node,"__USE_EXISTING_CONNECTION__"));
 
+    boolean usingStatsLogs = cid.equals("talendLogs_DB") || cid.equals("talendStats_DB") || cid.equals("talendMeter_DB");
+
+if (usingStatsLogs) {
+%>
+    String keyPsmt_<%=cid %> = null;
+    if ((keyPsmt_<%=cid %> = (String) resourceMap.remove("keyPsmt_<%=cid%>")) != null) {
+        SharedDBPreparedStatement.releasePreparedStatement(keyPsmt_<%=cid%>);
+    }
+<%
+}
+
 if(!useExistingConnection) {
 %>
     try {

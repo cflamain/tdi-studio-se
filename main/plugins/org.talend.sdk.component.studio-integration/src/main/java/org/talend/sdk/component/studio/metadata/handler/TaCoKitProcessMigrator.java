@@ -8,6 +8,7 @@ import org.talend.commons.exception.ExceptionHandler;
 import org.talend.commons.exception.PersistenceException;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.core.model.properties.Item;
+import org.talend.core.model.properties.JobletProcessItem;
 import org.talend.core.model.properties.ProcessItem;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
@@ -29,9 +30,9 @@ public class TaCoKitProcessMigrator extends AbstractImportResourcesHandler {
         }
         for (final ImportItem importItem : importedItemRecords) {
             try {
-                Optional<ProcessItem> processItem = getItem(importItem);
-                if (processItem.isPresent()) {
-                    manager.checkProcessItemMigration(processItem.get(), getComponentType(importItem.getRepositoryType()),
+                Optional<Item> item = getItem(importItem);
+                if (item.isPresent()) {
+                    manager.checkProcessItemMigration(item.get(), getComponentType(importItem.getRepositoryType()),
                             monitor);
                 }
             } catch (Exception e) {
@@ -70,15 +71,15 @@ public class TaCoKitProcessMigrator extends AbstractImportResourcesHandler {
      * @return Process item stored in repository
      * @throws PersistenceException
      */
-    private Optional<ProcessItem> getItem(final ImportItem importItem) throws PersistenceException {
-        List<IRepositoryViewObject> allVersion = ProxyRepositoryFactory.getInstance().getAllVersion(
-                ProjectManager.getInstance().getCurrentProject(), importItem.getItemId(), importItem.getImportPath(),
-                importItem.getRepositoryType());
+    private Optional<Item> getItem(final ImportItem importItem) throws PersistenceException {
+        List<IRepositoryViewObject> allVersion = ProxyRepositoryFactory
+                .getInstance()
+                .getAllVersion(ProjectManager.getInstance().getCurrentProject(), importItem.getItemId(), importItem.getImportPath(), importItem.getRepositoryType());
         for (IRepositoryViewObject repositoryObject : allVersion) {
             if (repositoryObject.getProperty().getVersion().equals(importItem.getItemVersion())) {
                 final Item item = repositoryObject.getProperty().getItem();
-                if (item instanceof ProcessItem) {
-                    return Optional.of((ProcessItem) item);
+                if (item instanceof ProcessItem || item instanceof JobletProcessItem) {
+                    return Optional.of(item);
                 }
             }
         }

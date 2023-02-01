@@ -24,12 +24,15 @@ import org.talend.commons.ui.runtime.image.IImage;
 import org.talend.core.model.properties.Item;
 import org.talend.core.model.properties.PropertiesPackage;
 import org.talend.core.model.properties.Property;
+import org.talend.core.model.properties.RoutineItem;
 import org.talend.core.model.repository.AbstractRepositoryContentHandler;
 import org.talend.core.model.repository.ERepositoryObjectType;
 import org.talend.core.model.repository.IRepositoryViewObject;
 import org.talend.core.model.repository.RepositoryViewObject;
 import org.talend.core.model.routines.CodesJarInfo;
+import org.talend.core.model.routines.RoutinesUtil;
 import org.talend.core.repository.model.ProxyRepositoryFactory;
+import org.talend.core.utils.CodesJarResourceCache;
 import org.talend.repository.model.IRepositoryNode.ENodeType;
 import org.talend.repository.model.IRepositoryNode.EProperties;
 import org.talend.repository.model.RepositoryNode;
@@ -83,9 +86,19 @@ public class RoutinesJarRepositoryContentHandler extends AbstractRepositoryConte
         if (property == null) {
             return;
         }
+
         try {
+            CodesJarInfo codeJarinfo = null;
+            if (RoutinesUtil.isInnerCodes(property)) {
+                codeJarinfo = CodesJarResourceCache.getCodesJarByInnerCode((RoutineItem) property.getItem());
+            } else {
+                codeJarinfo = CodesJarInfo.create(property);
+            }
+            if (codeJarinfo == null) {
+                return;
+            }
             List<IRepositoryViewObject> innerRoutinesObj = ProxyRepositoryFactory.getInstance()
-                    .getAllInnerCodes(CodesJarInfo.create(property));
+                    .getAllInnerCodes(codeJarinfo);
             for (IRepositoryViewObject innerRoutineObj : innerRoutinesObj) {
                 Property innerRoutineProperty = innerRoutineObj.getProperty();
                 RepositoryNode innerRoutineNode = new RepositoryNode(new RepositoryViewObject(innerRoutineProperty),
