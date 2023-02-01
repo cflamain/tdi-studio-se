@@ -235,9 +235,6 @@ skeleton="../templates/db_output_bulk.skeleton"
             query_<%=cid %> = insertQuery_<%=cid %>;
 <%
         } else if (("UPDATE").equals(dataAction)){
-%>
-        	boolean useAnd_<%=cid %> = false;
-<%
             if(isDeltaLake){
 %>
                 String updateQuery_<%=cid %> = null;
@@ -246,13 +243,14 @@ skeleton="../templates/db_output_bulk.skeleton"
 <%
             }else if(useUpdateStatement){
 %>
+				String updateQuery_<%=cid %> = select_query_<%=cid %>;
                 query_<%=cid %> = select_query_<%=cid %>;
 <%
             } else {
 %>
                 StringBuffer updateQuery_<%=cid %> = new StringBuffer("UPDATE "+tableName_<%=cid%>+" SET <%=updateSetStmt.toString()%> ");
 <%
-				// -- For useUpdateStatement this part is added inside tELTMap GenerationManager --
+				// -- For useUpdateStatement this part is added inside tELTMap GenerationManager TDI-49267 --
                 if((CodeGenerationUtils.hasAlphaNumericCharacter(whereClause) && (!useWhereTable)) || (useWhereTable && whereConditions.size() > 0)) {
 %>
                     updateQuery_<%=cid %>.append("  WHERE ");
@@ -280,9 +278,6 @@ skeleton="../templates/db_output_bulk.skeleton"
 					}
 				}
 %>
-				if(useAnd_<%=cid %>) {
-					updateQuery_<%=cid %>.append(")");
-				}
 				query_<%=cid %> = updateQuery_<%=cid %>.toString();
 <%
 				// --! For useUpdateStatement this part is added inside tELTMap GenerationManager !--
