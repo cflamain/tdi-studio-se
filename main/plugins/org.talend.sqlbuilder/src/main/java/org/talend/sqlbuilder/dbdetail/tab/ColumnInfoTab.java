@@ -13,11 +13,10 @@
 package org.talend.sqlbuilder.dbdetail.tab;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import net.sourceforge.squirrel_sql.fw.sql.ITableInfo;
 
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataFromDataBase;
 import org.talend.core.model.metadata.builder.database.ExtractMetaDataUtils;
@@ -26,6 +25,8 @@ import org.talend.sqlbuilder.dataset.dataset.DataSet;
 import org.talend.sqlbuilder.dbstructure.nodes.INode;
 import org.talend.sqlbuilder.dbstructure.nodes.TableNode;
 import org.talend.sqlbuilder.sessiontree.model.SessionTreeNode;
+
+import net.sourceforge.squirrel_sql.fw.sql.ITableInfo;
 
 /**
  * @author Davy Vanherbergen
@@ -100,11 +101,12 @@ public class ColumnInfoTab extends AbstractDataSetTab {
     public String getTableNameBySynonym(Connection conn, String name) {
         try {
             // This query is used for getting real table name from system tables, it is used only for Oracle.
-            String sql = "select TABLE_NAME from USER_SYNONYMS where SYNONYM_NAME = '" + name + "'"; //$NON-NLS-1$ //$NON-NLS-2$
+            String sql = "select TABLE_NAME from USER_SYNONYMS where SYNONYM_NAME = ? "; //$NON-NLS-1$ //$NON-NLS-2$
             Statement sta;
-            sta = conn.createStatement();
-            ExtractMetaDataUtils.getInstance().setQueryStatementTimeout(sta);
-            ResultSet resultSet = sta.executeQuery(sql);
+            PreparedStatement prepareStatement = conn.prepareStatement(sql);
+            prepareStatement.setString(1, name);
+            ExtractMetaDataUtils.getInstance().setQueryStatementTimeout(prepareStatement);
+            ResultSet resultSet = prepareStatement.executeQuery();
             while (resultSet.next()) {
                 return resultSet.getString("TABLE_NAME"); //$NON-NLS-1$
             }
