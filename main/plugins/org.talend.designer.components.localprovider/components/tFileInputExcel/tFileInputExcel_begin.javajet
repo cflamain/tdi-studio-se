@@ -1442,6 +1442,9 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 %>
 				try{
 					<%=firstConnName %>.<%=column.getLabel() %> = ParserUtils.parseTo_Date(temp_row_<%=cid %>[columnIndex_<%=cid%>]<%=(isTrimAll || (!trimSelects.isEmpty() && ("true").equals(trimSelects.get(i).get("TRIM"))))?".trim()":"" %>, <%= patternValue %>);
+					if(excelReader_<%=cid%>.isDate1904()){
+				        <%=firstConnName %>.<%=column.getLabel() %> = com.talend.excel.xssf.event.ColumnUtil.convert_Date1904(<%=firstConnName %>.<%=column.getLabel() %>);
+				    }
 				}catch(java.lang.Exception e){
 globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 					<% // for bug TDI-19404 %>
