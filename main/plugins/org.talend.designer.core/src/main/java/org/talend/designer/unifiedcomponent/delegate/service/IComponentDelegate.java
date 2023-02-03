@@ -24,6 +24,8 @@ public interface IComponentDelegate {
 
     public String getComponentName();
 
+    public String getUnifiedDisplayName();
+
     public String getFamily();
 
     public IImage getImage();

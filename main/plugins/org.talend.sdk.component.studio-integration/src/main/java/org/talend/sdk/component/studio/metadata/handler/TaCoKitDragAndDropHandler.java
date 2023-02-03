@@ -66,6 +66,12 @@ public class TaCoKitDragAndDropHandler extends AbstractDragAndDropServiceHandler
 
     private static final String TACOKIT = TaCoKitConst.METADATA_TACOKIT.name();
 
+    private static final String INPUT = "Input"; //$NON-NLS-1$
+
+    private static final String OUTPUT = "Output"; //$NON-NLS-1$
+
+    private static final String NETSUITE = "NetSuite"; //$NON-NLS-1$
+
     @Override
     public boolean canHandle(final Connection connection) {
         if (connection == null) {
@@ -284,8 +290,13 @@ public class TaCoKitDragAndDropHandler extends AbstractDragAndDropServiceHandler
                 setting.setName(TACOKIT);
                 setting.setRepositoryType(TACOKIT);
                 setting.setWithSchema(true);
-                // setting.setInputComponent(INPUT);
-                // setting.setOutputComponent(OUTPUT);
+                Connection connection = ((ConnectionItem) item).getConnection();
+                String componentMainName = getComponentMainName(connection, type);
+                if (componentMainName != null) {
+                    setting.setInputComponent(getInputComponentName(componentMainName));
+                    setting.setOutputComponent(getOutputComponentName(componentMainName));
+                    setting.setDefaultComponent(getInputComponentName(componentMainName));
+                }
                 List<Class<Item>> list = new ArrayList<Class<Item>>();
                 Class clazz = null;
                 try {
@@ -321,6 +332,31 @@ public class TaCoKitDragAndDropHandler extends AbstractDragAndDropServiceHandler
     public void handleTableRelevantParameters(final Connection connection, final IElement ele,
             final IMetadataTable metadataTable) {
         // nothing to do
+    }
+
+    private String getComponentMainName(Connection connection, final ERepositoryObjectType type) {
+        if (type != null) {
+            String typeLabel = type.getLabel();
+            if (NETSUITE.equalsIgnoreCase(typeLabel)) {
+                return NETSUITE + "V2019"; //$NON-NLS-1$
+            }
+        }
+        return null;
+    }
+
+    private String getInputComponentName(String componentMainName) {
+        return getInputOrOutputComponentName(componentMainName, true);
+    }
+
+    private String getOutputComponentName(String componentMainName) {
+        return getInputOrOutputComponentName(componentMainName, false);
+    }
+
+    private String getInputOrOutputComponentName(String componentMainName, boolean isInput) {
+        if (isInput) {
+            return componentMainName.concat(INPUT);
+        }
+        return componentMainName.concat(OUTPUT);
     }
 
 }

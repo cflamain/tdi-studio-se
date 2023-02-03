@@ -470,7 +470,7 @@ public class LoginHelper {
         return toReturn;
     }
 
-    public boolean loginAuto() {
+    public boolean loginAuto() throws Exception {
         ConnectionBean connBean = getConnection();
         User user = getUser(connBean);
 
@@ -826,7 +826,7 @@ public class LoginHelper {
             if (retrieveProjectThread.isInterrupted()) {
                 return null;
             }
-            if (isAuthorizationException(e)) {
+            if (isAuthorizationException(e) && errorManager != null) {
                 errorManager.setHasAuthException(true);
                 errorManager.setAuthException(e);
             }
