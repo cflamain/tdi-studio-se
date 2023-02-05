@@ -38,10 +38,10 @@ import org.talend.designer.core.ui.editor.process.Process;
  */
 public class UnifiedComponentServiceTest {
 
-    private IUnifiedComponentService unifiedCompservice = (IUnifiedComponentService) GlobalServiceRegister.getDefault()
+    private IUnifiedComponentService unifiedCompservice = GlobalServiceRegister.getDefault()
             .getService(IUnifiedComponentService.class);
 
-    private IComponentsService compService = (IComponentsService) GlobalServiceRegister.getDefault().getService(
+    private IComponentsService compService = GlobalServiceRegister.getDefault().getService(
             IComponentsService.class);
 
     /**

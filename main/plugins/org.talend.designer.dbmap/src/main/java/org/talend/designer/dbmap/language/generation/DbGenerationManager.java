@@ -858,7 +858,10 @@ public abstract class DbGenerationManager {
                             .replaceAll("\\b" + context + "\\b", //$NON-NLS-1$ //$NON-NLS-2$
                                     "\" +" + "\"" + quote + "\" + " + context + " + \"" + quote + "\"" + "+ \""); //$NON-NLS-1$ //$NON-NLS-2$
                 } else {
-                    expression = expression.replaceAll("\\b" + context + "\\b", "\" +" + context + "+ \""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+                    String tempExpression = expression.replace(" ", "");
+                    if (!tempExpression.contains("\"+" + context + "+\"")) {
+                        expression = expression.replaceAll("\\b" + context + "\\b", "\" +" + context + "+ \"");//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+                    }
                 }
                 haveReplace = true;
             }

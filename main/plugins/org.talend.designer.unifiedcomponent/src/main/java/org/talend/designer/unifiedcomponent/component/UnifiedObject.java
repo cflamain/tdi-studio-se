@@ -33,6 +33,8 @@ public class UnifiedObject {
 
     private Map<String, String> parameterMapping = new HashMap<String, String>();
 
+    private Map<String, String> defalutParameterValueMapping = new HashMap<String, String>();
+
     private Map<String, String> connectorMapping = new HashMap<String, String>();
 
     private Set<String> paramMappingExclude = new HashSet<String>();
@@ -93,6 +95,7 @@ public class UnifiedObject {
         return this.parameterMapping;
     }
 
+
     /**
      * Getter for paramMappingExclude.
      *
@@ -129,6 +132,10 @@ public class UnifiedObject {
 
     public void setDisplayComponentName(String jdbcComponent) {
         this.displayComponentName = jdbcComponent;
+    }
+
+    public Map<String, String> getDefalutParameterValueMapping() {
+        return this.defalutParameterValueMapping;
     }
 
 }
