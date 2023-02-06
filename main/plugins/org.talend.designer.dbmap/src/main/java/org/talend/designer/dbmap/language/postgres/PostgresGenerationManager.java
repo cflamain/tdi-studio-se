@@ -356,11 +356,19 @@ public class PostgresGenerationManager extends DbGenerationManager {
         return replaceVariablesForExpression(component, expression);
     }
 
+    @Override
+    protected String getColumnName(IConnection conn, String name, String quote) {
+        return name;
+    }
     private String replaceContextValue(String expression, String context) {
         if (inputSchemaContextSet.contains(context)) {
             expression = expression.replaceAll("\\b" + context + "\\b", "\\\\\"\"+" + context + "+\"\\\\\"");
         } else {
-            expression = expression.replaceAll("\\b" + context + "\\b", "\" +" + context + "+ \"");
+            String tempExpression = expression.replace(" ", "");
+            if (!tempExpression.contains("\"+" + context + "+\"")) {
+                expression = expression.replaceAll("\\b" + context + "\\b", "\" +" + context + "+ \"");
+            }
+
         }
         return expression;
     }

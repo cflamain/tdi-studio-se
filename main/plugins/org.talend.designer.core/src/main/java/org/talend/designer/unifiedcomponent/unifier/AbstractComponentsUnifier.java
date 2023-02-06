@@ -130,6 +130,27 @@ public abstract class AbstractComponentsUnifier implements IComponentsUnifier {
     }
 
     @Override
+    public Map<String, String> getDefaultParameterValueMapping() {
+        JSONObject jsonObject = unifiedMap.get(unifiedComp.getComponentName());
+        if (jsonObject != null) {
+            if (jsonObject.has("defaultParameterValue")) {
+                JSONObject paramObject = jsonObject.getJSONObject("defaultParameterValue");
+                if (paramObject.has("mapping")) {
+                    JSONObject mappingObj = paramObject.getJSONObject("mapping");
+                    Map<String, String> repValueAndParamMap = new HashMap<String, String>();
+                    for (Object object : mappingObj.keySet()) {
+                        String repValue = object.toString();
+                        repValueAndParamMap.put(repValue, mappingObj.getString(repValue));
+                    }
+                    return repValueAndParamMap;
+                }
+            }
+        }
+
+        return new HashMap<String, String>();
+    }
+
+    @Override
     public Set<String> getMappingExclude() {
         Set<String> mappingExclude = new HashSet<String>();
         JSONObject jsonObject = unifiedMap.get(unifiedComp.getComponentName());

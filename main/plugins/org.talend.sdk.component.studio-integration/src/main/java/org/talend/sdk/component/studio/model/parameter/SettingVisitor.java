@@ -185,7 +185,7 @@ public class SettingVisitor implements PropertyVisitor {
                     .map(PropertyDefinitionDecorator.Condition::getTargetPath)
                     .peek((String key) -> {
                         if (!this.settings.containsKey(key) && !"ui.scope".equals(key)) {
-                            LOGGER.error("Path " + key + " not found in settings for form " + this.form);
+                            LOGGER.debug("Key " + key + " is not found for path " + path + " in settings for form " + this.form);
                         }
                     })
                     .map(this.settings::get)
