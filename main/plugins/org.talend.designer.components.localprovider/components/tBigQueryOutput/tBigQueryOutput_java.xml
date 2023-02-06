@@ -294,7 +294,7 @@
 		  <DEFAULT>"https://bigquery.googleapis.com"</DEFAULT>
 		</PARAMETER>
 	
-    <PARAMETER NAME="TOKEN_NAME" FIELD="FILE" NUM_ROW="10"
+    <PARAMETER NAME="TOKEN_NAME" FIELD="FILE" NUM_ROW="8"
         REQUIRED="true" SHOW_IF="AUTH_MODE == 'OAUTH'">
         <DEFAULT>"__COMP_DEFAULT_FILE_DIR__/token.properties"</DEFAULT>
     </PARAMETER>
