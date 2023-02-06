@@ -5,7 +5,7 @@ Bundle-SymbolicName: org.talend.libraries.ftp
 Bundle-Version: 8.0.1.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
- lib/commons-net-3.3.jar
+ lib/commons-net-3.9.0.jar
 Export-Package: org.apache.commons.net,
  org.apache.commons.net.bsd,
  org.apache.commons.net.chargen,
@@ -27,3 +27,4 @@ Export-Package: org.apache.commons.net,
  org.apache.commons.net.util,
  org.apache.commons.net.whois
 Eclipse-BundleShape: dir
+

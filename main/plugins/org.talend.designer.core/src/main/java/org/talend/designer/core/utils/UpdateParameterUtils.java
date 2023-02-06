@@ -113,6 +113,7 @@ public final class UpdateParameterUtils {
             copiedList.add(from);
         }
         to.setValue(from.getValue());
+        to.setName(from.getName());
         Map<String, IElementParameter> fromChildParamMap = from.getChildParameters();
         if (fromChildParamMap != null && !fromChildParamMap.isEmpty()) {
             Map<String, IElementParameter> toChildParamMap = to.getChildParameters();

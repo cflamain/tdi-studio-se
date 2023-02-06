@@ -21,6 +21,7 @@ import org.talend.core.model.process.EComponentCategory;
 import org.talend.core.model.process.EConnectionType;
 import org.talend.core.model.process.EParameterFieldType;
 import org.talend.core.model.process.IElement;
+import org.talend.core.model.process.INode;
 import org.talend.core.model.process.INodeConnector;
 import org.talend.designer.core.model.components.EParameterName;
 import org.talend.designer.core.model.components.ElementParameter;
@@ -154,10 +155,11 @@ public class OutputSchemaParameter extends SchemaElementParameter {
      */
     protected Optional<IMetadataTable> getMetadata() {
         IElement elem = getElement();
-        if (elem == null || !(elem instanceof Node)) {
-            return Optional.empty();
+
+        if (elem instanceof INode) {
+            final IMetadataTable metadata = ((INode) elem).getMetadataFromConnector(getContext());
+            return Optional.ofNullable(metadata);
         }
-        final IMetadataTable metadata = ((Node) elem).getMetadataFromConnector(getContext());
-        return Optional.ofNullable(metadata);
+        return Optional.empty();
     }
 }
