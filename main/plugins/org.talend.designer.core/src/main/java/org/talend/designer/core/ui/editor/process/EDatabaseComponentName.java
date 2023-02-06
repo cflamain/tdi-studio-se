@@ -96,6 +96,8 @@ public enum EDatabaseComponentName implements IComponentName {
     EXASOL(DatabaseConnectionItem.class, EDatabaseTypeName.EXASOL, "tExasolInput", "tExasolOutput", true), // "INGRES"), //$NON-NLS-1$ //$NON-NLS-2$
     // )
     // ,
+    INGRES(DatabaseConnectionItem.class, EDatabaseTypeName.INGRES, "tIngresInput", "tIngresOutput", true), 
+    VECTORWISE(DatabaseConnectionItem.class, EDatabaseTypeName.VECTORWISE, "tVectorWiseInput", "tVectorWiseOutput", true), 
     SQLITE(DatabaseConnectionItem.class, EDatabaseTypeName.SQLITE, "tSQLiteInput", "tSQLiteOutput", true), // "SQLITE"), //$NON-NLS-1$ //$NON-NLS-2$
     FIREBIRD(DatabaseConnectionItem.class, EDatabaseTypeName.FIREBIRD, "tFirebirdInput", "tFirebirdOutput", true), // "FIREBIRD" //$NON-NLS-1$ //$NON-NLS-2$
     // ),

@@ -55,6 +55,7 @@ public class UpdateDbtypeOfCreateTableTask extends AbstractJobMigrationTask {
             dbtypes.put("FireBird", "FIREBIRD"); //$NON-NLS-1$ //$NON-NLS-2$
             dbtypes.put("Hsql", "HSQLDB"); //$NON-NLS-1$ //$NON-NLS-2$
             dbtypes.put("Informix", "INFORMIX"); //$NON-NLS-1$ //$NON-NLS-2$
+            dbtypes.put("Ingres", "INGRES"); 
             dbtypes.put("JavaDb", "JAVADB"); //$NON-NLS-1$ //$NON-NLS-2$
             dbtypes.put("MSSQLServer", "MSSQL"); //$NON-NLS-1$ //$NON-NLS-2$
             dbtypes.put("Oracle", "DBORACLE"); //$NON-NLS-1$ //$NON-NLS-2$

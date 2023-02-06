@@ -48,6 +48,8 @@ public class StatsAndLogsConstants {
     private static final String SYBASE = "SYBASE"; //$NON-NLS-1$
 
     private static final String SQL_SERVER = "MSSQL"; //$NON-NLS-1$
+    
+    private static final String INGRES = "INGRES";
 
     private static final String SQLITE = "SQLITE"; //$NON-NLS-1$
 
@@ -74,7 +76,7 @@ public class StatsAndLogsConstants {
             EDatabaseTypeName.ORACLE_OCI.getProduct(), EDatabaseTypeName.PLUSPSQL.getProduct(),
             EDatabaseTypeName.PSQL.getProduct(), EDatabaseTypeName.IBMDB2.getProduct(), EDatabaseTypeName.SYBASEASE.getProduct(),
             EDatabaseTypeName.SQLITE.getProduct(), EDatabaseTypeName.FIREBIRD.getProduct(), EDatabaseTypeName.ACCESS.getProduct(),
-            EDatabaseTypeName.TERADATA.getProduct(), EDatabaseTypeName.INFORMIX.getProduct() };
+            EDatabaseTypeName.INGRES.getProduct(), EDatabaseTypeName.TERADATA.getProduct(), EDatabaseTypeName.INFORMIX.getProduct() };
 
     private static final String[] PERL_DISPLAY_DBNAMES = new String[] {
             "MySQL", "Oracle with SID", "Oracle with service name", "Oracle OCI",//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
@@ -82,7 +84,7 @@ public class StatsAndLogsConstants {
 
     private static final String[] JAVA_DISPLAY_DBNAMES = new String[] {
             "JDBC", "MySQL", "Microsoft SQL Server", "Oracle with SID", "Oracle with service name", "Oracle OCI",//$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$//$NON-NLS-6$
-            "PostgresPlus", "PostgreSQL", "IBM DB2", "Sybase", "SQLite", "FireBird", "Informix", "Access", "Teradata" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$
+            "PostgresPlus", "PostgreSQL", "IBM DB2", "Sybase", "Ingres", "SQLite", "FireBird", "Informix", "Access", "Teradata" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$ //$NON-NLS-7$ //$NON-NLS-8$ //$NON-NLS-9$ //$NON-NLS-10$
 
     private static final String[] PERL_DB_COMPONENTS = new String[] {
             "tMysqlOutput", ORACLE_SID_ALIAS, ORACLE_SN_ALIAS, ORACLE_OCI_ALIAS,//$NON-NLS-1$
@@ -100,12 +102,12 @@ public class StatsAndLogsConstants {
             IBM_DB2, SYBASE, SQLITE, FIREBIRD };
 
     private static final String[] JAVA_REPOSITORY_ITEMS = new String[] { JDBC, MYSQL, SQL_SERVER, ORACLE_WITH_SID_CONN_TYPE,
-            ORACLE_WITH_SERVICE_CONN_TYPE, ORACLE_OCI, POSTGRESPLUS, POSTGRESQL, IBM_DB2, SYBASE, SQLITE,
+            ORACLE_WITH_SERVICE_CONN_TYPE, ORACLE_OCI, POSTGRESPLUS, POSTGRESQL, IBM_DB2, INGRES, SYBASE, SQLITE,
             FIREBIRD, INFORMIX, ACCESS, TERADATA };
 
     private static final String[] JAVA_CODE_LIST = new String[] { JDBC, MYSQL, SQL_SERVER,
             "OCLE", "OCLE", "OCLE_OCI", POSTGRESPLUS, POSTGRESQL, //$NON-NLS-1$ //$NON-NLS-2$//$NON-NLS-3$
-            IBM_DB2, SYBASE, SQLITE, FIREBIRD, INFORMIX, ACCESS, TERADATA };
+            IBM_DB2, SYBASE, INGRES, SQLITE, FIREBIRD, INFORMIX, ACCESS, TERADATA };
 
     public static final String[] ORACLE_VERSION_DISPLAY = new String[] {
             "Oracle 18 and above", "Oracle 12 (Deprecated)", "Oracle 11 (Deprecated)" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$

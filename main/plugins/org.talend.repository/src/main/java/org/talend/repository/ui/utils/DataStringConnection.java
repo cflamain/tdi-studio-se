@@ -128,6 +128,9 @@ public class DataStringConnection {
 
         dataConnection[DBTYPE_SQLITE] = new DataConnection("SQLite", "jdbc:sqlite:/<filename>", "jdbc:sqlite:/" + file); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+        dataConnection[9] = new DataConnection("Ingres", "jdbc:ingres://<host>:<port>/<sid>", //$NON-NLS-1$ //$NON-NLS-2$
+                "jdbc:ingres://" + host + ":" + port + "/" + sid, "II7");
+        
         // dataConnection[11] = new DataConnection("Microsoft SQL Server", "jdbc:jtds:sqlserver://<host>:<port>/<sid>",
         // "jdbc:jtds:sqlserver://" + host + ":" + port + "/" + sid, "1433"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
         dataConnection[11] = new DataConnection("Microsoft SQL Server", "jdbc:jtds:sqlserver://<host>:<port>/<sid>;<property>", //$NON-NLS-1$ //$NON-NLS-2$
@@ -234,6 +237,7 @@ public class DataStringConnection {
         List<String> databaseType = new ArrayList<String>(Arrays.asList(getItem()));
         if (LanguageManager.getCurrentLanguage() == ECodeLanguage.PERL) {
             databaseType.remove("Microsoft SQL Server"); //$NON-NLS-1$
+            databaseType.remove("Ingres");
             databaseType.remove("FireBird"); //$NON-NLS-1$
             databaseType.remove("Informix"); //$NON-NLS-1$
             databaseType.remove("Access"); //$NON-NLS-1$
@@ -482,7 +486,7 @@ public class DataStringConnection {
 
     }
 
-    private static String[] dataBaseNeededList = { "jdbc:mysql", "jdbc:sybase", "jdbc:db2", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+    private static String[] dataBaseNeededList = { "jdbc:mysql", "jdbc:sybase", "jdbc:db2", "jdbc:ingres", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
             "jdbc:jtds:sqlserver", "jdbc:informix-sqli", "jdbc:teradata", "jdbc:as400", "jdbc:derby", "jdbc:derby:net", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
             "jdbc:hsqldb:hsql", "jdbc:hsqldb:http", "jdbc:hsqldb:file", "jdbc:sapdb", "jdbc:postgresql", "jdbc:db2", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$ //$NON-NLS-6$
             "jdbc:netezza" }; //$NON-NLS-1$
