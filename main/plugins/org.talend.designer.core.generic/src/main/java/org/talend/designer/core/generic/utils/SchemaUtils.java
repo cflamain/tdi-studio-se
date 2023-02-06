@@ -245,6 +245,28 @@ public class SchemaUtils {
         return metadataTable;
     }
 
+    public static boolean updateMetadataTable(ComponentProperties properties, String schemaPropertyName,
+            Schema schema, MetadataTable metadataTable) {
+        if (properties == null || schemaPropertyName == null || schema == null) {
+            return false;
+        }
+        metadataTable.getColumns().clear();
+        convertComponentSchemaIntoTalendSchema(schema, metadataTable);
+        IMetadataTable iMetadataTable = MetadataToolHelper.convert(metadataTable);
+        updateComponentSchema(properties, schemaPropertyName, iMetadataTable);
+        metadataTable = ConvertionHelper.convert(iMetadataTable);
+        properties.setValue(schemaPropertyName, convertTalendSchemaIntoComponentSchema(metadataTable));
+        TaggedValue serializedPropsTV = CoreFactory.eINSTANCE.createTaggedValue();
+        serializedPropsTV.setTag(IComponentConstants.COMPONENT_PROPERTIES_TAG);
+        serializedPropsTV.setValue(properties.toSerialized());
+        metadataTable.getTaggedValue().add(serializedPropsTV);
+        TaggedValue schemaPropertyTV = CoreFactory.eINSTANCE.createTaggedValue();
+        schemaPropertyTV.setTag(IComponentConstants.COMPONENT_SCHEMA_TAG);
+        schemaPropertyTV.setValue(schemaPropertyName);
+        metadataTable.getTaggedValue().add(schemaPropertyTV);
+        return true;
+    }
+
     private static void convertComponentSchemaIntoTalendSchema(Schema schema, MetadataTable metadataTable) {
         if (schema == null || metadataTable == null) {
             return;

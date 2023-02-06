@@ -54,7 +54,7 @@ public class ResetMavenTemplateMigrationTask extends AbstractProjectMigrationTas
     public ExecutionResult execute(Project project) {
         try {
             // project pom
-            resetMavenTemplate(TEMPLATE_PROJECT_POM, "org.talend.designer.maven.ui"); //$NON-NLS-1$
+            // resetMavenTemplate(TEMPLATE_PROJECT_POM, "org.talend.designer.maven.ui"); //$NON-NLS-1$
             // job pom and assembly
             resetMavenTemplate(TEMPLATE_STANDALONE_JOB_POM, MAVEN_JOB_PLUGIN_ID);
             resetMavenTemplate(TEMPLATE_STANDALONE_JOB_ASSEMBLY, MAVEN_JOB_PLUGIN_ID);

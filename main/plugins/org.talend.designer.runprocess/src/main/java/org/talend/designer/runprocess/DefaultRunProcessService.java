@@ -92,7 +92,6 @@ import org.talend.designer.maven.tools.BuildCacheManager;
 import org.talend.designer.maven.tools.CodeM2CacheManager;
 import org.talend.designer.maven.tools.CodesJarM2CacheManager;
 import org.talend.designer.maven.tools.MavenPomSynchronizer;
-import org.talend.designer.maven.tools.ProjectPomManager;
 import org.talend.designer.maven.utils.PomIdsHelper;
 import org.talend.designer.maven.utils.PomUtil;
 import org.talend.designer.runprocess.i18n.Messages;
@@ -744,8 +743,7 @@ public class DefaultRunProcessService implements IRunProcessService {
     @Override
     public void updateProjectPomWithTemplate() {
         try {
-            ProjectPomManager manager = new ProjectPomManager();
-            manager.updateFromTemplate(null);
+            new AggregatorPomsHelper().createRootPom(new NullProgressMonitor());
         } catch (Exception e) {
             ExceptionHandler.process(e);
         }

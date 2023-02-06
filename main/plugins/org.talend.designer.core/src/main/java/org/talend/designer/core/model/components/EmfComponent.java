@@ -3240,6 +3240,9 @@ public class EmfComponent extends AbstractBasicComponent {
                 compType = ComponentType.SPARKBATCH;
             }
         }
+        if (node == null || compType == null) {
+            return null;
+        }
         IElementParameter hdElemParam = node.getElementParameter(compType.getVersionParameter());
         Object value = null;
         if (hdElemParam != null && (hdElemParam.isShow(node.getElementParameters()) || hdElemParam.getValue().toString().contains("SPARK"))) {
