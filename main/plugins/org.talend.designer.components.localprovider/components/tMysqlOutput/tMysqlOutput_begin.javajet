@@ -341,6 +341,7 @@ if(columnList != null && columnList.size() > 0) {
                         String keyPsmt_<%=cid %> = conn_<%=cid%> + "[psmt]" + "[" + <%=table%> + "]";
                         pstmt_<%=cid %> = SharedDBPreparedStatement.getSharedPreparedStatement(conn_<%=cid%>,insert_<%=cid%>,keyPsmt_<%=cid%>);
                         resourceMap.put("pstmt_<%=cid %>", pstmt_<%=cid %>);
+                        resourceMap.put("keyPsmt_<%=cid %>", keyPsmt_<%=cid %>);
                 <%}%>
 
 <%

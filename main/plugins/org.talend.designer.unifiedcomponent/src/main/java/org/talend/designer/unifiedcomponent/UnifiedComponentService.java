@@ -12,17 +12,21 @@
 // ============================================================================
 package org.talend.designer.unifiedcomponent;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.database.EDatabaseTypeName;
+import org.talend.core.model.components.EComponentType;
 import org.talend.core.model.components.IComponent;
 import org.talend.core.model.components.IComponentsFactory;
 import org.talend.core.model.components.IComponentsService;
@@ -166,7 +170,8 @@ public class UnifiedComponentService implements IUnifiedComponentService {
             DelegateComponent dComp = (DelegateComponent) comp;
             Set<UnifiedObject> unifiedObjects = dComp.getUnifiedObjectsByPalette(dComp.getPaletteType());
             for (UnifiedObject obj : unifiedObjects) {
-                if (obj.getDisplayComponentName().equals(component.getDisplayName())) {
+                if (obj.getDisplayComponentName().equals(component.getDisplayName())
+                        || ("t" + obj.getDisplayComponentName()).equals(component.getDisplayName())) { //$NON-NLS-1$
                     return dComp;
                 }
             }
@@ -235,10 +240,12 @@ public class UnifiedComponentService implements IUnifiedComponentService {
         String unifiedComp = String.valueOf(newUnifiedParam.getValue());
         UnifiedObject unifiedObject = dComp.getUnifiedObjectByName(unifiedComp);
         Map<String, String> newParamMapping = new HashMap<String, String>();
+        Map<String, String> newDefaultParamValueMapping = new HashMap<String, String>();
         Map<String, String> newConnectorMapping = new HashMap<String, String>();
         Set<String> mappingExelude = new HashSet<String>();
         if (unifiedObject != null) {
             newParamMapping.putAll(unifiedObject.getParameterMapping());
+            newDefaultParamValueMapping.putAll(unifiedObject.getDefalutParameterValueMapping());
             mappingExelude.addAll(unifiedObject.getParamMappingExclude());
             newConnectorMapping.putAll(unifiedObject.getConnectorMapping());
         }
@@ -254,6 +261,7 @@ public class UnifiedComponentService implements IUnifiedComponentService {
             }
 
             String newParamMappedValue = newParamMapping.get(newParam.getName());
+            String newDefaultParamValueMappedValue = newDefaultParamValueMapping.get(newParam.getName());
             String newParamRepositoryValue = newParam.getRepositoryValue();
             IElementParameter param2Find = null;
             for (IElementParameter oldParam : oldParams) {
@@ -283,9 +291,15 @@ public class UnifiedComponentService implements IUnifiedComponentService {
                     }
                 }
             }
+
             if (param2Find != null) {
-                node.setPropertyValue(newParam.getName(), param2Find.getValue());
-                if (newParam.getFieldType() == EParameterFieldType.TABLE) {
+                Object param2FindValue = param2Find.getValue();
+                boolean isGeneric = node.getComponent().getComponentType() == EComponentType.GENERIC;
+                if (newParam.getFieldType() == EParameterFieldType.TABLE && isGeneric) {
+                    param2FindValue = convertTableParameterValue(oldParamMapping, param2Find.getName(), param2FindValue);
+                }
+                node.setPropertyValue(newParam.getName(), param2FindValue);
+                if (newParam.getFieldType() == EParameterFieldType.TABLE && !isGeneric) {
                     newParam.setListItemsValue(param2Find.getListItemsValue());
                 }
                 for (String name : newParam.getChildParameters().keySet()) {
@@ -307,11 +321,42 @@ public class UnifiedComponentService implements IUnifiedComponentService {
                 }
 
             }
+            if (newDefaultParamValueMappedValue != null && StringUtils.isNotBlank(oldEmfComponent)) {
+                node.setPropertyValue(newParam.getName(), newDefaultParamValueMappedValue);
+            }
         }
         updateComponentSchema(node, oldMetadataTables, oldConnectors, oldConnectorMapping, newConnectorMapping);
 
         node.setPropertyValue(EParameterName.UPDATE_COMPONENTS.getName(), true);
 
+    }
+
+    public Object convertTableParameterValue(Map<String, String> oldParamMapping, String parentKey, Object objectValue) {
+        if (objectValue == null) {
+            return null;
+        }
+        boolean update = false;
+        List<Map<String, Object>> tableValues = new ArrayList<Map<String, Object>>();
+        tableValues = (List<Map<String, Object>>) objectValue;
+        final List<Map<String, Object>> converted = new ArrayList<>(tableValues.size());
+        for (Object current : tableValues) {
+            if (current != null && current instanceof Map) {
+                Map<String, Object> line = (Map<String, Object>) current;
+                Map<String, Object> convertedLine = new LinkedHashMap<>();
+                for (String key : line.keySet()) {
+                    String newKey = oldParamMapping.get(key);
+                    if (StringUtils.isNotBlank(newKey)) {
+                        convertedLine.put(newKey, line.get(key));
+                        update = true;
+                    }
+                }
+                converted.add(convertedLine);
+            }
+        }
+        if (update) {
+            return converted;
+        }
+        return objectValue;
     }
 
     private Map<String, Object> storeValue(Object obj) {
@@ -353,7 +398,7 @@ public class UnifiedComponentService implements IUnifiedComponentService {
                         }
                         IGenericWizardService wizardService = null;
                         if (GlobalServiceRegister.getDefault().isServiceRegistered(IGenericWizardService.class)) {
-                            wizardService = (IGenericWizardService) GlobalServiceRegister.getDefault()
+                            wizardService = GlobalServiceRegister.getDefault()
                                     .getService(IGenericWizardService.class);
                         }
                         if (wizardService != null) {
@@ -502,7 +547,7 @@ public class UnifiedComponentService implements IUnifiedComponentService {
     @Override
     public void filterUnifiedComponentForPalette(IComponentsFactory compFac, Collection<IComponent> componentSet,
             String lowerCasedKeyword) {
-        IUnifiedComponentService service = (IUnifiedComponentService) GlobalServiceRegister.getDefault()
+        IUnifiedComponentService service = GlobalServiceRegister.getDefault()
                 .getService(IUnifiedComponentService.class);
         // filter unified components
         Iterator<IComponent> iterator = componentSet.iterator();
@@ -577,7 +622,7 @@ public class UnifiedComponentService implements IUnifiedComponentService {
             if (filter != null) {
                 for (UnifiedObject obj : dcomp.getUnifiedObjects()) {
                     if (matchFilter(obj, filter)) {
-                        IComponentsService compService = (IComponentsService) GlobalServiceRegister.getDefault()
+                        IComponentsService compService = GlobalServiceRegister.getDefault()
                                 .getService(IComponentsService.class);
                         IComponent emfComponent = compService.getComponentsFactory().get(obj.getComponentName(),
                                 dcomp.getPaletteType());

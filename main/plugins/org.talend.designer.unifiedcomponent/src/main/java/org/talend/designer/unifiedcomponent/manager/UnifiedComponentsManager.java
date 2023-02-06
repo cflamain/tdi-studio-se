@@ -145,10 +145,10 @@ public class UnifiedComponentsManager {
             if (component == null) {
                 // create a new component
                 component = createDelegateComponent(delegateComp.getFamily(), delegateComp.getComponentName(),
-                        delegateComp.getImage());
+                        delegateComp.getUnifiedDisplayName(), delegateComp.getImage());
             }
 
-            IComponentsService compService = (IComponentsService) GlobalServiceRegister.getDefault()
+            IComponentsService compService = GlobalServiceRegister.getDefault()
                     .getService(IComponentsService.class);
             Set<String> exsitCategories = new HashSet<String>();
             for (String paletteType : unifier.getCategories()) {
@@ -163,6 +163,7 @@ public class UnifiedComponentsManager {
                 object.setComponentName(componentName);
                 object.getSupportedCategories().addAll(unifier.getCategories());
                 object.getParameterMapping().putAll(unifier.getParameterMapping());
+                object.getDefalutParameterValueMapping().putAll(unifier.getDefaultParameterValueMapping());
                 object.getConnectorMapping().putAll(unifier.getConnectorMapping());
                 object.getParamMappingExclude().addAll(unifier.getMappingExclude());
                 object.getHideFamilies().addAll(unifier.getFamilies());
@@ -174,17 +175,16 @@ public class UnifiedComponentsManager {
         }
     }
 
-    private DelegateComponent createDelegateComponent(String familyName, String name, IImage image) {
-        DelegateComponent component = new DelegateComponent(familyName, name);
+    private DelegateComponent createDelegateComponent(String familyName, String name, String unifiedDisplayName, IImage image) {
+        DelegateComponent component = new DelegateComponent(familyName, name, unifiedDisplayName);
         component.setComponentImage(image);
         return component;
     }
 
     private DelegateComponent newDelegateComponent(DelegateComponent component, String paletteType) {
         DelegateComponent newComponent = createDelegateComponent(component.getOriginalFamilyName(), component.getName(),
-                component.getComponentImage());
+                component.getUnifiedDisplayName(), component.getComponentImage());
         newComponent.setPaletteType(paletteType);
         return newComponent;
     }
-
 }

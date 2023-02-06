@@ -463,6 +463,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e.getMessage());
 			}else{
 			%>
 				SharedDBPreparedStatement.releasePreparedStatement(keyPsmt_<%=cid%>);
+				resourceMap.remove("keyPsmt_<%=cid%>");
 			<%
 			}
 			%>

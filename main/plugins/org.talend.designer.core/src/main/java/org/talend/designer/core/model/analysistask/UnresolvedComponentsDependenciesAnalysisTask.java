@@ -23,6 +23,8 @@ import org.talend.analysistask.AbstractItemAnalysisTask;
 import org.talend.analysistask.AnalysisReportRecorder;
 import org.talend.analysistask.AnalysisReportRecorder.SeverityOption;
 import org.talend.camel.core.model.camelProperties.BeanItem;
+import org.talend.core.CorePlugin;
+import org.talend.core.ILibraryManagerService;
 import org.talend.core.model.general.ModuleNeeded;
 import org.talend.core.model.general.ModuleNeeded.ELibraryInstallStatus;
 import org.talend.core.model.properties.Item;
@@ -83,7 +85,7 @@ public class UnresolvedComponentsDependenciesAnalysisTask extends AbstractItemAn
                             String mvnDep = ev.getValue();
                             if (mvnDep != null && !StringUtils.isEmpty(mvnDep) && "JAR_NAME".equalsIgnoreCase(ev.getElementRef())) {
 	                            ModuleNeeded module = ModuleNeeded.newInstance(null, mvnDep, null, true);
-	                            if (isMissingDependency(module.getModuleName())) {
+	                            if (isMissingDependency(module)) {
 	                            	recordList.add(new AnalysisReportRecorder(this, item, SeverityOption.CRITICAL,
 	                						Messages.getString("UnresolvedComponentsDependenciesAnalysisTask.missingDependency",
 	                								geItemName(item), componentID, module)));
@@ -103,7 +105,7 @@ public class UnresolvedComponentsDependenciesAnalysisTask extends AbstractItemAn
                     	String mvnDep = p.getValue();
                     	if (mvnDep != null && !StringUtils.isEmpty(mvnDep)) {
                             ModuleNeeded module = ModuleNeeded.newInstance(null, mvnDep, null, true);
-	                        if (isMissingDependency(module.getModuleName())) {
+	                        if (isMissingDependency(module)) {
 	                        	recordList.add(new AnalysisReportRecorder(this, item, SeverityOption.CRITICAL,
 	            						Messages.getString("UnresolvedComponentsDependenciesAnalysisTask.missingDependency",
 	            								geItemName(item), componentID, module)));
@@ -160,14 +162,22 @@ public class UnresolvedComponentsDependenciesAnalysisTask extends AbstractItemAn
 		return "";
 	}
 
-	private boolean isMissingDependency(String dependency) {
+	private boolean isMissingDependency(ModuleNeeded module) {
+		
+		String moduleName = module.getModuleName();
+		
 		Set<ModuleNeeded> allModules = ModulesNeededProvider.getAllManagedModules();
 
-		for (ModuleNeeded module : allModules) {
-			if (areEqualDependencies(dependency, module) && (ELibraryInstallStatus.INSTALLED.equals(module.getStatus())
-					|| ELibraryInstallStatus.DEPLOYED.equals(module.getStatus()))) {
+		for (ModuleNeeded m : allModules) {
+			if (areEqualDependencies(moduleName, m) && (ELibraryInstallStatus.INSTALLED.equals(m.getStatus())
+					|| ELibraryInstallStatus.DEPLOYED.equals(m.getStatus()))) {
 				return false;
 			}
+		}
+		
+		ILibraryManagerService repositoryBundleService = CorePlugin.getDefault().getRepositoryBundleService();
+		if (repositoryBundleService.retrieve(module, null, false)) {
+		    return false;
 		}
 
 		return true;

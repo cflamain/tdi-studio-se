@@ -330,9 +330,14 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
             return true;
         }
         boolean logged = false;
-        if (!LoginHelper.isAlwaysAskAtStartup() && !LoginHelper.isNeedForceShowLogonDialog()) {
-            logged = LoginHelper.getInstance().loginAuto();
+        if (!LoginHelper.isAlwaysAskAtStartup() && !LoginHelper.isNeedForceShowLogonDialog() && checkSSOToken()) {
+            try {
+                logged = LoginHelper.getInstance().loginAuto();
+            } catch (Throwable ex) {
+                ExceptionHandler.process(ex);
+            }
         }
+        
         if (!logged) {
             if (ArrayUtils.contains(Platform.getApplicationArgs(), EclipseCommandLine.LOGIN_ONLINE_UPDATE)
                     && !SharedStudioUtils.isSharedStudioMode()) {
@@ -365,6 +370,26 @@ public class RepositoryService implements IRepositoryService, IRepositoryContext
         }
         return logged;
 
+    }
+    
+    private boolean checkSSOToken() {
+        boolean hasValidToken = true;
+        if (ICloudSignOnService.get() != null && ICloudSignOnService.get().isSignViaCloud()) {
+            ICoreTisService tisService = ICoreTisService.get();
+            if (tisService != null) {
+                try {
+                    hasValidToken = tisService.hasValidToken(LoginHelper.getInstance().getCurrentSelectedConnBean());
+                } catch (Exception ex) {
+                    if (LoginHelper.isAuthorizationException(ex)) {
+                        hasValidToken = false;
+                    }
+                }
+            }
+            if (hasValidToken) {
+                LoginHelper.destroy(); // Reload new token from file
+            }
+        }
+        return hasValidToken;
     }
 
     private boolean isloginDialogDisabled() {

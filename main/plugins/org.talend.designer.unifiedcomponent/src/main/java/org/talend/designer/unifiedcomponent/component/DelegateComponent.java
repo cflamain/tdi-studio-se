@@ -13,9 +13,11 @@
 package org.talend.designer.unifiedcomponent.component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -47,18 +49,29 @@ public class DelegateComponent extends AbstractBasicComponent {
 
     private String name;
 
+    private String unifiedDisplayName;
+
     private String familyName;
 
     private Boolean visible;
 
     private IImage componentImage;
 
-    private Set<UnifiedObject> unifiedObjects = new HashSet<UnifiedObject>();
+    private Set<UnifiedObject> unifiedObjects = new TreeSet<UnifiedObject>(new Comparator<UnifiedObject>() {
+
+        @Override
+        public int compare(UnifiedObject o1, UnifiedObject o2) {
+            String o1db = o1.getDatabase();
+            String o2db = o2.getDatabase();
+            return o2db.compareTo(o1db);
+        }
+    });
 
     private String translatedFamilyName;
 
-    public DelegateComponent(String familyName, String name) {
+    public DelegateComponent(String familyName, String name, String unifiedDisplayName) {
         this.name = name;
+        this.unifiedDisplayName = unifiedDisplayName;
         this.familyName = familyName;
         getTranslatedFamilyName();
     }
@@ -71,6 +84,10 @@ public class DelegateComponent extends AbstractBasicComponent {
     @Override
     public String getName() {
         return name;
+    }
+
+    public String getUnifiedDisplayName() {
+        return this.unifiedDisplayName;
     }
 
     /*
@@ -339,7 +356,7 @@ public class DelegateComponent extends AbstractBasicComponent {
         param = new ElementParameter(node);
         param.setName(EParameterName.UNIFIED_COMPONENTS.getName());
         param.setValue(""); //$NON-NLS-1$
-        param.setDisplayName(EParameterName.UNIFIED_COMPONENTS.getDisplayName());
+        param.setDisplayName(getUnifiedDisplayName());
         param.setFieldType(EParameterFieldType.UNIFIED_COMPONENTS);
         param.setCategory(EComponentCategory.BASIC);
         param.setNumRow(0);

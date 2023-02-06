@@ -38,7 +38,7 @@
 <%
 if(ProcessUtils.isTestContainer(node.getProcess())) {
 %>
-if(!<%=expression %>){
+if(!(<%=expression %>)){
    if (junitGlobalMap.get("tests.log") == null) {
         junitGlobalMap.put("tests.log", new String());
    }

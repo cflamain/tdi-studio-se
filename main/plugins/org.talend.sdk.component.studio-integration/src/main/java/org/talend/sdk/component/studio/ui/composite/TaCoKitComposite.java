@@ -211,18 +211,33 @@ public class TaCoKitComposite extends MissingSettingsMultiThreadDynamicComposite
      * @return last Composite added
      */
     protected Composite addCommonWidgets() {
-        final Composite propertyComposite = addPropertyType(composite);
+        final Composite unifiedComposite = addUnified(composite);
+        final Composite propertyComposite = addPropertyType(composite, unifiedComposite);
         final Composite existConnectionComposite = addUseExistConnection(composite, propertyComposite);
         final Composite schemaComposite = addSchemas(composite, existConnectionComposite);
         final Composite lastComposite = addStatCatcher(schemaComposite);
         return lastComposite;
     }
 
-    protected Composite addPropertyType(final Composite parent) {
+    protected Composite addUnified(final Composite parent) {
+        Composite previous = getMessagesComp();
+        IElementParameter parameter = elem.getElementParameterFromField(EParameterFieldType.UNIFIED_COMPONENTS);
+        if (parameter != null) {
+            final Composite unifiedComposite = new Composite(parent, SWT.NONE);
+            unifiedComposite.setBackground(parent.getBackground());
+            unifiedComposite.setLayout(new FormLayout());
+            unifiedComposite.setLayoutData(levelLayoutData(previous));
+            addWidgetIfActive(unifiedComposite, parameter);
+            return unifiedComposite;
+        }
+        return previous;
+    }
+
+    protected Composite addPropertyType(final Composite parent, final Composite previous) {
         final Composite propertyComposite = new Composite(parent, SWT.NONE);
         propertyComposite.setBackground(parent.getBackground());
         propertyComposite.setLayout(new FormLayout());
-        propertyComposite.setLayoutData(levelLayoutData(getMessagesComp()));
+        propertyComposite.setLayoutData(levelLayoutData(previous));
         final IElementParameter propertyType = elem.getElementParameter("PROPERTY");
         addWidgetIfActive(propertyComposite, propertyType);
         return propertyComposite;

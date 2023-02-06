@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.talend.core.GlobalServiceRegister;
 import org.talend.core.model.components.ComponentCategory;
 import org.talend.designer.core.IUnifiedComponentService;
+import org.talend.designer.core.model.components.EParameterName;
 
 /**
  * created by wchen on Dec 15, 2017 Detailled comment
@@ -26,7 +27,7 @@ import org.talend.designer.core.IUnifiedComponentService;
  */
 public class DelegateComponentTest {
 
-    private IUnifiedComponentService unifiedCompservice = (IUnifiedComponentService) GlobalServiceRegister.getDefault()
+    private IUnifiedComponentService unifiedCompservice = GlobalServiceRegister.getDefault()
             .getService(IUnifiedComponentService.class);
 
     @Test
@@ -42,7 +43,8 @@ public class DelegateComponentTest {
         unifiedObjectsByPalette = delegateComponent.getUnifiedObjectsByPalette("testGetUnifiedObjectsByPalette");
         Assert.assertEquals(unifiedObjectsByPalette.size(), 0);
 
-        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent");
+        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent",
+                EParameterName.UNIFIED_COMPONENTS.getDisplayName());
         UnifiedObject object = new UnifiedObject();
         object.setComponentName("tMysqlComponent");
         object.setDatabase("Mysql");
@@ -70,7 +72,8 @@ public class DelegateComponentTest {
         Assert.assertNotNull(unifiedObjectByName);
         Assert.assertEquals(unifiedObjectByName.getComponentName(), "tMysqlRow");
 
-        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent");
+        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent",
+                EParameterName.UNIFIED_COMPONENTS.getDisplayName());
         testComponent.setPaletteType(testPalette);
         UnifiedObject object = new UnifiedObject();
         object.setComponentName("tMysqlComponent");
@@ -101,7 +104,8 @@ public class DelegateComponentTest {
         Assert.assertNotNull(unifiedObjectByName);
         Assert.assertEquals(unifiedObjectByName.getDatabase(), "Oracle");
 
-        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent");
+        DelegateComponent testComponent = new DelegateComponent("testFamily", "testComponent",
+                EParameterName.UNIFIED_COMPONENTS.getDisplayName());
         testComponent.setPaletteType(testPalette);
         UnifiedObject object = new UnifiedObject();
         object.setComponentName("tMysqlComponent");

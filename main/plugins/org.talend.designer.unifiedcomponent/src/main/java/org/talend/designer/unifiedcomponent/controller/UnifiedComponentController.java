@@ -258,7 +258,6 @@ public class UnifiedComponentController extends AbstractElementPropertySectionCo
                     return unifiedObjectByName.getDatabase();
                 }
             }
-
         }
         return null;
     }

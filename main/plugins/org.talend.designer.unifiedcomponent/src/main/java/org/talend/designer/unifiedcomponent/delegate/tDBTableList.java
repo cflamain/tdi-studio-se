@@ -19,7 +19,7 @@ import org.talend.designer.unifiedcomponent.resources.ComponentImage;
  * created by wchen on Dec 4, 2017 Detailled comment
  *
  */
-public class tDBTableList implements IComponentDelegate {
+public class tDBTableList extends AbstractUnifiedComponent {
 
     /*
      * (non-Javadoc)
