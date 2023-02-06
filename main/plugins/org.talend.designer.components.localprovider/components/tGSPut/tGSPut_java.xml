@@ -187,11 +187,27 @@
     </PARAMETERS>
 
     <ADVANCED_PARAMETERS>
-
+		<PARAMETER 	NAME="USE_REGION_ENDPOINT" 
+					FIELD="CHECK" 
+					NUM_ROW="4" 
+					EQUIRED="true"	
+					GROUP="REGION_ENDPOINT_GROUP" 
+					SHOW_IF="(AUTH_TYPE == 'SERVICE_ACCOUNT')" >
+			<DEFAULT>false</DEFAULT>
+		</PARAMETER>
+		<PARAMETER 	NAME="REGION_ENDPOINT_GS" 
+					FIELD="TEXT" 
+					NUM_ROW="5" 
+					REQUIRED="false" 
+					GROUP="REGION_ENDPOINT_GROUP" 
+					SHOW_IF="(AUTH_TYPE == 'SERVICE_ACCOUNT') AND (USE_REGION_ENDPOINT == 'true')" >
+		  <DEFAULT>"https://storage.googleapis.com"</DEFAULT>
+		</PARAMETER>
+		
 		<PARAMETER
                 NAME="PART_SIZE"
                 FIELD="TEXT"
-                NUM_ROW="1"
+                NUM_ROW="10"
 				SHOW_IF="((USE_EXISTING_CONNECTION == 'true') AND ((#LINK@NODE.CONNECTION.AUTH_TYPE == 'SERVICE_ACCOUNT') OR (#LINK@NODE.CONNECTION.AUTH_TYPE == 'TOKEN')))
                   OR ((USE_EXISTING_CONNECTION == 'false') AND ((AUTH_TYPE == 'SERVICE_ACCOUNT') OR (AUTH_TYPE == 'TOKEN')))"
         >
