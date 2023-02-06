@@ -49,7 +49,7 @@ imports="
 			org.apache.axis2.transport.http.impl.httpclient4.HttpTransportPropertiesImpl.Authenticator auth_<%=cid%> = new org.apache.axis2.transport.http.impl.httpclient4.HttpTransportPropertiesImpl.Authenticator();
 
 			List<String> authSchemes_<%=cid%> = new java.util.ArrayList<String>();
-			authSchemes_<%=cid%>.add(org.apache.axis2.transport.http.impl.httpclient4.HttpTransportPropertiesImpl.NTLM);
+			authSchemes_<%=cid%>.add(org.apache.axis2.transport.http.impl.httpclient4.HttpTransportPropertiesImpl.Authenticator.NTLM);
 			auth_<%=cid%> .setAuthSchemes(authSchemes_<%=cid%>);
 
             auth_<%=cid%> .setUsername(<%=username%>);
