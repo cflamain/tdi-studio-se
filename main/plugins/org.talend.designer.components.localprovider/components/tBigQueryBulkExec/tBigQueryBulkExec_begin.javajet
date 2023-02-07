@@ -206,12 +206,12 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",ee_<%=cid%>.getMessage());
 		try(java.io.FileInputStream credentialsStream_<%=cid%> = new java.io.FileInputStream(credentialsFile_<%=cid%>)) {
 		    credentials_<%=cid%> = com.google.auth.oauth2.ServiceAccountCredentials.fromStream(credentialsStream_<%=cid%>);
 		}
-
-		com.google.cloud.bigquery.BigQuery bigquery_<%=cid%> = com.google.cloud.bigquery.BigQueryOptions.newBuilder()
-				.setCredentials(credentials_<%=cid%>)
-				.setProjectId(<%=projectId%>)
-				.build()
-				.getService();
+				
+		com.google.cloud.bigquery.BigQueryOptions.Builder bigQueryOptionsBuilder_<%=cid%> = com.google.cloud.bigquery.BigQueryOptions.newBuilder().setCredentials(credentials_<%=cid%>).setProjectId(<%=projectId%>);
+		<% if( "true".equals(ElementParameterParser.getValue(node, "__USE_REGION_ENDPOINT__")) ){ %>
+			bigQueryOptionsBuilder_<%=cid%>.setHost( <%= ElementParameterParser.getValue(node, "__REGION_ENDPOINT_BQ__")%> );
+		<%  } %>
+		com.google.cloud.bigquery.BigQuery bigquery_<%=cid%> = bigQueryOptionsBuilder_<%=cid%>.build().getService();
 
 		/* ----END-CREATING-CLIENT (Cloud API)---- */
 
