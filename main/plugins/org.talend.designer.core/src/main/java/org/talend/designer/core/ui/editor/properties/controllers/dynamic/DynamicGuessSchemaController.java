@@ -58,7 +58,6 @@ import org.talend.designer.core.i18n.Messages;
 import org.talend.designer.core.ui.editor.cmd.ChangeMetadataCommand;
 import org.talend.designer.core.ui.editor.nodes.Node;
 import org.talend.designer.core.ui.editor.properties.controllers.AbstractElementPropertySectionController;
-import org.talend.designer.core.ui.editor.properties.controllers.dynamic.DynamicGuessSchemaProcess.GuessSchemaResult;
 import org.talend.designer.core.ui.editor.properties.controllers.uidialog.OpenContextChooseComboDialog;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -73,21 +72,21 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
 
     private static final String SCHEMA = "SCHEMA"; //$NON-NLS-1$
 
-    private final ExecutorService executorService = Executors
+    private ExecutorService executorService = Executors
             .newCachedThreadPool(new BasicThreadFactory.Builder().namingPattern(getClass().getName() + "-%d").build()); //$NON-NLS-1$
 
-    public DynamicGuessSchemaController(final IDynamicProperty dp) {
+    public DynamicGuessSchemaController(IDynamicProperty dp) {
         super(dp);
     }
 
     @Override
-    public Control createControl(final Composite subComposite, final IElementParameter param, final int numInRow,
-            final int nbInRow, final int top, final Control lastControl) {
+    public Control createControl(Composite subComposite, IElementParameter param, int numInRow, int nbInRow, int top,
+            Control lastControl) {
         this.curParameter = param;
         this.paramFieldType = param.getFieldType();
         FormData data;
 
-        final Button btnCmd = new Button(subComposite, SWT.NONE);
+        Button btnCmd = new Button(subComposite, SWT.NONE);
         btnCmd.setText(GUESS_SCHEMA_NAME);
 
         data = new FormData();
@@ -127,7 +126,7 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
         } catch (InvocationTargetException | InterruptedException e) {
             Display.getDefault().asyncExec(() -> {
                 ExceptionMessageDialog.openError(composite.getShell(), Messages.getString("guessSchema.dialog.error.title"), //$NON-NLS-1$
-                        Messages.getString("guessSchema.dialog.error.msg.default"), e); //$NON-NLS-1$
+                        Messages.getString("guessSchema.dialog.error.msg.default"), e.getCause().getCause()); //$NON-NLS-1$
             });
             if (InterruptedException.class.isInstance(e)) {
                 Thread.currentThread().interrupt();
@@ -139,50 +138,27 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
             return; // task was canceled
         }
 
-        final GuessSchemaResult schema = guessSchema.getSchema();
-        if (schema == null || StringUtils.isBlank(schema.getResult())) {
-            String errorMessage = schema.getError();
-            if (StringUtils.isNotBlank(errorMessage)) {
-                ExceptionHandler.process(new Exception(errorMessage));
-            }
+        String schema = guessSchema.getSchema();
+        IMetadataTable newMeta = buildMetadata(schema);
+        if (newMeta == null || newMeta.getListColumns().isEmpty()) {
             ExceptionMessageDialog.openInformation(composite.getShell(),
                     Messages.getString("guessSchema.dialog.info.NoSchema.title"), //$NON-NLS-1$
                     Messages.getString("guessSchema.dialog.info.NoSchema.msg")); //$NON-NLS-1$
             return;
         }
-
-        final Node node = Node.class.cast(curParameter.getElement());
-        IMetadataTable newMeta = buildMetadata(schema.getResult());
-        if (newMeta == null) {
-            Exception causedBy = null;
-            String errMessage = schema.getError();
-            if (errMessage != null && !errMessage.trim().isEmpty()) {
-                causedBy = new Exception(causedBy);
-            }
-            Exception ex = null;
-            if (causedBy != null) {
-                ex = new Exception(schema.getResult(), causedBy);
-            } else {
-                ex = new Exception(schema.getResult());
-            }
-            ExceptionHandler.process(ex);
-            ExceptionMessageDialog.openError(composite.getShell(), Messages.getString("guessSchema.dialog.error.title"), //$NON-NLS-1$
-                    Messages.getString("guessSchema.dialog.error.msg.default"), //$NON-NLS-1$
-                    ex);
-            return;
-        }
+        Node node = Node.class.cast(curParameter.getElement());
         CommandStack commandStack = getCommandStack();
         MetadataDialog metaDialog = new MetadataDialog(composite.getShell(), newMeta, node, commandStack);
         metaDialog.setText(Messages.getString("guessSchema.dialog.title", node.getLabel())); //$NON-NLS-1$
         if (metaDialog.open() == MetadataDialog.OK) {
-            final IMetadataTable outputMetaCopy = metaDialog.getOutputMetaData();
-            final IMetadataTable old = node.getMetadataTable(outputMetaCopy.getTableName());
+            IMetadataTable outputMetaCopy = metaDialog.getOutputMetaData();
+            IMetadataTable old = node.getMetadataTable(outputMetaCopy.getTableName());
             if (outputMetaCopy.sameMetadataAs(old, IMetadataColumn.OPTIONS_NONE)) {
                 return;
             }
             IElementParameter param = ((List<IElementParameter>) elem.getElementParameters()).stream()
                     .filter(p -> p.getContext() != null).findFirst().orElse(curParameter);
-            final ChangeMetadataCommand cmd = new ChangeMetadataCommand(node, param, old, outputMetaCopy);
+            ChangeMetadataCommand cmd = new ChangeMetadataCommand(node, param, old, outputMetaCopy);
             if (commandStack != null) {
                 commandStack.execute(cmd);
             } else {
@@ -206,7 +182,7 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
         return selectContext;
     }
 
-    private String checkQuotes(final String str) {
+    private String checkQuotes(String str) {
         if (str == null || "".equals(str)) { //$NON-NLS-1$
             return TalendTextUtils.addQuotes(str);
         }
@@ -214,12 +190,12 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
         return str;
     }
 
-    private IMetadataTable buildMetadata(final String schema) {
+    private IMetadataTable buildMetadata(String schema) {
         if (StringUtils.isBlank(schema)) {
             return null;
         }
         List<MetadataColumn> metadataColumns = new ArrayList<>();
-        final String[] lines = schema.split("\n"); //$NON-NLS-1$
+        String[] lines = schema.split("\n"); //$NON-NLS-1$
         ObjectMapper mapper = new ObjectMapper();
         for (String line : lines) {
             try {
@@ -234,10 +210,10 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
             return null;
         }
 
-        final List<String> columnLabels = new ArrayList<>();
-        final List<IMetadataColumn> columns = new ArrayList<>();
+        List<String> columnLabels = new ArrayList<>();
+        List<IMetadataColumn> columns = new ArrayList<>();
         int i = -1;
-        for (final IMetadataColumn oneColumn : metadataColumns) {
+        for (IMetadataColumn oneColumn : metadataColumns) {
             i++;
             oneColumn.setLabel(getLabel(columnLabels, i, oneColumn));
             if (oneColumn.getOriginalDbColumnName() == null || oneColumn.getOriginalDbColumnName().isEmpty()) {
@@ -273,7 +249,7 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
         return metadataTable;
     }
 
-    private String getLabel(final List<String> columnLabels, final int i, final IMetadataColumn oneColumn) {
+    private String getLabel(List<String> columnLabels, int i, IMetadataColumn oneColumn) {
         String labelName = oneColumn.getLabel();
         String sub = ""; //$NON-NLS-1$
         String sub2 = ""; //$NON-NLS-1$
@@ -319,23 +295,23 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
 
     class DynamicGuessSchemaRunnable implements IRunnableWithProgress {
 
-        private final IContext context;
+        private IContext context;
 
-        private GuessSchemaResult schema;
+        private String schema;
 
         private boolean canceled;
 
-        DynamicGuessSchemaRunnable(final IContext context) {
+        DynamicGuessSchemaRunnable(IContext context) {
             this.context = context;
         }
 
         @Override
-        public void run(final IProgressMonitor monitor) throws InterruptedException, InvocationTargetException {
+        public void run(IProgressMonitor monitor) throws InterruptedException, InvocationTargetException {
             try {
                 DynamicGuessSchemaProcess gsp = new DynamicGuessSchemaProcess(Node.class.cast(curParameter.getElement()), context,
                         executorService);
 
-                final Future<GuessSchemaResult> result = gsp.run();
+                Future<String> result = gsp.run();
                 while (!result.isDone()) {
                     if (monitor.isCanceled()) {
                         result.cancel(true);
@@ -354,7 +330,7 @@ public class DynamicGuessSchemaController extends AbstractElementPropertySection
             }
         }
 
-        synchronized GuessSchemaResult getSchema() {
+        synchronized String getSchema() {
             return schema;
         }
 

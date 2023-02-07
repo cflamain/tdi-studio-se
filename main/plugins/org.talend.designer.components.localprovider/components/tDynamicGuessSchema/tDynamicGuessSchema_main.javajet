@@ -13,7 +13,8 @@ String cid = node.getUniqueName();
 IConnection connection = node.getIncomingConnections().get(0);
 IMetadataColumn column = connection.getMetadataTable().getListColumns().get(0);
 %>
-if (out_count_<%=cid %>++ == 0) {
+if (!out_flag_<%=cid %>) {
 	mapper_<%=cid %>.writeValue(out_<%=cid %>, <%=connection.getName() %>.<%=column.getLabel() %>.metadatas);
+	out_flag_<%=cid %> = true;
 	break;
 }
