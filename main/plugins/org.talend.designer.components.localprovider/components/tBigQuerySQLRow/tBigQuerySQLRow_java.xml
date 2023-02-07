@@ -150,6 +150,7 @@
 					SHOW_IF="(AUTH_MODE == 'SERVICEACCOUNT')" >
 			<DEFAULT>false</DEFAULT>
 		</PARAMETER>
+		<!--
 		<PARAMETER 	NAME="REGION_ENDPOINT_GS" 
 					FIELD="TEXT" 
 					NUM_ROW="5" 
@@ -158,6 +159,7 @@
 					SHOW_IF="(AUTH_MODE == 'SERVICEACCOUNT') AND (USE_REGION_ENDPOINT == 'true')" >
 		  <DEFAULT>"https://storage.googleapis.com"</DEFAULT>
 		</PARAMETER>
+		-->
 		<PARAMETER 	NAME="REGION_ENDPOINT_BQ" 
 					FIELD="TEXT" 
 					NUM_ROW="6" 
