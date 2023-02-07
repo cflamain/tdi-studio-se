@@ -140,6 +140,10 @@ public class UnifiedComponentUtil {
                 if (("JDBC".equals(databaseName) || isAdditionalJDBC(databaseName)) && !dbTypeName.equals(databaseName)) {
                     continue;
                 }
+                //
+                if ("NetSuite".equalsIgnoreCase(dbTypeName)) { //$NON-NLS-1$
+                    continue;
+                }
 
                 if (isAdditionalJDBC(databaseName)) {
                     String compKey = StringUtils.deleteWhitespace(databaseName);

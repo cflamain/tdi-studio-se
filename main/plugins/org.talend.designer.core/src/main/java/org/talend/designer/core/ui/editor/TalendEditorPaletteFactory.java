@@ -394,13 +394,16 @@ public final class TalendEditorPaletteFactory {
             componentAll = componentsHandler.filterComponents(componentAll);
         }
 
-        if (needCheckVisible) {
-            Iterator<IComponent> iter = componentAll.iterator();
-            while (iter.hasNext()) {
-                IComponent component = iter.next();
-                if (component == null || !ComponentUtilities.isComponentVisible(component) || component.isTechnical()) {
-                    iter.remove();
-                }
+        Iterator<IComponent> iter = componentAll.iterator();
+        while (iter.hasNext()) {
+            IComponent component = iter.next();
+            String oraFamily = component.getOriginalFamilyName();
+            if ("Business/NetSuite".equalsIgnoreCase(oraFamily) || "Cloud/NetSuite".equalsIgnoreCase(oraFamily)) { //$NON-NLS-1$ //$NON-NLS-2$
+                iter.remove();
+            }
+            if (needCheckVisible
+                    && (component == null || !ComponentUtilities.isComponentVisible(component) || component.isTechnical())) {
+                iter.remove();
             }
         }
 
