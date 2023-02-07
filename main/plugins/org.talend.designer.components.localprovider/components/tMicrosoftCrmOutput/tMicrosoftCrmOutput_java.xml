@@ -38484,7 +38484,7 @@
             <IMPORT
                 NAME="neethi-3.2.0"
                 MODULE="neethi-3.2.0.jar"
-                MVN="mvn:org.apache.neethi/neethi/3.1.1"
+                MVN="mvn:org.apache.neethi/neethi/3.2.0"
                 REQUIRED_IF="(AUTH_TYPE == 'ON_PREMISE') AND (MS_CRM_VERSION == 'CRM_2015')" />
             <IMPORT
                 NAME="slf4j-api-1.7.12"
