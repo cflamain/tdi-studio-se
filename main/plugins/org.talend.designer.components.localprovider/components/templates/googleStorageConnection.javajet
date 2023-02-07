@@ -32,7 +32,7 @@ globalMap.put("<%=cid%>_ERROR_MESSAGE",e_<%=cid%>.getMessage());
   <% } %>
 }
  
-  com.google.cloud.storage.StorageOptionsBuilder storageBuilder_<%=cid%> = com.google.cloud.storage.StorageOptions.newBuilder().setCredentials(credential_<%=cid%>);
+  com.google.cloud.storage.StorageOptions.Builder storageBuilder_<%=cid%> = com.google.cloud.storage.StorageOptions.newBuilder().setCredentials(credential_<%=cid%>);
 	<% if( "true".equals(ElementParameterParser.getValue(node, "__USE_REGION_ENDPOINT__")) ){ %>
 		storageBuilder_<%=cid%>.setHost( <%= ElementParameterParser.getValue(node, "__REGION_ENDPOINT_GS__")%> );
 	<%  } %>
