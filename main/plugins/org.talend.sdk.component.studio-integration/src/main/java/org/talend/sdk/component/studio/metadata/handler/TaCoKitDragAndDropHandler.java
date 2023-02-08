@@ -337,7 +337,12 @@ public class TaCoKitDragAndDropHandler extends AbstractDragAndDropServiceHandler
     private String getComponentMainName(Connection connection, final ERepositoryObjectType type) {
         if (type != null) {
             String typeLabel = type.getLabel();
-            if (NETSUITE.equalsIgnoreCase(typeLabel)) {
+            String parentTypeLabel = null;
+            ERepositoryObjectType parentType = type.findParentType(type);
+            if (parentType != null) {
+                parentTypeLabel = parentType.getLabel();
+            }
+            if (NETSUITE.equalsIgnoreCase(typeLabel) || NETSUITE.equalsIgnoreCase(parentTypeLabel)) {
                 return NETSUITE + "V2019"; //$NON-NLS-1$
             }
         }
